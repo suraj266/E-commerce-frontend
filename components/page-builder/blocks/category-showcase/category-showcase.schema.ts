@@ -1,0 +1,36 @@
+import { z } from "zod";
+
+/**
+ * One curated entry in the showcase. Stored as a list of category ids — the
+ * View component fetches the live category data so renames / image updates
+ * propagate without re-saving the block. `imageOverride` lets the admin pin
+ * a different image just for this showcase tile (useful when the category's
+ * own imageUrl is too generic).
+ */
+export const categoryShowcaseItemSchema = z.object({
+  categoryId: z.string().default(""),
+  imageOverride: z.string().default(""),
+});
+
+export const categoryShowcaseSchema = z.object({
+  title: z.string().default("Shop by category"),
+  subtitle: z.string().default(""),
+  items: z.array(categoryShowcaseItemSchema).default([]),
+  /**
+   * Auto mode pulls top-level active categories instead of the curated list.
+   * Admins can flip this for a "set it and forget it" experience.
+   */
+  source: z.enum(["manual", "auto"]).default("manual"),
+  maxItems: z.number().int().min(2).max(12).default(6),
+});
+
+export type CategoryShowcaseItem = z.infer<typeof categoryShowcaseItemSchema>;
+export type CategoryShowcaseProps = z.infer<typeof categoryShowcaseSchema>;
+
+export const categoryShowcaseDefaults = (): CategoryShowcaseProps => ({
+  title: "Shop by category",
+  subtitle: "",
+  items: [],
+  source: "manual",
+  maxItems: 6,
+});

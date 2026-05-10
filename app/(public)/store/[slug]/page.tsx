@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { Mail, Phone, Store as StoreIcon } from "lucide-react";
@@ -98,11 +99,12 @@ export default function PublicStorePage() {
       {/* Banner */}
       <div className="relative h-48 sm:h-64 bg-gradient-to-r from-primary/20 to-primary/5">
         {store.bannerUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={store.bannerUrl}
             alt={`${store.name} banner`}
-            className="h-full w-full object-cover"
+            fill
+            sizes="100vw"
+            className="object-cover"
           />
         )}
       </div>
@@ -112,11 +114,12 @@ export default function PublicStorePage() {
         <div className="flex items-end gap-4">
           <div className="h-24 w-24 rounded-lg bg-card border-4 border-background shadow-lg flex items-center justify-center overflow-hidden">
             {store.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={store.logoUrl}
                 alt={store.name}
-                className="h-full w-full object-cover"
+                fill
+                sizes="100px"
+                className="object-cover"
               />
             ) : (
               <StoreIcon className="h-10 w-10 text-muted-foreground" />

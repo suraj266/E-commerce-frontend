@@ -9,6 +9,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { Globe, Tag as BrandIcon } from "lucide-react";
@@ -71,10 +72,11 @@ export default function PublicBrandPage() {
       {/* Banner */}
       <div className="relative h-48 sm:h-64 bg-gradient-to-r from-primary/20 to-primary/5">
         {brand.bannerUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={brand.bannerUrl}
             alt={`${brand.name} banner`}
+            fill
+            sizes="100vw"
             className="h-full w-full object-cover"
           />
         )}
@@ -85,10 +87,11 @@ export default function PublicBrandPage() {
         <div className="flex items-end gap-4">
           <div className="h-24 w-24 rounded-lg bg-card border-4 border-background shadow-lg flex items-center justify-center overflow-hidden">
             {brand.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={brand.logoUrl}
                 alt={brand.name}
+                fill
+                sizes="100px"
                 className="h-full w-full object-cover"
               />
             ) : (

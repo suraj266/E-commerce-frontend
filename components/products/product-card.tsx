@@ -6,12 +6,14 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { Box } from "lucide-react";
 
 import { Product } from "@/types/product.types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { discountPercent, formatPrice } from "@/lib/utils/currency";
+import { useSiteSettings } from "@/lib/context/site-settings-context";
 
 interface ProductCardProps {
   product: Product;
@@ -20,6 +22,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
+  const { getDisplayPrice } = useSiteSettings();
   const primaryImage =
     product.images?.find((i) => i.isPrimary) ?? product.images?.[0];
   const pct = discountPercent(product.price, product.compareAtPrice);
@@ -29,11 +32,12 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
       <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
         <div className="relative aspect-square bg-muted">
           {primaryImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={primaryImage.imageUrl}
               alt={primaryImage.altText ?? product.name}
-              className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
@@ -60,7 +64,7 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
           </div>
           <div className="flex items-baseline gap-2 pt-1">
             <span className="font-semibold text-foreground">
-              {formatPrice(product.price, currency)}
+              {formatPrice(getDisplayPrice(product.price, product.priceWithTax), currency)}
             </span>
             {product.compareAtPrice != null && pct != null && (
               <span className="text-xs text-muted-foreground line-through">

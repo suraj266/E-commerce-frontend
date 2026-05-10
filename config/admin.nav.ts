@@ -29,6 +29,15 @@ import {
   Box,
   Palette,
   Receipt,
+  FileText,
+  ListTree,
+  GalleryHorizontal,
+  Users,
+  CreditCard,
+  ScrollText,
+  Wallet,
+  Settings,
+  Mail,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -86,6 +95,11 @@ export const adminNavigation: NavGroup[] = [
     label: "Marketplace",
     items: [
       {
+        title: "Customers",
+        href: "/admin/customers",
+        icon: Users,
+      },
+      {
         title: "Sellers",
         href: "/admin/sellers",
         icon: Store,
@@ -103,12 +117,62 @@ export const adminNavigation: NavGroup[] = [
     ],
   },
   {
+    label: "Content",
+    items: [
+      {
+        title: "Pages",
+        href: "/admin/pages",
+        icon: FileText,
+      },
+      {
+        title: "Menus",
+        href: "/admin/menus",
+        icon: ListTree,
+      },
+      {
+        title: "Sliders",
+        href: "/admin/sliders",
+        icon: GalleryHorizontal,
+      },
+    ],
+  },
+  {
+    label: "Payments",
+    items: [
+      {
+        title: "Transactions",
+        href: "/admin/payments/transactions",
+        icon: ScrollText,
+      },
+      {
+        title: "Payment Methods",
+        href: "/admin/payments/methods",
+        icon: CreditCard,
+      },
+      {
+        title: "Payment Logs",
+        href: "/admin/payments/logs",
+        icon: Wallet,
+      },
+    ],
+  },
+  {
     label: "Settings",
     items: [
+      {
+        title: "General",
+        href: "/admin/settings/general",
+        icon: Settings,
+      },
       {
         title: "Appearance",
         href: "/admin/settings/appearance",
         icon: Palette,
+      },
+      {
+        title: "Email",
+        href: "/admin/settings/email",
+        icon: Mail,
       },
     ],
   },

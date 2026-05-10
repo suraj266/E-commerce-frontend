@@ -20,6 +20,25 @@ export const PRODUCT_IMAGE_FIELDS = gql`
   }
 `;
 
+export const PRODUCT_SUMMARY_FIELDS = gql`
+  ${PRODUCT_IMAGE_FIELDS}
+  fragment ProductSummaryFields on Product {
+    id
+    name
+    slug
+    productType
+    status
+    isFeatured
+    price
+    compareAtPrice
+    priceWithTax
+    createdAt
+    images {
+      ...ProductImageFields
+    }
+  }
+`;
+
 export const PRODUCT_FIELDS = gql`
   ${PRODUCT_IMAGE_FIELDS}
   fragment ProductFields on Product {
@@ -38,6 +57,7 @@ export const PRODUCT_FIELDS = gql`
     price
     compareAtPrice
     costPrice
+    priceWithTax
     sku
     weight
     length
@@ -232,6 +252,7 @@ export const GET_PUBLIC_PRODUCT = gql`
         id
         sku
         price
+        priceWithTax
         compareAtPrice
         imageUrl
         status
@@ -251,7 +272,7 @@ export const GET_PUBLIC_PRODUCT = gql`
 `;
 
 export const GET_PUBLIC_PRODUCTS = gql`
-  ${PRODUCT_FIELDS}
+  ${PRODUCT_SUMMARY_FIELDS}
   query GetPublicProducts(
     $storeSlug: String
     $brandSlug: String
@@ -268,7 +289,54 @@ export const GET_PUBLIC_PRODUCTS = gql`
       sort: $sort
       limit: $limit
     ) {
-      ...ProductFields
+      ...ProductSummaryFields
+      variants {
+        id
+        price
+        priceWithTax
+        availableQuantity
+      }
+    }
+  }
+`;
+
+export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
+  ${PRODUCT_SUMMARY_FIELDS}
+  query GetPaginatedPublicProducts(
+    $storeSlug: String
+    $brandSlug: String
+    $tagSlug: String
+    $categorySlug: String
+    $minPrice: Float
+    $maxPrice: Float
+    $sort: ProductSortOrder
+    $page: Int
+    $pageSize: Int
+  ) {
+    paginatedPublicProducts(
+      storeSlug: $storeSlug
+      brandSlug: $brandSlug
+      tagSlug: $tagSlug
+      categorySlug: $categorySlug
+      minPrice: $minPrice
+      maxPrice: $maxPrice
+      sort: $sort
+      page: $page
+      pageSize: $pageSize
+    ) {
+      items {
+        ...ProductSummaryFields
+        variants {
+          id
+          price
+          priceWithTax
+          availableQuantity
+        }
+      }
+      totalCount
+      totalPages
+      currentPage
+      pageSize
     }
   }
 `;

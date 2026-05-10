@@ -87,20 +87,14 @@ export default function AdminLoginPage() {
   async function onSubmit(values: z.infer<typeof adminLoginSchema>) {
     setServerError(null);
     try {
-      // Call the backend auth API
+      // Admin-only login surface. Backend rejects non-admin credentials
+      // (customer / seller) with a generic "Invalid credentials" error so
+      // the admin portal can't be probed for role-bound accounts.
       const response = await authApi.login({
         email: values.email,
         password: values.password,
+        accountType: "admin",
       });
-
-      // Verify this user actually has admin privileges
-      const roleName = response.user.role?.name;
-      if (roleName !== "superAdmin" && roleName !== "admin") {
-        setServerError(
-          "Access denied. This portal is for administrators only."
-        );
-        return;
-      }
 
       // Store auth state in Zustand (memory-only, not localStorage)
       setAuth(response.accessToken, response.user);

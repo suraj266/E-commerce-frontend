@@ -62,6 +62,8 @@ export interface ProductVariant {
   price: number;
   compareAtPrice?: number | null;
   costPrice?: number | null;
+  /** Price including tax (price + price × taxRate/100). Null if no tax assigned. */
+  priceWithTax?: number | null;
   barcode?: string | null;
   weight?: number | null;
   length?: number | null;
@@ -122,6 +124,8 @@ export interface Product {
   price?: number | null;
   compareAtPrice?: number | null;
   costPrice?: number | null;
+  /** Price including tax. Computed by backend. */
+  priceWithTax?: number | null;
   sku?: string | null;
 
   // Logistics
@@ -212,6 +216,18 @@ export interface GetPublicProductData {
 
 export interface GetPublicProductsData {
   publicProducts: Product[];
+}
+
+export interface PaginatedProducts {
+  items: Product[];
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+}
+
+export interface GetPaginatedPublicProductsData {
+  paginatedPublicProducts: PaginatedProducts;
 }
 
 // ---------------------------------------------------------------------------

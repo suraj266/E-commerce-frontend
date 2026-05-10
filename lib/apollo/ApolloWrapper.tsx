@@ -124,7 +124,23 @@ function makeClient() {
       : ApolloLink.from([errorLink, authLink, httpLink]);
 
   return new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      typePolicies: {
+        // When items are removed from Cart/Wishlist, Apollo replaces the
+        // array instead of merging. merge:true tells Apollo to always
+        // prefer the incoming array — suppresses the cache-data-loss warning.
+        Cart: {
+          fields: {
+            items: { merge: false },
+          },
+        },
+        Wishlist: {
+          fields: {
+            items: { merge: false },
+          },
+        },
+      },
+    }),
     link,
   });
 }

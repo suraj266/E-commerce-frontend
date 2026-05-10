@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ApolloWrapper } from "@/lib/apollo/ApolloWrapper";
+import { SiteSettingsProvider } from "@/lib/context/site-settings-context";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -32,7 +33,9 @@ export default function RootLayout({
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ApolloWrapper>{children}</ApolloWrapper>
+        <ApolloWrapper>
+          <SiteSettingsProvider>{children}</SiteSettingsProvider>
+        </ApolloWrapper>
         {/* Global toast notifications */}
         <Toaster richColors position="top-right" />
       </body>

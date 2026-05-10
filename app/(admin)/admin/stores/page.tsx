@@ -21,7 +21,6 @@ import { toast } from "sonner";
 import {
   Eye,
   Loader2,
-  Search,
   ShieldCheck,
   Store as StoreIcon,
   Trash2,
@@ -86,6 +85,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  TableEmpty,
+  TablePagination,
+  TableSkeleton,
+  TableToolbar,
+  usePagination,
+} from "@/components/ui/data-table";
+
+const COL_COUNT = 6;
 
 const STATUS_VARIANT: Record<
   StoreStatus,
@@ -192,6 +208,21 @@ export default function AdminStoresPage() {
     );
   });
 
+  const pg = usePagination({ totalRows: filtered.length, defaultPageSize: 25 });
+  const visible = filtered.slice(pg.start, pg.start + pg.pageSize);
+
+  const activeFilterCount =
+    (searchQuery ? 1 : 0) + (statusFilter !== "all" ? 1 : 0);
+  const onSearchChange = (v: string) => {
+    setSearchQuery(v);
+    pg.resetPage();
+  };
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    pg.resetPage();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -204,123 +235,128 @@ export default function AdminStoresPage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search name, slug, support email..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(val) => setStatusFilter(val as "all" | StoreStatus)}
-        >
-          <SelectTrigger className="w-full sm:w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {STORE_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {STORE_STATUS_LABEL[s]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <TableToolbar
+        search={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search name, slug, support email..."
+        activeFilterCount={activeFilterCount}
+        onReset={resetFilters}
+        primaryFilters={
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => setStatusFilter(val as "all" | StoreStatus)}
+          >
+            <SelectTrigger className="w-full sm:w-56">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {STORE_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STORE_STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
-      <div className="rounded-lg border bg-card p-2 shadow-sm min-h-[400px]">
-        {loading && (
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-14 w-full animate-pulse rounded-lg bg-muted"
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            {searchQuery
-              ? `No stores found for "${searchQuery}"`
-              : "No stores yet."}
-          </div>
-        )}
-
-        {!loading && filtered.length > 0 && (
-          <>
-            <div className="flex items-center gap-4 px-3 py-2 mb-2 text-sm font-medium text-muted-foreground border-b uppercase pb-3">
-              <div className="w-12 text-center">S.No</div>
-              <div className="flex-1">Name</div>
-              <div className="hidden md:block flex-1">Slug</div>
-              <div className="hidden md:block w-24 text-center">Currency</div>
-              <div className="w-32 text-center">Status</div>
-              <div className="w-28 text-right">Actions</div>
-            </div>
-
-            <div className="flex flex-col gap-1 p-1">
-              {filtered.map((store, idx) => (
-                <div
-                  key={store.id}
-                  className="flex items-center gap-4 p-3 mb-2 bg-card border rounded-lg shadow-sm hover:bg-muted/30 transition-colors"
-                >
-                  <div className="w-12 text-center text-sm text-muted-foreground font-mono">
-                    {idx + 1}
-                  </div>
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => setOpenStore(store)}
-                  >
-                    <div className="font-semibold truncate">{store.name}</div>
-                  </div>
-                  <div className="hidden md:block flex-1 min-w-0 text-sm text-muted-foreground font-mono truncate">
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden md:table-cell">Slug</TableHead>
+              <TableHead className="hidden md:table-cell text-center">
+                Currency
+              </TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && all.length === 0 ? (
+              <TableSkeleton colSpan={COL_COUNT} />
+            ) : visible.length === 0 ? (
+              <TableEmpty
+                colSpan={COL_COUNT}
+                icon={StoreIcon}
+                hasFilters={activeFilterCount > 0}
+                onClearFilters={resetFilters}
+              >
+                {searchQuery
+                  ? `No stores found for "${searchQuery}"`
+                  : "No stores yet."}
+              </TableEmpty>
+            ) : (
+              visible.map((store, idx) => (
+                <TableRow key={store.id}>
+                  <TableCell className="text-xs text-muted-foreground font-mono">
+                    {pg.start + idx + 1}
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      onClick={() => setOpenStore(store)}
+                      className="text-left hover:underline"
+                    >
+                      <div className="font-semibold truncate">{store.name}</div>
+                    </button>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground font-mono">
                     /{store.slug}
-                  </div>
-                  <div className="hidden md:block w-24 text-center text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-center text-sm text-muted-foreground">
                     {store.currencyCode}
-                  </div>
-                  <div className="w-32 flex justify-center">
+                  </TableCell>
+                  <TableCell className="text-center">
                     <Badge
                       variant={STATUS_VARIANT[store.status]}
-                      className="capitalize w-full flex justify-center text-xs"
+                      className="text-xs"
                     >
                       {STORE_STATUS_LABEL[store.status]}
                     </Badge>
-                  </div>
-                  <div className="w-28 flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="View / override"
-                      onClick={() => setOpenStore(store)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Delete"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeletingStore(store)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t px-4 py-3 text-sm text-muted-foreground">
-              Showing {filtered.length} of {all.length} stores
-            </div>
-          </>
-        )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        title="View / override"
+                        onClick={() => setOpenStore(store)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        title="Delete"
+                        onClick={() => setDeletingStore(store)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      <TablePagination
+        page={pg.safePage}
+        pageSize={pg.pageSize}
+        totalRows={filtered.length}
+        totalPages={pg.totalPages}
+        onPageChange={pg.setPage}
+        onPageSizeChange={(n) => {
+          pg.setPageSize(n);
+          pg.resetPage();
+        }}
+      />
 
       {/* Detail Sheet */}
       <Sheet open={!!openStore} onOpenChange={(o) => !o && setOpenStore(null)}>

@@ -21,7 +21,6 @@ import {
   Pencil,
   Trash2,
   Loader2,
-  Search,
   Star,
   StarOff,
   Tag as BrandIcon,
@@ -84,6 +83,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUploader } from "@/components/media/image-uploader";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  TableEmpty,
+  TablePagination,
+  TableSkeleton,
+  TableToolbar,
+  usePagination,
+} from "@/components/ui/data-table";
+
+const COL_COUNT = 8;
 
 const STATUS_VARIANT: Record<
   BrandStatus,
@@ -292,6 +308,21 @@ export default function AdminBrandsPage() {
     );
   });
 
+  const pg = usePagination({ totalRows: filtered.length, defaultPageSize: 25 });
+  const visible = filtered.slice(pg.start, pg.start + pg.pageSize);
+
+  const activeFilterCount =
+    (searchQuery ? 1 : 0) + (statusFilter !== "all" ? 1 : 0);
+  const onSearchChange = (v: string) => {
+    setSearchQuery(v);
+    pg.resetPage();
+  };
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    pg.resetPage();
+  };
+
   const isSaving = creating || updating;
 
   return (
@@ -314,79 +345,69 @@ export default function AdminBrandsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search name, slug, country..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select
-          value={statusFilter}
-          onValueChange={(val) => setStatusFilter(val as "all" | BrandStatus)}
-        >
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            {BRAND_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {BRAND_STATUS_LABEL[s]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <TableToolbar
+        search={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search name, slug, country..."
+        activeFilterCount={activeFilterCount}
+        onReset={resetFilters}
+        primaryFilters={
+          <Select
+            value={statusFilter}
+            onValueChange={(val) => setStatusFilter(val as "all" | BrandStatus)}
+          >
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {BRAND_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {BRAND_STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
-      {/* Table */}
-      <div className="rounded-lg border bg-card p-2 shadow-sm min-h-[400px]">
-        {loading && (
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-16 w-full animate-pulse rounded-lg bg-muted"
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            {searchQuery
-              ? `No brands found for "${searchQuery}"`
-              : "No brands yet. Click 'Add Brand' to create one."}
-          </div>
-        )}
-
-        {!loading && filtered.length > 0 && (
-          <>
-            <div className="flex items-center gap-4 px-3 py-2 mb-2 text-sm font-medium text-muted-foreground border-b uppercase pb-3">
-              <div className="w-12 text-center">S.No</div>
-              <div className="w-12">Logo</div>
-              <div className="flex-1">Name</div>
-              <div className="hidden md:block flex-1">Slug</div>
-              <div className="hidden lg:block w-20 text-center">Country</div>
-              <div className="w-24 text-center">Status</div>
-              <div className="w-20 text-center">Featured</div>
-              <div className="w-28 text-right">Actions</div>
-            </div>
-
-            <div className="flex flex-col gap-1 p-1">
-              {filtered.map((brand, idx) => (
-                <div
-                  key={brand.id}
-                  className="flex items-center gap-4 p-3 mb-2 bg-card border rounded-lg shadow-sm hover:bg-muted/30 transition-colors"
-                >
-                  <div className="w-12 text-center text-sm text-muted-foreground font-mono">
-                    {idx + 1}
-                  </div>
-                  <div className="w-12 flex justify-center">
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="w-12">#</TableHead>
+              <TableHead className="w-14">Logo</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden md:table-cell">Slug</TableHead>
+              <TableHead className="hidden lg:table-cell text-center">
+                Country
+              </TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-center">Featured</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && all.length === 0 ? (
+              <TableSkeleton colSpan={COL_COUNT} />
+            ) : visible.length === 0 ? (
+              <TableEmpty
+                colSpan={COL_COUNT}
+                icon={BrandIcon}
+                hasFilters={activeFilterCount > 0}
+                onClearFilters={resetFilters}
+              >
+                {searchQuery
+                  ? `No brands found for "${searchQuery}"`
+                  : "No brands yet. Click 'Add Brand' to create one."}
+              </TableEmpty>
+            ) : (
+              visible.map((brand, idx) => (
+                <TableRow key={brand.id}>
+                  <TableCell className="text-xs text-muted-foreground font-mono">
+                    {pg.start + idx + 1}
+                  </TableCell>
+                  <TableCell>
                     {brand.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -399,20 +420,23 @@ export default function AdminBrandsPage() {
                         <BrandIcon className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
-                  </div>
-                  <div
-                    className="flex-1 min-w-0 cursor-pointer"
-                    onClick={() => openEdit(brand)}
-                  >
-                    <div className="font-semibold truncate">{brand.name}</div>
-                  </div>
-                  <div className="hidden md:block flex-1 min-w-0 text-xs text-muted-foreground font-mono truncate">
+                  </TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => openEdit(brand)}
+                      className="text-left hover:underline"
+                    >
+                      <div className="font-semibold truncate">{brand.name}</div>
+                    </button>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-xs text-muted-foreground font-mono truncate max-w-[240px]">
                     /brand/{brand.slug}
-                  </div>
-                  <div className="hidden lg:block w-20 text-center text-sm text-muted-foreground">
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-center text-sm text-muted-foreground">
                     {brand.countryCode ?? "—"}
-                  </div>
-                  <div className="w-24 flex justify-center">
+                  </TableCell>
+                  <TableCell className="text-center">
                     <button
                       type="button"
                       onClick={() => toggleStatus(brand)}
@@ -426,11 +450,12 @@ export default function AdminBrandsPage() {
                         {BRAND_STATUS_LABEL[brand.status]}
                       </Badge>
                     </button>
-                  </div>
-                  <div className="w-20 flex justify-center">
+                  </TableCell>
+                  <TableCell className="text-center">
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-8 w-8"
                       onClick={() => toggleFeatured(brand)}
                       title={brand.isFeatured ? "Unfeature" : "Feature"}
                     >
@@ -440,52 +465,64 @@ export default function AdminBrandsPage() {
                         <StarOff className="h-4 w-4 text-muted-foreground" />
                       )}
                     </Button>
-                  </div>
-                  <div className="w-28 flex items-center justify-end gap-1">
-                    {brand.websiteUrl && (
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {brand.websiteUrl && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                          title="Open website"
+                        >
+                          <a
+                            href={brand.websiteUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        asChild
-                        title="Open website"
+                        className="h-8 w-8"
+                        onClick={() => openEdit(brand)}
+                        title="Edit"
                       >
-                        <a
-                          href={brand.websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </a>
+                        <Pencil className="h-4 w-4" />
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEdit(brand)}
-                      title="Edit"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setDeleting(brand)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t px-4 py-3 text-sm text-muted-foreground">
-              Showing {filtered.length} of {all.length} brands
-            </div>
-          </>
-        )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeleting(brand)}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      <TablePagination
+        page={pg.safePage}
+        pageSize={pg.pageSize}
+        totalRows={filtered.length}
+        totalPages={pg.totalPages}
+        onPageChange={pg.setPage}
+        onPageSizeChange={(n) => {
+          pg.setPageSize(n);
+          pg.resetPage();
+        }}
+      />
 
       {/* ===================================================================
           CREATE / EDIT SHEET

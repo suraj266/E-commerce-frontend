@@ -16,6 +16,7 @@ import {
   Box,
   Boxes,
   ShieldCheck,
+  Package,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -48,6 +49,16 @@ export const sellerNavigation: NavGroup[] = [
         title: "Inventory",
         href: "/seller/inventory",
         icon: Boxes,
+      },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      {
+        title: "Orders",
+        href: "/seller/orders",
+        icon: Package,
       },
     ],
   },

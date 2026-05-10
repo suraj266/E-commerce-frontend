@@ -32,6 +32,26 @@ export interface RegisterSellerResponse {
   verificationUrl?: string;
 }
 
+export interface RegisterCustomerRequest {
+  name: string;
+  email: string;
+  password: string;
+}
+
+export type RegisterCustomerResponse = RegisterSellerResponse;
+
+export interface RequestPasswordResetResponse {
+  message: string;
+  // Dev-only — frontend shows a click-through link until SMTP is wired.
+  // Production responses strip these.
+  resetToken?: string;
+  resetUrl?: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export interface VerifyEmailResponse {
   message: string;
   email: string;
@@ -94,6 +114,44 @@ export const authApi = {
     return await apiClient<RegisterSellerResponse>('/auth/seller/register', {
       method: 'POST',
       body: JSON.stringify(input),
+    });
+  },
+
+  registerCustomer: async (
+    input: RegisterCustomerRequest,
+  ): Promise<RegisterCustomerResponse> => {
+    return await apiClient<RegisterCustomerResponse>(
+      '/auth/customer/register',
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      },
+    );
+  },
+
+  // ---------------------------------------------------------------------------
+  // Password reset
+  // ---------------------------------------------------------------------------
+
+  requestPasswordReset: async (
+    email: string,
+  ): Promise<RequestPasswordResetResponse> => {
+    return await apiClient<RequestPasswordResetResponse>(
+      '/auth/request-password-reset',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      },
+    );
+  },
+
+  resetPassword: async (
+    token: string,
+    password: string,
+  ): Promise<ResetPasswordResponse> => {
+    return await apiClient<ResetPasswordResponse>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password }),
     });
   },
 

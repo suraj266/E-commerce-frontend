@@ -20,18 +20,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  Loader2,
-  Receipt,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Receipt } from "lucide-react";
 
 import {
   GET_ADMIN_TAXES_PAGINATED,
@@ -84,6 +73,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSetPageTitle } from "@/components/shell/page-title-context";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  TableEmpty,
+  TablePagination,
+  TableSkeleton,
+  TableToolbar,
+  usePagination,
+} from "@/components/ui/data-table";
+
+const COL_COUNT = 6;
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 // ---------------------------------------------------------------------------
 // Form schema
@@ -109,8 +116,6 @@ export default function TaxesPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTax, setEditingTax] = useState<Tax | null>(null);
   const [deletingTax, setDeletingTax] = useState<Tax | null>(null);
@@ -121,15 +126,23 @@ export default function TaxesPage() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  // Reset to page 1 on search/page-size change
+  // Server pagination — sync server's totalCount into the hook each load
+  const [serverTotal, setServerTotal] = useState(0);
+  const pg = usePagination({
+    totalRows: serverTotal,
+    defaultPageSize: 50,
+  });
+
+  // Reset to page 1 on search change
   useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, pageSize]);
+    pg.resetPage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pg.resetPage stable
+  }, [debouncedSearch]);
 
   // ---- Data ----
   const refetchVars = {
-    page: currentPage,
-    pageSize,
+    page: pg.page,
+    pageSize: pg.pageSize,
     search: debouncedSearch || null,
   };
 
@@ -145,6 +158,12 @@ export default function TaxesPage() {
   useEffect(() => {
     if (queryError) toast.error(`Failed to load taxes: ${queryError.message}`);
   }, [queryError]);
+
+  // Sync server-reported totalCount into the pagination hook
+  useEffect(() => {
+    const c = data?.adminTaxesPaginated?.totalCount;
+    if (typeof c === "number" && c !== serverTotal) setServerTotal(c);
+  }, [data?.adminTaxesPaginated?.totalCount, serverTotal]);
 
   // ---- Mutations ----
   const refetchQueries = [
@@ -254,14 +273,17 @@ export default function TaxesPage() {
   }
 
   // ---- Derived ----
-  const paged = data?.adminTaxesPaginated;
-  const taxes = paged?.items ?? [];
-  const totalCount = paged?.totalCount ?? 0;
-  const totalPages = paged?.totalPages ?? 1;
-  const serverPage = paged?.currentPage ?? currentPage;
-  const startIdx = (serverPage - 1) * pageSize + 1;
-  const endIdx = Math.min(serverPage * pageSize, totalCount);
+  const taxes = data?.adminTaxesPaginated?.items ?? [];
   const isSaving = creating || updating;
+  const activeFilterCount = debouncedSearch ? 1 : 0;
+  const onSearchChange = (v: string) => {
+    setSearchQuery(v);
+    pg.resetPage();
+  };
+  const resetFilters = () => {
+    setSearchQuery("");
+    pg.resetPage();
+  };
 
   // ---- Render ----
   return (
@@ -283,194 +305,106 @@ export default function TaxesPage() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative w-full sm:max-w-xs">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search name or description..."
-          className="pl-9"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
+      <TableToolbar
+        search={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search name or description..."
+        activeFilterCount={activeFilterCount}
+        onReset={resetFilters}
+      />
 
-      {/* Table */}
-      <div className="rounded-lg border bg-card shadow-sm min-h-[300px]">
-        {queryLoading && (
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-14 w-full animate-pulse rounded-lg bg-muted"
-              />
-            ))}
-          </div>
-        )}
-
-        {!queryLoading && taxes.length === 0 && (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            {debouncedSearch
-              ? `No taxes found for "${debouncedSearch}"`
-              : "No taxes yet. Click 'Add Tax' to create one."}
-          </div>
-        )}
-
-        {!queryLoading && taxes.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-xs uppercase text-muted-foreground border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">Name</th>
-                  <th className="px-3 py-3 text-right font-medium">Rate</th>
-                  <th className="px-3 py-3 text-left font-medium hidden md:table-cell">
-                    Description
-                  </th>
-                  <th className="px-3 py-3 text-center font-medium hidden sm:table-cell">
-                    Order
-                  </th>
-                  <th className="px-3 py-3 text-center font-medium">Status</th>
-                  <th className="px-3 py-3 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {taxes.map((tax) => (
-                  <tr
-                    key={tax.id}
-                    className="border-b last:border-b-0 hover:bg-muted/30 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium">{tax.name}</td>
-                    <td className="px-3 py-3 text-right font-mono">
-                      {tax.rate.toFixed(2)}%
-                    </td>
-                    <td className="px-3 py-3 text-muted-foreground hidden md:table-cell max-w-md truncate">
-                      {tax.description ?? "—"}
-                    </td>
-                    <td className="px-3 py-3 text-center font-mono text-xs hidden sm:table-cell text-muted-foreground">
-                      {tax.displayOrder}
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <Badge
-                        variant={tax.isActive ? "default" : "secondary"}
-                        className="text-[10px]"
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead>Name</TableHead>
+              <TableHead className="text-right">Rate</TableHead>
+              <TableHead className="hidden md:table-cell">
+                Description
+              </TableHead>
+              <TableHead className="hidden sm:table-cell text-center">
+                Order
+              </TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {queryLoading && taxes.length === 0 ? (
+              <TableSkeleton colSpan={COL_COUNT} />
+            ) : taxes.length === 0 ? (
+              <TableEmpty
+                colSpan={COL_COUNT}
+                icon={Receipt}
+                hasFilters={activeFilterCount > 0}
+                onClearFilters={resetFilters}
+              >
+                {debouncedSearch
+                  ? `No taxes found for "${debouncedSearch}"`
+                  : "No taxes yet. Click 'Add Tax' to create one."}
+              </TableEmpty>
+            ) : (
+              taxes.map((tax) => (
+                <TableRow key={tax.id}>
+                  <TableCell className="font-medium">{tax.name}</TableCell>
+                  <TableCell className="text-right font-mono">
+                    {tax.rate.toFixed(2)}%
+                  </TableCell>
+                  <TableCell className="text-muted-foreground hidden md:table-cell max-w-md truncate">
+                    {tax.description ?? "—"}
+                  </TableCell>
+                  <TableCell className="text-center font-mono text-xs hidden sm:table-cell text-muted-foreground">
+                    {tax.displayOrder}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant={tax.isActive ? "default" : "secondary"}
+                      className="text-[10px]"
+                    >
+                      {tax.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => openEditForm(tax)}
+                        title="Edit"
                       >
-                        {tax.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => openEditForm(tax)}
-                          title="Edit"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeletingTax(tax)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination footer */}
-        {!queryLoading && totalCount > 0 && (
-          <div className="border-t px-3 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-muted-foreground">
-              Showing{" "}
-              <span className="font-medium text-foreground">{startIdx}</span>–
-              <span className="font-medium text-foreground">{endIdx}</span> of{" "}
-              <span className="font-medium text-foreground">
-                {totalCount.toLocaleString("en-IN")}
-              </span>{" "}
-              {debouncedSearch
-                ? `matches for "${debouncedSearch}"`
-                : "taxes"}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 mr-2">
-                <span className="text-sm text-muted-foreground hidden sm:inline">
-                  Rows
-                </span>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(v) => setPageSize(Number(v))}
-                >
-                  <SelectTrigger className="h-8 w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[25, 50, 100].map((n) => (
-                      <SelectItem key={n} value={String(n)}>
-                        {n}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setCurrentPage(1)}
-                disabled={serverPage <= 1}
-                title="First page"
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={serverPage <= 1}
-                title="Previous page"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium px-2 min-w-[5rem] text-center">
-                {serverPage} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={serverPage >= totalPages}
-                title="Next page"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={serverPage >= totalPages}
-                title="Last page"
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeletingTax(tax)}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      <TablePagination
+        page={pg.safePage}
+        pageSize={pg.pageSize}
+        totalRows={serverTotal}
+        totalPages={pg.totalPages}
+        onPageChange={pg.setPage}
+        onPageSizeChange={(n) => {
+          pg.setPageSize(n);
+          pg.resetPage();
+        }}
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
+      />
 
       {/* Create / Edit Dialog */}
       <Dialog open={isFormOpen} onOpenChange={(o) => !o && closeForm()}>

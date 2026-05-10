@@ -40,7 +40,6 @@ import {
   Loader2,
   Pencil,
   Plus,
-  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -108,6 +107,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  TableEmpty,
+  TablePagination,
+  TableSkeleton,
+  TableToolbar,
+  usePagination,
+} from "@/components/ui/data-table";
+
+const COL_COUNT = 6;
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -261,6 +277,21 @@ export default function AdminAttributesPage() {
     );
   });
 
+  const pg = usePagination({ totalRows: filtered.length, defaultPageSize: 25 });
+  const visible = filtered.slice(pg.start, pg.start + pg.pageSize);
+
+  const activeFilterCount =
+    (searchQuery ? 1 : 0) + (typeFilter !== "all" ? 1 : 0);
+  const onSearchChange = (v: string) => {
+    setSearchQuery(v);
+    pg.resetPage();
+  };
+  const resetFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("all");
+    pg.resetPage();
+  };
+
   const isSaving = creating || updating;
 
   return (
@@ -284,93 +315,88 @@ export default function AdminAttributesPage() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search name, slug..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <Select
-          value={typeFilter}
-          onValueChange={(val) => setTypeFilter(val as "all" | AttributeType)}
-        >
-          <SelectTrigger className="w-full sm:w-44">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
-            {ATTRIBUTE_TYPE_OPTIONS.map((t) => (
-              <SelectItem key={t} value={t}>
-                {ATTRIBUTE_TYPE_LABEL[t]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <TableToolbar
+        search={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="Search name, slug..."
+        activeFilterCount={activeFilterCount}
+        onReset={resetFilters}
+        primaryFilters={
+          <Select
+            value={typeFilter}
+            onValueChange={(val) => setTypeFilter(val as "all" | AttributeType)}
+          >
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              {ATTRIBUTE_TYPE_OPTIONS.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {ATTRIBUTE_TYPE_LABEL[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
 
-      {/* Table */}
-      <div className="rounded-lg border bg-card p-2 shadow-sm min-h-[400px]">
-        {loading && (
-          <div className="space-y-3 p-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-14 w-full animate-pulse rounded-lg bg-muted"
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
-          <div className="flex h-32 items-center justify-center text-muted-foreground">
-            {searchQuery
-              ? `No attributes found for "${searchQuery}"`
-              : "No attributes yet. Click 'Add Attribute' to create one."}
-          </div>
-        )}
-
-        {!loading && filtered.length > 0 && (
-          <>
-            <div className="flex items-center gap-4 px-3 py-2 mb-2 text-sm font-medium text-muted-foreground border-b uppercase pb-3">
-              <div className="w-12 text-center">S.No</div>
-              <div className="flex-1">Name</div>
-              <div className="hidden md:block w-32">Type</div>
-              <div className="hidden lg:block w-20 text-center">Variant?</div>
-              <div className="w-20 text-center">Values</div>
-              <div className="w-24 text-right">Actions</div>
-            </div>
-
-            <div className="flex flex-col gap-1 p-1">
-              {filtered.map((attr, idx) => {
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead className="w-12">#</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead className="hidden md:table-cell">Type</TableHead>
+              <TableHead className="hidden lg:table-cell text-center">
+                Variant?
+              </TableHead>
+              <TableHead className="text-center">Values</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && all.length === 0 ? (
+              <TableSkeleton colSpan={COL_COUNT} />
+            ) : visible.length === 0 ? (
+              <TableEmpty
+                colSpan={COL_COUNT}
+                icon={Layers}
+                hasFilters={activeFilterCount > 0}
+                onClearFilters={resetFilters}
+              >
+                {searchQuery
+                  ? `No attributes found for "${searchQuery}"`
+                  : "No attributes yet. Click 'Add Attribute' to create one."}
+              </TableEmpty>
+            ) : (
+              visible.map((attr, idx) => {
                 const valuesCount = attr.values?.length ?? 0;
                 return (
-                  <div
-                    key={attr.id}
-                    className="flex items-center gap-4 p-3 mb-2 bg-card border rounded-lg shadow-sm hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="w-12 text-center text-sm text-muted-foreground font-mono">
-                      {idx + 1}
-                    </div>
-                    <div
-                      className="flex-1 min-w-0 cursor-pointer"
-                      onClick={() => openEdit(attr)}
-                    >
-                      <div className="font-semibold truncate">{attr.name}</div>
-                      <div className="text-xs text-muted-foreground font-mono truncate">
-                        {attr.slug}
-                      </div>
-                    </div>
-                    <div className="hidden md:block w-32">
+                  <TableRow key={attr.id}>
+                    <TableCell className="text-xs text-muted-foreground font-mono">
+                      {pg.start + idx + 1}
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(attr)}
+                        className="text-left hover:underline"
+                      >
+                        <div className="font-semibold truncate">
+                          {attr.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-mono truncate">
+                          {attr.slug}
+                        </div>
+                      </button>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <Badge variant="secondary" className="text-xs">
                         {ATTRIBUTE_TYPE_LABEL[attr.type]}
                       </Badge>
-                    </div>
-                    <div className="hidden lg:block w-20 text-center text-sm">
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-center text-sm">
                       {attr.isVariantAttribute ? (
                         <Badge variant="default" className="text-xs">
                           Variant
@@ -378,40 +404,51 @@ export default function AdminAttributesPage() {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                    </div>
-                    <div className="w-20 text-center text-sm text-muted-foreground font-mono">
+                    </TableCell>
+                    <TableCell className="text-center text-sm text-muted-foreground font-mono">
                       {attr.type === "BOOLEAN" ? "—" : valuesCount}
-                    </div>
-                    <div className="w-24 flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(attr)}
-                        title="Edit"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeletingAttr(attr)}
-                        title="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openEdit(attr)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setDeletingAttr(attr)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
                 );
-              })}
-            </div>
-
-            <div className="border-t px-4 py-3 text-sm text-muted-foreground">
-              Showing {filtered.length} of {all.length} attributes
-            </div>
-          </>
-        )}
+              })
+            )}
+          </TableBody>
+        </Table>
       </div>
+
+      <TablePagination
+        page={pg.safePage}
+        pageSize={pg.pageSize}
+        totalRows={filtered.length}
+        totalPages={pg.totalPages}
+        onPageChange={pg.setPage}
+        onPageSizeChange={(n) => {
+          pg.setPageSize(n);
+          pg.resetPage();
+        }}
+      />
 
       {/* ===================================================================
           CREATE / EDIT SHEET — includes values manager when editing existing

@@ -58,18 +58,14 @@ export default function SellerLoginPage() {
     setUnverifiedEmail(null);
     setResendInfo(null);
     try {
+      // Seller-only login surface. Backend rejects non-seller credentials
+      // with a generic "Invalid credentials" error so role can't be
+      // enumerated — customers / admins have their own login pages.
       const response = await authApi.login({
         email: values.email,
         password: values.password,
+        accountType: "seller",
       });
-
-      const roleName = response.user.role?.name;
-      if (roleName !== "seller" && roleName !== "superAdmin") {
-        setServerError(
-          "This portal is for sellers. Use the customer or admin login.",
-        );
-        return;
-      }
 
       setAuth(response.accessToken, response.user);
       router.push("/seller/dashboard");

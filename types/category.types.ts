@@ -28,6 +28,12 @@ export interface Category {
   updatedAt: string;
   /** Populated only by `categoryChildren` query — undefined elsewhere. */
   hasChildren?: boolean | null;
+  /** Populated only by `publicCategoryBySlug` — undefined elsewhere. */
+  children?: Category[] | null;
+}
+
+export interface GetPublicCategoryBySlugData {
+  publicCategoryBySlug: Category;
 }
 
 /** Subset returned by categoryChildren / categoryAncestors. */
@@ -65,6 +71,20 @@ export interface CategoryFormValues {
 export interface GetCategoriesData {
   categories: Category[];
 }
+
+/** Lightweight shape for the shop filter sidebar. */
+export interface ShopFilterCategory {
+  id: string;
+  name: string;
+  slug: string;
+  displayOrder: number;
+  productCount: number;
+}
+
+export interface GetShopFilterCategoriesData {
+  shopFilterCategories: ShopFilterCategory[];
+}
+
 
 export interface PaginatedCategories {
   items: Category[];

@@ -2,15 +2,13 @@
  * =============================================================================
  * Auth Layout
  * =============================================================================
- * 
- * Layout for authentication pages (login, register, forgot password).
- * Centers the auth form in the middle of the screen.
- * 
- * REVERSE AUTH PROTECTION:
- * If a user is already logged in (has refreshToken cookie),
- * they will be automatically redirected to /admin/dashboard.
- * This prevents the confusing UX of seeing a login page
- * when you're already authenticated.
+ *
+ * Wraps every (auth) route group page with the reverse-auth proxy so logged-in
+ * users get bounced to their dashboard instead of seeing the login screen.
+ *
+ * The actual visual chrome (split-screen, branding, etc.) lives in each page
+ * via <AuthSplitLayout>, so individual pages can vary their visual panel
+ * copy without forking the whole layout.
  * =============================================================================
  */
 
@@ -21,14 +19,5 @@ export default function AuthLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <ReverseAuthProxy>
-      <div className="flex h-screen w-full items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4">
-        <div className="w-full max-w-md">
-          {children}
-        </div>
-      </div>
-    </ReverseAuthProxy>
-  );
+  return <ReverseAuthProxy>{children}</ReverseAuthProxy>;
 }
-

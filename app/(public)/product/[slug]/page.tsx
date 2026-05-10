@@ -20,6 +20,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
@@ -42,6 +43,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useCart } from "@/components/cart/use-cart";
+import { useSiteSettings } from "@/lib/context/site-settings-context";
 
 export default function PublicProductPage() {
   const params = useParams<{ slug: string }>();
@@ -109,6 +112,9 @@ export default function PublicProductPage() {
 
 // ---------------------------------------------------------------------------
 function ProductDetail({ product }: { product: Product }) {
+  const { add: addToCart, busy: cartBusy } = useCart();
+  const { getDisplayPrice } = useSiteSettings();
+
   const currency =
     (product as unknown as { metadata?: { currencyCode?: string } }).metadata
       ?.currencyCode ?? "INR";
@@ -203,6 +209,9 @@ function ProductDetail({ product }: { product: Product }) {
   const displayPrice = isVariable
     ? selectedVariant?.price ?? product.price
     : product.price;
+  const displayPriceWithTax = isVariable
+    ? selectedVariant?.priceWithTax ?? product.priceWithTax
+    : product.priceWithTax;
   const displayCompareAt = isVariable
     ? selectedVariant?.compareAtPrice ?? null
     : product.compareAtPrice;
@@ -233,7 +242,11 @@ function ProductDetail({ product }: { product: Product }) {
     stockAvailable > 0 &&
     stockAvailable <= 5;
 
-  function handleAddToCart() {
+  // The variant we'll send to the cart. For SIMPLE products that's the
+  // auto-created default; for VARIABLE the user must have picked all axes.
+  const cartTargetVariant = isVariable ? selectedVariant : variants[0];
+
+  async function handleAddToCart() {
     if (isVariable && !selectedVariant) {
       toast.error("Pick all options first");
       return;
@@ -242,9 +255,10 @@ function ProductDetail({ product }: { product: Product }) {
       toast.error("Out of stock");
       return;
     }
-    toast.info("Cart is coming in Sprint 3");
+    if (!cartTargetVariant) return;
+    await addToCart(cartTargetVariant.id, 1);
   }
-  function handleBuyNow() {
+  async function handleBuyNow() {
     if (isVariable && !selectedVariant) {
       toast.error("Pick all options first");
       return;
@@ -253,7 +267,11 @@ function ProductDetail({ product }: { product: Product }) {
       toast.error("Out of stock");
       return;
     }
-    toast.info("Checkout is coming in Sprint 3");
+    if (!cartTargetVariant) return;
+    // Add to cart, then bounce to /cart. Phase 5 (checkout) will jump
+    // straight to a checkout flow with this single item.
+    const ok = await addToCart(cartTargetVariant.id, 1, { silent: true });
+    if (ok) window.location.href = "/cart";
   }
 
   return (
@@ -285,13 +303,14 @@ function ProductDetail({ product }: { product: Product }) {
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
           {/* Gallery */}
           <div className="space-y-3">
-            <div className="aspect-square rounded-lg bg-card border overflow-hidden flex items-center justify-center">
+            <div className="relative aspect-square rounded-lg bg-card border overflow-hidden flex items-center justify-center">
               {activeImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <Image
                   src={activeImage.imageUrl}
                   alt={activeImage.altText ?? product.name}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover"
                 />
               ) : (
                 <Box className="h-16 w-16 text-muted-foreground/40" />
@@ -304,17 +323,18 @@ function ProductDetail({ product }: { product: Product }) {
                     type="button"
                     key={img.id}
                     onClick={() => setActiveImage(img)}
-                    className={`aspect-square rounded-md border overflow-hidden transition ${
+                    className={`relative aspect-square rounded-md border overflow-hidden transition ${
                       activeImage?.id === img.id
                         ? "border-primary ring-2 ring-primary"
                         : "border-border hover:border-foreground/40"
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={img.imageUrl}
                       alt=""
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="20vw"
+                      className="object-cover"
                     />
                   </button>
                 ))}
@@ -436,12 +456,12 @@ function ProductDetail({ product }: { product: Product }) {
             <div className="flex items-baseline gap-3 flex-wrap pt-2">
               {isVariable && !selectedVariant ? (
                 <span className="text-2xl font-bold text-muted-foreground">
-                  Starting from {formatPrice(product.price, currency)}
+                  Starting from {formatPrice(getDisplayPrice(product.price, product.priceWithTax), currency)}
                 </span>
               ) : (
                 <>
                   <span className="text-3xl font-bold">
-                    {formatPrice(displayPrice, currency)}
+                    {formatPrice(getDisplayPrice(displayPrice, displayPriceWithTax), currency)}
                   </span>
                   {displayCompareAt != null && pct != null && (
                     <>
@@ -498,26 +518,27 @@ function ProductDetail({ product }: { product: Product }) {
               <Button
                 size="lg"
                 onClick={handleAddToCart}
-                disabled={outOfStock}
+                disabled={outOfStock || cartBusy}
                 className="flex-1"
               >
                 <ShoppingCart className="mr-2 h-5 w-5" />
-                {outOfStock ? "Out of stock" : "Add to Cart"}
+                {outOfStock
+                  ? "Out of stock"
+                  : cartBusy
+                    ? "Adding..."
+                    : "Add to Cart"}
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 onClick={handleBuyNow}
-                disabled={outOfStock}
+                disabled={outOfStock || cartBusy}
                 className="flex-1"
               >
                 <Zap className="mr-2 h-5 w-5" />
                 Buy Now
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground italic">
-              Cart and checkout flow ships in Sprint 3.
-            </p>
           </div>
         </div>
 

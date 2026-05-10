@@ -52,6 +52,22 @@ export const GET_CATEGORIES = gql`
 `;
 
 // ---------------------------------------------------------------------------
+// Query: Shop filter sidebar — only categories with active products + count
+// ---------------------------------------------------------------------------
+export const GET_SHOP_FILTER_CATEGORIES = gql`
+  query GetShopFilterCategories {
+    shopFilterCategories {
+      id
+      name
+      slug
+      displayOrder
+      productCount
+    }
+  }
+`;
+
+
+// ---------------------------------------------------------------------------
 // Query: Paginated + searchable category list (admin table only)
 // ---------------------------------------------------------------------------
 export const GET_ADMIN_CATEGORIES_PAGINATED = gql`
@@ -113,6 +129,22 @@ export const GET_CATEGORY = gql`
   query GetCategory($id: ID!) {
     category(id: $id) {
       ...CategoryFields
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Query: Public category-by-slug — backs `/category/[slug]` storefront page.
+// Returns the category + its immediate active children for sub-category chips.
+// ---------------------------------------------------------------------------
+export const GET_PUBLIC_CATEGORY_BY_SLUG = gql`
+  ${CATEGORY_FIELDS}
+  query GetPublicCategoryBySlug($slug: String!) {
+    publicCategoryBySlug(slug: $slug) {
+      ...CategoryFields
+      children {
+        ...CategoryFields
+      }
     }
   }
 `;
