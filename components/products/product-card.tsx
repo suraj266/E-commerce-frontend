@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { discountPercent, formatPrice } from "@/lib/utils/currency";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
+import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button";
 
 interface ProductCardProps {
   product: Product;
@@ -27,10 +28,19 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
     product.images?.find((i) => i.isPrimary) ?? product.images?.[0];
   const pct = discountPercent(product.price, product.compareAtPrice);
 
+  const pdpHref = `/product/${product.slug}`;
+
   return (
-    <Link href={`/product/${product.slug}`} className="group">
+    // Image + title areas each get their own <Link>. We can't wrap the whole
+    // card in one <Link> because the wishlist heart is a <button> and
+    // <button> inside <a> is invalid HTML. Same pattern as shop-product-card.
+    <div className="group relative">
       <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
-        <div className="relative aspect-square bg-muted">
+        <Link
+          href={pdpHref}
+          className="relative aspect-square bg-muted block"
+          aria-label={product.name}
+        >
           {primaryImage ? (
             <Image
               src={primaryImage.imageUrl}
@@ -52,16 +62,20 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
               -{pct}% OFF
             </Badge>
           )}
-        </div>
+        </Link>
+        {/* Heart sits outside any <Link>, on top of the image via absolute pos. */}
+        <WishlistHeartButton productId={product.id} />
         <div className="p-3 space-y-1">
           {product.brand && (
             <div className="text-xs text-muted-foreground truncate">
               {product.brand.name}
             </div>
           )}
-          <div className="font-medium text-sm line-clamp-2 min-h-[2.5rem]">
-            {product.name}
-          </div>
+          <Link href={pdpHref}>
+            <div className="font-medium text-sm line-clamp-2 min-h-[2.5rem] hover:underline">
+              {product.name}
+            </div>
+          </Link>
           <div className="flex items-baseline gap-2 pt-1">
             <span className="font-semibold text-foreground">
               {formatPrice(getDisplayPrice(product.price, product.priceWithTax), currency)}
@@ -74,6 +88,6 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
           </div>
         </div>
       </Card>
-    </Link>
+    </div>
   );
 }

@@ -52,6 +52,9 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { formatPrice } from "@/lib/utils/currency";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
+import { ApplyCouponPanel } from "@/components/coupon/apply-coupon-panel";
+import { useAppliedCoupon } from "@/components/coupon/use-applied-coupon";
+import { useCouponStore } from "@/store/coupon.store";
 
 // ---------------------------------------------------------------------------
 // Razorpay SDK type (loaded dynamically)
@@ -111,6 +114,11 @@ export default function CheckoutPage() {
   );
   const [notes, setNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Applied coupon — persisted from cart, re-validated against current cart.
+  const { code: appliedCouponCode, discountAmount: couponDiscount } =
+    useAppliedCoupon({ cartSignal: cart?.subtotal });
+  const clearAppliedCoupon = useCouponStore((s) => s.clear);
 
   // Auto-select default address
   useEffect(() => {
@@ -178,6 +186,8 @@ export default function CheckoutPage() {
                 },
               },
             });
+            // Order is redeemed — clear the persisted coupon.
+            clearAppliedCoupon();
             toast.success("Payment successful! Redirecting...");
             router.push(`/account/orders/${orderId}`);
           } catch (err) {
@@ -207,7 +217,7 @@ export default function CheckoutPage() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     },
-    [verifyPayment, router]
+    [verifyPayment, router, clearAppliedCoupon]
   );
 
   // ---- Place Order Handler ----
@@ -230,6 +240,7 @@ export default function CheckoutPage() {
             shippingAddressId: selectedAddressId,
             gateway: selectedGateway,
             customerNotes: notes || undefined,
+            couponCode: appliedCouponCode ?? undefined,
           },
         },
       });
@@ -242,7 +253,10 @@ export default function CheckoutPage() {
       }
 
       if (!result.requiresPayment) {
-        // COD — order placed immediately
+        // COD — order placed immediately. Clear the persisted coupon now
+        // that it's redeemed; the server enforces idempotency via the
+        // unique CouponRedemption.orderId so a retry can't double-apply.
+        clearAppliedCoupon();
         toast.success(`Order ${result.orderNumber} placed successfully!`);
         router.push(`/account/orders/${result.orderId}`);
         return;
@@ -472,7 +486,7 @@ export default function CheckoutPage() {
                 : cart.subtotal;
 
               // Optionally include processing fee in the total if it's fixed amount
-              let displayTotal = displaySubtotal;
+              let displayTotal = Math.max(0, displaySubtotal - couponDiscount);
               if (
                 activeGateway &&
                 activeGateway.processingFee > 0 &&
@@ -486,7 +500,10 @@ export default function CheckoutPage() {
                 activeGateway.processingFee > 0 &&
                 activeGateway.processingFeeType === "PERCENTAGE"
               ) {
-                displayTotal += (displaySubtotal * activeGateway.processingFee) / 100;
+                displayTotal +=
+                  (Math.max(0, displaySubtotal - couponDiscount) *
+                    activeGateway.processingFee) /
+                  100;
               }
 
               return (
@@ -500,12 +517,22 @@ export default function CheckoutPage() {
                     {!showPriceWithTax && (
                       <Row label="Tax" value="Calculated by seller" />
                     )}
+                    {couponDiscount > 0 && (
+                      <Row
+                        label="Coupon discount"
+                        value={`− ${formatPrice(couponDiscount)}`}
+                      />
+                    )}
                     {processingFeeDisplay && (
                       <Row
                         label="Processing fee"
                         value={processingFeeDisplay}
                       />
                     )}
+                  </div>
+
+                  <div className="mt-4 pt-4">
+                    <ApplyCouponPanel cartSignal={cart.subtotal} compact />
                   </div>
 
                   <div className="mt-4 pt-4 border-t flex items-baseline justify-between">

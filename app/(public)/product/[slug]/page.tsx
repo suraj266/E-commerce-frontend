@@ -45,6 +45,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/components/cart/use-cart";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
+import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button";
 
 export default function PublicProductPage() {
   const params = useParams<{ slug: string }>();
@@ -538,6 +539,11 @@ function ProductDetail({ product }: { product: Product }) {
                 <Zap className="mr-2 h-5 w-5" />
                 Buy Now
               </Button>
+              <WishlistHeartButton
+                productId={product.id}
+                variant="inline"
+                className="h-11 w-11"
+              />
             </div>
           </div>
         </div>

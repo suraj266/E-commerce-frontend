@@ -24,6 +24,8 @@ import { useCart } from "@/components/cart/use-cart";
 import { useAuthStore } from "@/store/auth.store";
 import { formatPrice } from "@/lib/utils/currency";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
+import { ApplyCouponPanel } from "@/components/coupon/apply-coupon-panel";
+import { useAppliedCoupon } from "@/components/coupon/use-applied-coupon";
 import type { CartItem } from "@/types/cart.types";
 
 export default function CartPage() {
@@ -31,6 +33,9 @@ export default function CartPage() {
   const isAuthed = !!accessToken;
   const { cart, loading, busy, add, updateQty, remove, clear } = useCart();
   const { showPriceWithTax, getDisplayPrice } = useSiteSettings();
+  const { discountAmount: couponDiscount } = useAppliedCoupon({
+    cartSignal: cart?.subtotal,
+  });
 
   if (!isAuthed) {
     return (
@@ -130,6 +135,7 @@ export default function CartPage() {
                 }, 0)
               : (cart?.subtotal ?? 0);
 
+            const estimatedTotal = Math.max(0, displaySubtotal - couponDiscount);
             return (
               <>
                 <div className="space-y-2 text-sm">
@@ -143,12 +149,20 @@ export default function CartPage() {
                   {!showPriceWithTax && (
                     <SummaryRow label="Tax" value="Calculated at checkout" />
                   )}
+                  {couponDiscount > 0 && (
+                    <SummaryRow
+                      label="Coupon discount"
+                      value={`− ${formatPrice(couponDiscount)}`}
+                    />
+                  )}
                 </div>
+
+                <ApplyCouponPanel cartSignal={cart?.subtotal} />
 
                 <div className="border-t pt-4 flex items-baseline justify-between">
                   <span className="text-base font-semibold">Estimated total</span>
                   <span className="text-xl font-bold">
-                    {formatPrice(displaySubtotal)}
+                    {formatPrice(estimatedTotal)}
                   </span>
                 </div>
               </>

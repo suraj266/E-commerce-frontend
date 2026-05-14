@@ -38,6 +38,7 @@ import {
   Wallet,
   Settings,
   Mail,
+  BadgePercent,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -89,6 +90,11 @@ export const adminNavigation: NavGroup[] = [
         href: "/admin/taxes",
         icon: Receipt,
       },
+      {
+        title: "Coupons",
+        href: "/admin/coupons",
+        icon: BadgePercent,
+      },
     ],
   },
   {
@@ -113,6 +119,16 @@ export const adminNavigation: NavGroup[] = [
         title: "Products",
         href: "/admin/products",
         icon: Box,
+      },
+    ],
+  },
+  {
+    label: "Marketing",
+    items: [
+      {
+        title: "Coupons",
+        href: "/admin/coupons",
+        icon: Tag,
       },
     ],
   },
