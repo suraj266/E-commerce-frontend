@@ -12,7 +12,7 @@
  * the URL flash param so the layout can surface it.
  */
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -39,6 +39,14 @@ type Values = z.infer<typeof schema>;
 const VISUAL_IMAGE = "/auth/forgot-visual.jpg";
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordPageInner />
+    </Suspense>
+  );
+}
+
+function ResetPasswordPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const token = params.get("token");

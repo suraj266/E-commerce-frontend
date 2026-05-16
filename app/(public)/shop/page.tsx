@@ -15,7 +15,7 @@
  * filter on the backend query).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 
@@ -46,6 +46,16 @@ const SORT_OPTIONS: { value: ProductSortOrder | "RECOMMENDED"; label: string }[]
 ];
 
 export default function ShopPage() {
+  // useSearchParams() triggers a CSR bailout during prerender — wrap so the
+  // route can still be built without forcing the whole page to be dynamic.
+  return (
+    <Suspense fallback={null}>
+      <ShopPageInner />
+    </Suspense>
+  );
+}
+
+function ShopPageInner() {
   const router = useRouter();
   const params = useSearchParams();
 

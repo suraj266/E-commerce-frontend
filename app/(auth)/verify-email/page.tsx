@@ -11,7 +11,7 @@
  *      can click "Verify now" before SMTP is wired up.
  */
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, MailCheck, XCircle } from "lucide-react";
@@ -28,6 +28,14 @@ type Status =
 const VISUAL_IMAGE = "/auth/verify-visual.jpg";
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailPageInner />
+    </Suspense>
+  );
+}
+
+function VerifyEmailPageInner() {
   const params = useSearchParams();
   const tokenInUrl = params.get("token");
   const emailHint = params.get("email");

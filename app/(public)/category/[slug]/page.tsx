@@ -22,7 +22,7 @@
  * the storefront (Apollo client), so we keep parity here.
  */
 
-import { useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -59,6 +59,14 @@ const SORT_OPTIONS: { value: ProductSortOrder | "RECOMMENDED"; label: string }[]
 ];
 
 export default function CategoryPage() {
+  return (
+    <Suspense fallback={null}>
+      <CategoryPageInner />
+    </Suspense>
+  );
+}
+
+function CategoryPageInner() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const router = useRouter();

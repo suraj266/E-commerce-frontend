@@ -12,7 +12,7 @@
  * this flag to the login API and let the backend decide cookie maxAge.
  */
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -37,6 +37,14 @@ type LoginValues = z.infer<typeof loginSchema>;
 const VISUAL_IMAGE = "/auth/login-visual.jpg";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const setAuth = useAuthStore((s) => s.setAuth);
