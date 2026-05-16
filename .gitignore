@@ -40,5 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# graphql-codegen output — regenerated via `pnpm codegen`
-/gql/
+# graphql-codegen output is committed: the Docker build host can't reach
+# the backend's /graphql endpoint at build time (codegen.ts uses a localhost
+# schema source), so the generated client lives in the repo. Run
+# `pnpm codegen` after pulling the latest schema and commit the diff.
