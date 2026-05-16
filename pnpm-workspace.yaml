@@ -1,3 +1,9 @@
+# pnpm v10+ treats any pnpm-workspace.yaml as a workspace declaration and
+# requires a `packages` field. We're not a real workspace, but listing `.`
+# satisfies pnpm and keeps `ignoredBuiltDependencies` in effect.
+packages:
+  - "."
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
