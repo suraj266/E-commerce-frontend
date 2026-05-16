@@ -9,7 +9,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     env_file:
-      - .env.local
+      - .env
     environment:
       NODE_ENV: development
       # next dev needs to bind on 0.0.0.0 to be reachable from the host.
