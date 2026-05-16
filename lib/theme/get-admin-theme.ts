@@ -7,8 +7,10 @@ import {
 const GRAPHQL_URL =
   process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:7000/graphql";
 
+// Named distinct from the client-side GetAdminTheme so codegen's operation-name
+// uniqueness check passes. Both hit the same resolver.
 const QUERY = /* GraphQL */ `
-  query GetAdminTheme {
+  query GetAdminThemeSSR {
     adminTheme {
       id
       primaryLight

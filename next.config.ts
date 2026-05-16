@@ -8,12 +8,17 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
+  // `standalone` emits a self-contained server at .next/standalone with only
+  // the node_modules each route traces — keeps the production Docker image
+  // small (no full node_modules copy).
+  output: "standalone",
   images: {
     unoptimized: isDev,
     // Allow images from our own backend (dev + prod) and any S3/CDN host.
     // For production, replace localhost with the real backend domain.
     remotePatterns: [
       { protocol: "http", hostname: "localhost", port: "7000", pathname: "/**" },
+      { protocol: "https", hostname: "multi-api.surajojha.com", pathname: "/**" },
       { protocol: "https", hostname: "**.s3.amazonaws.com", pathname: "/**" },
       { protocol: "https", hostname: "**.cloudfront.net", pathname: "/**" },
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },

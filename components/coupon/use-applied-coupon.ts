@@ -41,8 +41,16 @@ export interface UseAppliedCouponReturn {
   loading: boolean;
   apply: (code: string) => Promise<CouponValidation | null>;
   remove: () => void;
-  /** Convenience: discount to subtract from totals; 0 when invalid/unset. */
+  /** Pre-tax discount; 0 when invalid/unset. */
   discountAmount: number;
+  /**
+   * Effective discount on the tax-inclusive total (includes the GST savings
+   * from the discounted taxable value). Use this for the discount line on
+   * the cart/checkout summary when prices are shown tax-inclusive.
+   */
+  discountInclTax: number;
+  /** Server-computed customer-paying total, post-discount + post-GST. */
+  customerTotal: number | null;
 }
 
 export function useAppliedCoupon(
@@ -137,6 +145,21 @@ export function useAppliedCoupon(
     validation?.isValid && validation.discountAmount > 0
       ? validation.discountAmount
       : 0;
+  const discountInclTax =
+    validation?.isValid && validation.discountInclTax > 0
+      ? validation.discountInclTax
+      : 0;
+  const customerTotal =
+    validation?.isValid ? validation.customerTotal : null;
 
-  return { code, validation, loading, apply, remove, discountAmount };
+  return {
+    code,
+    validation,
+    loading,
+    apply,
+    remove,
+    discountAmount,
+    discountInclTax,
+    customerTotal,
+  };
 }

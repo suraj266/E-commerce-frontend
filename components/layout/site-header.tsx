@@ -18,11 +18,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
-import { ChevronDown, Menu as MenuIcon, Search } from "lucide-react";
+import { ChevronDown, Menu as MenuIcon } from "lucide-react";
 
 import { HeaderWishlistLink } from "@/components/wishlist/header-wishlist-link";
 import { HeaderCartLink } from "@/components/cart/header-cart-link";
 import { HeaderAccountLink } from "@/components/auth/header-account-link";
+import { SearchTrigger } from "@/components/layout/search-trigger";
 import { GET_PUBLIC_MENU } from "@/lib/graphql/menus";
 import {
   GetPublicMenuData,
@@ -157,20 +158,21 @@ export function SiteHeader() {
             Ecommerce
           </Link>
 
-          {/* Primary nav (desktop) */}
-          <nav className="hidden md:flex items-center gap-1 flex-1">
+          {/* Primary nav (desktop). No flex-1 — the inline search input
+              below takes the spare horizontal space instead. */}
+          <nav className="hidden md:flex items-center gap-1 shrink-0">
             {primaryItems.map((item) => (
               <PrimaryItem key={item.id} item={item} />
             ))}
           </nav>
 
+          {/* Inline header search. Renders an always-visible input on
+              desktop (flex-1 inside the SearchTrigger) and a separate icon
+              trigger on mobile, so the same component covers both layouts. */}
+          <SearchTrigger />
+
           {/* Right-side actions */}
-          <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" aria-label="Search" asChild>
-              <Link href="/shop">
-                <Search className="h-5 w-5" />
-              </Link>
-            </Button>
+          <div className="ml-auto md:ml-0 flex items-center gap-1 shrink-0">
             <HeaderAccountLink />
             <HeaderWishlistLink />
             <HeaderCartLink />

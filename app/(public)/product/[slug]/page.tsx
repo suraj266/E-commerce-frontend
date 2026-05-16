@@ -46,6 +46,8 @@ import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/components/cart/use-cart";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
 import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button";
+import { InlineRatingLink } from "@/components/reviews/inline-rating-link";
+import { ProductReviewsSection } from "@/components/reviews/product-reviews-section";
 
 export default function PublicProductPage() {
   const params = useParams<{ slug: string }>();
@@ -360,6 +362,8 @@ function ProductDetail({ product }: { product: Product }) {
               {product.name}
             </h1>
 
+            <InlineRatingLink productId={product.id} />
+
             {product.shortDescription && (
               <p className="text-muted-foreground">{product.shortDescription}</p>
             )}
@@ -598,6 +602,14 @@ function ProductDetail({ product }: { product: Product }) {
             </CardContent>
           </Card>
         )}
+
+        {/* Reviews — anchored so the inline rating link can scroll here */}
+        <section id="reviews" className="scroll-mt-24">
+          <ProductReviewsSection
+            productId={product.id}
+            productName={product.name}
+          />
+        </section>
       </div>
     </div>
   );

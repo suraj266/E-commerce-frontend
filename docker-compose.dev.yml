@@ -1,0 +1,80 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev # DEV: stops at the `dev` stage — source + node_modules, no production build
+    container_name: ecommerce_frontend_dev
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env.local
+    environment:
+      NODE_ENV: development
+      # next dev needs to bind on 0.0.0.0 to be reachable from the host.
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    working_dir: /app
+
+    develop:
+      watch:
+        # Source code: sync each top-level dir we actually edit so Next.js's
+        # HMR picks up changes without restarting the container.
+        - action: sync
+          path: ./app
+          target: /app/app
+        - action: sync
+          path: ./components
+          target: /app/components
+        - action: sync
+          path: ./lib
+          target: /app/lib
+        - action: sync
+          path: ./store
+          target: /app/store
+        - action: sync
+          path: ./hooks
+          target: /app/hooks
+        - action: sync
+          path: ./config
+          target: /app/config
+        - action: sync
+          path: ./types
+          target: /app/types
+        - action: sync
+          path: ./gql
+          target: /app/gql
+        - action: sync
+          path: ./public
+          target: /app/public
+
+        # Config files that next dev reads at startup — sync+restart so the
+        # in-container `next dev` picks up the new value.
+        - action: sync+restart
+          path: ./next.config.ts
+          target: /app/next.config.ts
+        - action: sync+restart
+          path: ./tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync+restart
+          path: ./postcss.config.mjs
+          target: /app/postcss.config.mjs
+
+        # Dependency change → rebuild the whole image to re-run pnpm install.
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./pnpm-lock.yaml
+
+    # Copy /app/.next out of node_modules' way and onto a named volume so the
+    # build cache survives container restarts.
+    volumes:
+      - nextcache_dev:/app/.next
+
+    # -H 0.0.0.0 forces next dev to bind on all interfaces so the host can
+    # reach it (the `dev` script in package.json binds to localhost-only).
+    command: sh -c "pnpm exec next dev -H 0.0.0.0 -p 3000"
+
+volumes:
+  nextcache_dev:

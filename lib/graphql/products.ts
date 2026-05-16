@@ -312,6 +312,7 @@ export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
     $sort: ProductSortOrder
     $page: Int
     $pageSize: Int
+    $search: String
   ) {
     paginatedPublicProducts(
       storeSlug: $storeSlug
@@ -323,6 +324,7 @@ export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
       sort: $sort
       page: $page
       pageSize: $pageSize
+      search: $search
     ) {
       items {
         ...ProductSummaryFields
@@ -337,6 +339,32 @@ export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
       totalPages
       currentPage
       pageSize
+    }
+  }
+`;
+
+/**
+ * Header search autocomplete — returns both category and product matches.
+ * Server clamps product `limit` to 10 and returns up to 3 categories.
+ * Queries < 2 chars resolve to empty arrays.
+ */
+export const SEARCH_SUGGESTIONS = gql`
+  query SearchSuggestions($q: String!, $limit: Int) {
+    searchSuggestions(q: $q, limit: $limit) {
+      categories {
+        id
+        name
+        slug
+        productCount
+      }
+      products {
+        id
+        name
+        slug
+        price
+        imageUrl
+        brandName
+      }
     }
   }
 `;

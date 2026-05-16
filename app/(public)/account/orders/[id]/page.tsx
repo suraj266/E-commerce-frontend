@@ -36,6 +36,7 @@ import {
 import { formatPrice } from "@/lib/utils/currency";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
+import { WriteReviewDialog } from "@/components/reviews/write-review-dialog";
 
 import {
   AlertDialog,
@@ -272,7 +273,7 @@ function SellerOrderCard({ sellerOrder }: { sellerOrder: SellerOrder }) {
       <ul className="divide-y">
         {sellerOrder.items.map((it) => (
           <li key={it.id}>
-            <OrderItemRow item={it} />
+            <OrderItemRow item={it} sellerOrderStatus={sellerOrder.status} />
           </li>
         ))}
       </ul>
@@ -284,7 +285,19 @@ function SellerOrderCard({ sellerOrder }: { sellerOrder: SellerOrder }) {
   );
 }
 
-function OrderItemRow({ item }: { item: OrderItem }) {
+function OrderItemRow({
+  item,
+  sellerOrderStatus,
+}: {
+  item: OrderItem;
+  sellerOrderStatus: string;
+}) {
+  const [reviewOpen, setReviewOpen] = useState(false);
+  // Eligibility on the server is the source of truth, but only delivered
+  // sub-orders are worth even surfacing the CTA. Saves an API roundtrip
+  // for every non-delivered line.
+  const canTryReview = sellerOrderStatus === "DELIVERED";
+
   return (
     <div className="flex gap-4 p-4">
       <div className="relative h-16 w-16 shrink-0 rounded-md overflow-hidden bg-muted">
@@ -305,9 +318,24 @@ function OrderItemRow({ item }: { item: OrderItem }) {
             {item.variantName}
           </div>
         )}
-        <div className="text-xs text-foreground/50 mt-0.5">
-          SKU {item.sku}
-        </div>
+        <div className="text-xs text-foreground/50 mt-0.5">SKU {item.sku}</div>
+        {canTryReview && (
+          <>
+            <button
+              type="button"
+              onClick={() => setReviewOpen(true)}
+              className="mt-2 text-xs font-medium text-brand hover:underline"
+            >
+              Write a review →
+            </button>
+            <WriteReviewDialog
+              productId={item.productId}
+              productName={item.name}
+              open={reviewOpen}
+              onOpenChange={setReviewOpen}
+            />
+          </>
+        )}
       </div>
       <div className="text-right">
         <div className="text-sm font-semibold">

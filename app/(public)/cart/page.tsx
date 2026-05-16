@@ -33,7 +33,11 @@ export default function CartPage() {
   const isAuthed = !!accessToken;
   const { cart, loading, busy, add, updateQty, remove, clear } = useCart();
   const { showPriceWithTax, getDisplayPrice } = useSiteSettings();
-  const { discountAmount: couponDiscount } = useAppliedCoupon({
+  const {
+    discountAmount: couponDiscountPreTax,
+    discountInclTax: couponDiscountInclTax,
+    customerTotal: couponCustomerTotal,
+  } = useAppliedCoupon({
     cartSignal: cart?.subtotal,
   });
 
@@ -124,7 +128,10 @@ export default function CartPage() {
           <h2 className="text-lg font-semibold">Order summary</h2>
 
           {(() => {
-            // Compute tax-inclusive subtotal if setting is ON
+            // When prices are shown tax-inclusive, use the server-computed
+            // numbers from validateCoupon — they account for the GST
+            // reduction on the discounted taxable value (CGST Act §15(3)(a))
+            // and tie out exactly to what placement will charge.
             const displaySubtotal = showPriceWithTax
               ? items.reduce((sum, item) => {
                   const unitPrice = getDisplayPrice(
@@ -135,7 +142,19 @@ export default function CartPage() {
                 }, 0)
               : (cart?.subtotal ?? 0);
 
-            const estimatedTotal = Math.max(0, displaySubtotal - couponDiscount);
+            // Pick the right discount + total for the current display mode.
+            const couponDiscount = showPriceWithTax
+              ? couponDiscountInclTax
+              : couponDiscountPreTax;
+
+            // Prefer the server's customerTotal (post-GST, post-discount) when
+            // we're in tax-inclusive mode and a coupon is applied. Falls back
+            // to subtotal−discount otherwise.
+            const estimatedTotal =
+              showPriceWithTax && couponCustomerTotal != null
+                ? couponCustomerTotal
+                : Math.max(0, displaySubtotal - couponDiscount);
+
             return (
               <>
                 <div className="space-y-2 text-sm">

@@ -41,8 +41,22 @@ export interface Coupon {
 export interface CouponValidation {
   isValid: boolean;
   reason: string | null;
+  /** Pre-tax discount (e.g. 10% × ₹100 = ₹10). */
   discountAmount: number;
+  /** Pre-tax cart subtotal. */
   subtotal: number;
+  /** Tax-inclusive subtotal, pre-discount. */
+  subtotalInclTax: number;
+  /**
+   * Effective discount on the tax-inclusive total. Includes GST reduction
+   * from the smaller post-discount taxable value (CGST Act §15(3)(a)).
+   */
+  discountInclTax: number;
+  /**
+   * Final amount the customer pays at checkout. Use this for the displayed
+   * "Total" line so it matches what placement will charge.
+   */
+  customerTotal: number;
   coupon: Coupon | null;
 }
 

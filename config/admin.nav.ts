@@ -39,6 +39,7 @@ import {
   Settings,
   Mail,
   BadgePercent,
+  Star,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -129,6 +130,11 @@ export const adminNavigation: NavGroup[] = [
         title: "Coupons",
         href: "/admin/coupons",
         icon: Tag,
+      },
+      {
+        title: "Reviews",
+        href: "/admin/reviews",
+        icon: Star,
       },
     ],
   },

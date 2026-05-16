@@ -1,0 +1,23 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        # NEXT_PUBLIC_* are baked into the client bundle at build time.
+        # Compose pulls these from the host environment / .env file.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_GRAPHQL_URL: ${NEXT_PUBLIC_GRAPHQL_URL}
+    container_name: ecommerce_frontend
+    restart: always
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      # PORT/HOSTNAME are already set in the Dockerfile but kept here so
+      # changing them does NOT need a rebuild.
+      PORT: 3000
+      HOSTNAME: 0.0.0.0

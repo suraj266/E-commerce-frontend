@@ -230,6 +230,34 @@ export interface GetPaginatedPublicProductsData {
   paginatedPublicProducts: PaginatedProducts;
 }
 
+/** Lightweight product row for header search autocomplete. */
+export interface SearchSuggestion {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  imageUrl: string | null;
+  brandName: string | null;
+}
+
+/** Category match in the header search dropdown. */
+export interface CategorySuggestion {
+  id: string;
+  name: string;
+  slug: string;
+  productCount: number;
+}
+
+/** Composite payload returned by `searchSuggestions`. */
+export interface SearchSuggestionsResult {
+  categories: CategorySuggestion[];
+  products: SearchSuggestion[];
+}
+
+export interface SearchSuggestionsData {
+  searchSuggestions: SearchSuggestionsResult;
+}
+
 // ---------------------------------------------------------------------------
 // Variant GraphQL response shapes
 // ---------------------------------------------------------------------------

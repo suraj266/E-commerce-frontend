@@ -116,8 +116,12 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Applied coupon — persisted from cart, re-validated against current cart.
-  const { code: appliedCouponCode, discountAmount: couponDiscount } =
-    useAppliedCoupon({ cartSignal: cart?.subtotal });
+  const {
+    code: appliedCouponCode,
+    discountAmount: couponDiscountPreTax,
+    discountInclTax: couponDiscountInclTax,
+    customerTotal: couponCustomerTotal,
+  } = useAppliedCoupon({ cartSignal: cart?.subtotal });
   const clearAppliedCoupon = useCouponStore((s) => s.clear);
 
   // Auto-select default address
@@ -485,8 +489,22 @@ export default function CheckoutPage() {
                   }, 0)
                 : cart.subtotal;
 
-              // Optionally include processing fee in the total if it's fixed amount
-              let displayTotal = Math.max(0, displaySubtotal - couponDiscount);
+              // Match the discount line to the display mode. Pre-tax mode
+              // shows ₹X off; tax-inclusive mode shows the effective ₹X +
+              // GST reduction, which is the real customer saving.
+              const couponDiscount = showPriceWithTax
+                ? couponDiscountInclTax
+                : couponDiscountPreTax;
+
+              // Base total: prefer the server's customerTotal in tax-inclusive
+              // mode (it accounts for GST recomputing on the discounted base),
+              // otherwise fall back to subtotal − discount.
+              let displayTotal =
+                showPriceWithTax && couponCustomerTotal != null
+                  ? couponCustomerTotal
+                  : Math.max(0, displaySubtotal - couponDiscount);
+
+              // Processing fee tacks on top of whichever base we chose.
               if (
                 activeGateway &&
                 activeGateway.processingFee > 0 &&
@@ -494,16 +512,13 @@ export default function CheckoutPage() {
               ) {
                 displayTotal += activeGateway.processingFee;
               }
-              // If PERCENTAGE, it's calculated on the backend anyway, but we can rough it for display
               if (
                 activeGateway &&
                 activeGateway.processingFee > 0 &&
                 activeGateway.processingFeeType === "PERCENTAGE"
               ) {
                 displayTotal +=
-                  (Math.max(0, displaySubtotal - couponDiscount) *
-                    activeGateway.processingFee) /
-                  100;
+                  (displayTotal * activeGateway.processingFee) / 100;
               }
 
               return (

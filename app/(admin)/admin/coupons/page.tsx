@@ -276,10 +276,18 @@ export default function AdminCouponsPage() {
   }
 
   async function onSubmit(values: CouponFormValues) {
-    const numberOrNull = (v: unknown) =>
-      v === "" || v == null ? null : Number(v);
-    const payload = {
-      code: values.code,
+    // Treats empty AND 0 as "not set" so the form can't accidentally save a
+    // useless "cap at zero" or "0 redemptions allowed" value. The backend
+    // also defends against this, but coercing here keeps the data clean.
+    const numberOrNull = (v: unknown) => {
+      if (v === "" || v == null) return null;
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    // Fields that exist on BOTH create + update inputs. `code` is create-only
+    // because it's immutable once a coupon exists (changing it would orphan
+    // historical references).
+    const shared = {
       name: values.name,
       description: values.description || undefined,
       discountType: values.discountType,
@@ -294,10 +302,12 @@ export default function AdminCouponsPage() {
     };
     if (editing) {
       await updateCoupon({
-        variables: { input: { id: editing.id, ...payload } },
+        variables: { input: { id: editing.id, ...shared } },
       });
     } else {
-      await createCoupon({ variables: { input: payload } });
+      await createCoupon({
+        variables: { input: { code: values.code, ...shared } },
+      });
     }
   }
 
@@ -617,12 +627,12 @@ export default function AdminCouponsPage() {
                         <Input
                           type="number"
                           min={0}
-                          placeholder="Cap on percentage discounts"
+                          placeholder="No cap"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription className="text-xs">
-                        Ignored for fixed-amount coupons.
+                        Leave blank for no cap. Ignored for fixed-amount coupons.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
