@@ -17,6 +17,13 @@ services:
       PORT: 3000
     working_dir: /app
 
+    # Maps host.docker.internal → the host's gateway so server-side fetches
+    # from this container can reach the backend that's published on the
+    # host (port 7000). Docker Desktop on Mac/Windows resolves this name
+    # automatically; this line is required for Docker on Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     develop:
       watch:
         # Source code: sync each top-level dir we actually edit so Next.js's

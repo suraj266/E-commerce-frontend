@@ -15,7 +15,15 @@ export interface SessionUser {
   role: { id: string; name: string } | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
+// Server-side fetches (this file only runs in a Node context) must reach
+// the backend over the Docker network, NOT via the browser-facing URL.
+// `localhost:7000` from inside the frontend container points to the
+// frontend itself. Prefer the explicit internal URL when set; fall back
+// to the public URL for non-Docker dev.
+const API_URL =
+  process.env.INTERNAL_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:7000";
 
 export async function getServerSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
