@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { CheckCircle2, Eye, EyeOff, Loader2, XCircle } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth.api";
@@ -56,8 +56,7 @@ function ResetPasswordPageInner() {
   const [done, setDone] = useState(false);
 
   const form = useForm<Values>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any) as any,
+    resolver: zodResolver(schema),
     defaultValues: { password: "", confirm: "" },
   });
 

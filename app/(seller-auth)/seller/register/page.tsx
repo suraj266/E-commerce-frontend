@@ -13,7 +13,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { Store, CheckCircle2 } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth.api";
@@ -63,7 +63,7 @@ export default function SellerRegisterPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<RegisterValues>({
-    resolver: zodResolver(registerSchema as any) as any,
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",

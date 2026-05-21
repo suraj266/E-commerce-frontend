@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { Store, MailCheck } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth.api";
@@ -49,7 +49,7 @@ export default function SellerLoginPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<z.infer<typeof sellerLoginSchema>>({
-    resolver: zodResolver(sellerLoginSchema as any) as any,
+    resolver: zodResolver(sellerLoginSchema),
     defaultValues: { email: "", password: "" },
   });
 

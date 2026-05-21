@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -51,8 +51,7 @@ export default function ProfilePage() {
   );
 
   const form = useForm<ProfileValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(profileSchema as any) as any,
+    resolver: zodResolver(profileSchema),
     defaultValues: {
       name: "",
       phone: "",

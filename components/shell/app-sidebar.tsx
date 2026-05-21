@@ -42,6 +42,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/auth.store";
 import { authApi } from "@/lib/api/auth.api";
+import { refreshAccessToken } from "@/lib/auth/refresh-manager";
 import type { NavGroup } from "@/config/nav.types";
 
 export interface AppSidebarBrand {
@@ -74,7 +75,14 @@ export function AppSidebar({
 
   async function handleLogout() {
     try {
-      if (accessToken) await authApi.logout(accessToken);
+      // Fresh tabs and post-reload sessions don't have the accessToken in
+      // memory yet (it's intentionally not persisted to localStorage). Pull
+      // one from the refresh cookie before calling logout — otherwise the
+      // backend never sees the request, the refreshToken cookie isn't
+      // cleared, and ReverseAuthProxy bounces the user right back to the
+      // dashboard on the post-logout redirect.
+      const token = accessToken ?? (await refreshAccessToken());
+      if (token) await authApi.logout(token);
     } catch (error) {
       // Even if backend logout fails, still clear locally.
       console.error("Logout API error (proceeding with local cleanup):", error);

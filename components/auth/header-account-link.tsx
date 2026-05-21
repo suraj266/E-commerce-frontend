@@ -13,8 +13,11 @@ import { useAuthStore } from "@/store/auth.store";
  *     land back in their account after authenticating
  */
 export function HeaderAccountLink() {
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  // `user` is persisted; `accessToken` lives in memory only and flips to
+  // null between page reload and boot rehydration. Using user here avoids
+  // a "Sign in" flash on every reload.
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
   const href = isAuthed ? "/account" : "/login?next=/account/profile";
   return (
     <Button variant="ghost" size="icon" aria-label="Account" asChild>

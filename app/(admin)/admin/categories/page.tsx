@@ -28,7 +28,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   Plus,
@@ -256,7 +256,7 @@ export default function CategoriesPage() {
   // ---------------------------------------------------------------------------
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema as any) as any,
+    resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       description: "",

@@ -17,12 +17,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth.api";
 import { useAuthStore } from "@/store/auth.store";
 import { AuthSplitLayout } from "@/components/auth/auth-split-layout";
+import { getRoleHome } from "@/lib/auth/role-home";
+import { sanitizeRedirect } from "@/lib/auth/safe-redirect";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -52,8 +54,7 @@ function LoginPageInner() {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<LoginValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(loginSchema as any) as any,
+    resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", rememberMe: false },
   });
 
@@ -71,8 +72,11 @@ function LoginPageInner() {
       });
       setAuth(res.accessToken, res.user);
 
-      const next = params.get("next");
-      router.push(next ?? "/account");
+      const next = sanitizeRedirect(
+        params.get("next"),
+        getRoleHome(res.user.role?.name),
+      );
+      router.push(next);
     } catch (err) {
       setServerError(
         err instanceof Error ? err.message : "Failed to sign in.",

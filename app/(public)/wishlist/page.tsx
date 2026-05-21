@@ -29,8 +29,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { formatPrice } from "@/lib/utils/currency";
 
 export default function WishlistPage() {
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
 
   const { data, loading, error } = useQuery<MyWishlistData>(GET_MY_WISHLIST, {
     skip: !isAuthed,

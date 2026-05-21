@@ -46,8 +46,11 @@ const CART_REFETCH = [
  * hydration and only pulls the integer count.
  */
 export function useCartCount() {
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  // `user` is persisted; `accessToken` is memory-only and briefly null
+  // between reload and boot-rehydration. Use user so we don't skip the
+  // count query for a frame post-reload.
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
   const { data } = useQuery<MyCartItemCountData>(GET_MY_CART_ITEM_COUNT, {
     skip: !isAuthed,
     fetchPolicy: "cache-and-network",
@@ -59,8 +62,8 @@ export function useCartCount() {
 export function useCart() {
   const router = useRouter();
   const pathname = usePathname();
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
 
   const { data, loading, refetch } = useQuery<MyCartData>(GET_MY_CART, {
     skip: !isAuthed,

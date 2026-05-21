@@ -26,7 +26,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { authApi } from "@/lib/api/auth.api";
 import { useAuthStore } from "@/store/auth.store";
 import { Shield } from "lucide-react";
@@ -73,7 +73,7 @@ export default function AdminLoginPage() {
   // NOTE: zodResolver type mismatch with Zod v4 - using explicit cast
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<z.infer<typeof adminLoginSchema>>({
-    resolver: zodResolver(adminLoginSchema as any) as any,
+    resolver: zodResolver(adminLoginSchema),
     defaultValues: {
       email: "",
       password: "",

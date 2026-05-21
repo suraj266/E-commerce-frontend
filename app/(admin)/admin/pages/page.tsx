@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   Plus,
@@ -212,8 +212,7 @@ export default function AdminPagesPage() {
   );
 
   const form = useForm<NewPageValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(newPageSchema as any) as any,
+    resolver: zodResolver(newPageSchema),
     defaultValues: { title: "", slug: "" },
   });
 

@@ -20,7 +20,7 @@ import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -131,8 +131,7 @@ export default function EmailTemplateEditorPage() {
     });
 
   const form = useForm<FormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any) as any,
+    resolver: zodResolver(schema),
     defaultValues: {
       name: "",
       description: "",

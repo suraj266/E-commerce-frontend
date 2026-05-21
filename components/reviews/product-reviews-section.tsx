@@ -48,8 +48,8 @@ interface Props {
 }
 
 export function ProductReviewsSection({ productId, productName }: Props) {
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
 
   const [sort, setSort] = useState<ReviewSort>("newest");
   const [page, setPage] = useState(1);

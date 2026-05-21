@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   Store as StoreIcon,
@@ -155,7 +155,7 @@ export default function CreateStoreWizardPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<WizardValues>({
-    resolver: zodResolver(wizardSchema as any) as any,
+    resolver: zodResolver(wizardSchema),
     defaultValues: {
       name: "",
       slug: "",

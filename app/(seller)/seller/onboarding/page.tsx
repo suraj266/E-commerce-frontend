@@ -26,7 +26,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   CheckCircle2,
@@ -175,8 +175,7 @@ export default function SellerOnboardingPage() {
     });
 
   const form = useForm<WizardValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(fullSchema as any) as any,
+    resolver: zodResolver(fullSchema),
     defaultValues: {
       legalName: "",
       displayName: "",

@@ -20,7 +20,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   Trash2,
@@ -224,8 +224,7 @@ export default function SellersPage() {
   );
 
   const statusForm = useForm<SetStatusValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(setStatusSchema as any) as any,
+    resolver: zodResolver(setStatusSchema),
     defaultValues: { status: "VERIFIED", reason: "" },
   });
 

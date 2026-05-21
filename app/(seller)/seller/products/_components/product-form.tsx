@@ -23,7 +23,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   Box,
@@ -222,7 +222,7 @@ export function ProductForm({ product }: ProductFormProps) {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema as any) as any,
+    resolver: zodResolver(productSchema),
     defaultValues: {
       storeId: product?.storeId ?? "",
       name: product?.name ?? "",

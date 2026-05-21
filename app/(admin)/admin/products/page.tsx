@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   Box,
@@ -167,8 +167,7 @@ export default function AdminProductsPage() {
     });
 
   const statusForm = useForm<SetStatusValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(setStatusSchema as any) as any,
+    resolver: zodResolver(setStatusSchema),
     defaultValues: { status: "ARCHIVED", reason: "" },
   });
 

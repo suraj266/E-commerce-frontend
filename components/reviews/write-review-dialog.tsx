@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, Play, Trash2, Video, X } from "lucide-react";
 
@@ -116,8 +116,7 @@ export function WriteReviewDialog({
     });
 
   const form = useForm<ReviewFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any) as any,
+    resolver: zodResolver(schema),
     defaultValues: { rating: 0, title: "", body: "" },
   });
 

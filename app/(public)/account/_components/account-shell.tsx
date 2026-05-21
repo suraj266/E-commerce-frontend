@@ -24,6 +24,7 @@ import { GET_MY_PROFILE } from "@/lib/graphql/account";
 import { MyProfileData } from "@/types/account.types";
 import { useAuthStore } from "@/store/auth.store";
 import { authApi } from "@/lib/api/auth.api";
+import { refreshAccessToken } from "@/lib/auth/refresh-manager";
 import { useRouter } from "next/navigation";
 
 const NAV: {
@@ -40,8 +41,12 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const user = useAuthStore((s) => s.user);
   const logoutStore = useAuthStore((s) => s.logout);
-  const isAuthed = !!accessToken;
+  // Drive UI gating off `user` (persisted) rather than `accessToken`
+  // (memory-only) so a hard reload doesn't flash the "Sign in" CTA before
+  // the token rehydrates from the refresh cookie.
+  const isAuthed = !!user;
 
   // Probe the customer-only `myProfile` to detect role mismatch (admin/
   // seller token would 403 here). The query is skipped when not authed
@@ -53,9 +58,14 @@ export function AccountShell({ children }: { children: React.ReactNode }) {
   });
 
   async function handleLogout() {
-    if (accessToken) {
+    // Token may be null on a fresh tab (memory-only). Pull one from the
+    // refresh cookie first so the backend can actually revoke the session
+    // and clear the refreshToken cookie — otherwise the next visit to a
+    // gated page bounces the user straight back in.
+    const token = accessToken ?? (await refreshAccessToken());
+    if (token) {
       try {
-        await authApi.logout(accessToken);
+        await authApi.logout(token);
       } catch {
         /* ignore — clear local state regardless */
       }

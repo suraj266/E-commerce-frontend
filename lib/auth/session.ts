@@ -15,15 +15,7 @@ export interface SessionUser {
   role: { id: string; name: string } | null;
 }
 
-// Server-side fetches (this file only runs in a Node context) must reach
-// the backend over the Docker network, NOT via the browser-facing URL.
-// `localhost:7000` from inside the frontend container points to the
-// frontend itself. Prefer the explicit internal URL when set; fall back
-// to the public URL for non-Docker dev.
-const API_URL =
-  process.env.INTERNAL_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:7000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
 
 export async function getServerSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
@@ -48,21 +40,7 @@ export async function getServerSession(): Promise<SessionUser | null> {
   }
 }
 
-/**
- * Map a role name to the user's "home" portal URL.
- * Used to redirect users to the correct dashboard based on their role.
- */
-export function getRoleHome(roleName: string | undefined | null): string {
-  switch (roleName) {
-    case "superAdmin":
-    case "admin":
-      return "/admin/dashboard";
-    case "seller":
-      return "/seller/dashboard";
-    case "customer":
-      return "/account";
-    default:
-      // No role / unknown role → send to public home
-      return "/";
-  }
-}
+// Re-export so existing server-side imports (AuthProxy/ReverseAuthProxy)
+// keep working. The actual definition lives in role-home.ts because it's
+// also consumed by client components and must not pull in `next/headers`.
+export { getRoleHome } from "./role-home";

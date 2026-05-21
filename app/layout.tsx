@@ -31,6 +31,12 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      // Browser extensions (Grammarly, Scribe Recorder, dark-mode forcers,
+      // password managers, etc.) routinely mutate <html>/<body> attributes
+      // before React hydrates, which triggers a noisy mismatch warning.
+      // Scope is limited to direct attributes of <html> — descendants are
+      // still hydration-checked normally.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
         <ApolloWrapper>

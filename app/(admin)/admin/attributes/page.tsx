@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -202,7 +202,7 @@ export default function AdminAttributesPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<AttributeFormValues>({
-    resolver: zodResolver(attributeSchema as any) as any,
+    resolver: zodResolver(attributeSchema),
     defaultValues: {
       name: "",
       slug: "",

@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth.api";
@@ -44,8 +44,7 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<RegisterValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(registerSchema as any) as any,
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",

@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   GalleryHorizontal,
@@ -203,8 +203,7 @@ export default function AdminSlidersPage() {
   );
 
   const form = useForm<NewSliderValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(newSliderSchema as any) as any,
+    resolver: zodResolver(newSliderSchema),
     defaultValues: { name: "", key: "" },
   });
 

@@ -33,8 +33,8 @@ import { useAuthStore } from "@/store/auth.store";
 export function useWishlist() {
   const router = useRouter();
   const pathname = usePathname();
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
 
   // Local Set kept in sync with the GraphQL fetch. We mutate the Set
   // optimistically and fall back to whatever the server reports next time

@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import { Loader2, Pencil, RotateCcw, Trash2, Users } from "lucide-react";
 
@@ -144,11 +144,14 @@ export default function AdminCustomersPage() {
     defaultPageSize: 50,
   });
 
-  // Reset page when filters change
+  // Reset page when filters change.
+  // pg.resetPage is stable (returned from a hook with useCallback), so we
+  // intentionally omit it from deps — otherwise its identity change would
+  // re-trigger the effect on every render of the parent hook.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     pg.resetPage();
   }, [debouncedSearch, statusFilter, includeDeleted, pg.pageSize]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- pg.resetPage stable
 
   const refetchVars = {
     status: statusFilter === "all" ? null : statusFilter,
@@ -207,8 +210,7 @@ export default function AdminCustomersPage() {
     });
 
   const form = useForm<EditValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(editSchema as any) as any,
+    resolver: zodResolver(editSchema),
     defaultValues: {
       name: "",
       phone: "",

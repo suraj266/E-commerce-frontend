@@ -15,7 +15,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -437,7 +437,7 @@ function BrandingCard({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<EditStoreValues>({
-    resolver: zodResolver(editStoreSchema as any) as any,
+    resolver: zodResolver(editStoreSchema),
     defaultValues: {
       name: store.name,
       slug: store.slug,
@@ -722,7 +722,7 @@ function WarehouseDialog({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<WarehouseValues>({
-    resolver: zodResolver(warehouseSchema as any) as any,
+    resolver: zodResolver(warehouseSchema),
     defaultValues: {
       name: "",
       code: "",

@@ -29,8 +29,8 @@ import { useAppliedCoupon } from "@/components/coupon/use-applied-coupon";
 import type { CartItem } from "@/types/cart.types";
 
 export default function CartPage() {
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
   const { cart, loading, busy, add, updateQty, remove, clear } = useCart();
   const { showPriceWithTax, getDisplayPrice } = useSiteSettings();
   const {

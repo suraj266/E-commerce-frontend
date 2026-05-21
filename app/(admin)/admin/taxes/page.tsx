@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Loader2, Receipt } from "lucide-react";
 
@@ -208,8 +208,7 @@ export default function TaxesPage() {
 
   // ---- Form ----
   const form = useForm<TaxFormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(taxSchema as any) as any,
+    resolver: zodResolver(taxSchema),
     defaultValues: {
       name: "",
       rate: 0,

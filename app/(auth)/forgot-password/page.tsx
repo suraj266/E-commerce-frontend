@@ -15,7 +15,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@/lib/forms/zod-resolver";
 import { ArrowLeft, KeyRound, Loader2, MailCheck } from "lucide-react";
 
 import { authApi } from "@/lib/api/auth.api";
@@ -36,8 +36,7 @@ export default function ForgotPasswordPage() {
   const [serverError, setServerError] = useState<string | null>(null);
 
   const form = useForm<Values>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema as any) as any,
+    resolver: zodResolver(schema),
     defaultValues: { email: "" },
   });
 

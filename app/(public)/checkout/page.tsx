@@ -81,8 +81,8 @@ function loadRazorpayScript(): Promise<boolean> {
 // ===========================================================================
 export default function CheckoutPage() {
   const router = useRouter();
-  const accessToken = useAuthStore((s) => s.accessToken);
-  const isAuthed = !!accessToken;
+  const user = useAuthStore((s) => s.user);
+  const isAuthed = !!user;
   const { showPriceWithTax, getDisplayPrice } = useSiteSettings();
 
   // ---- Data queries ----
