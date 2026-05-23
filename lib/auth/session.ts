@@ -15,7 +15,7 @@ export interface SessionUser {
   role: { id: string; name: string } | null;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7000";
+const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL;
 
 export async function getServerSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();

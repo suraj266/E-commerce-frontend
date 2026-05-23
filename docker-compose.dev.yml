@@ -12,6 +12,7 @@ services:
       - .env
     environment:
       NODE_ENV: development
+      INTERNAL_API_URL: ${INTERNAL_API_URL:-http://host.docker.internal:7000}
       # next dev needs to bind on 0.0.0.0 to be reachable from the host.
       HOSTNAME: 0.0.0.0
       PORT: 3000

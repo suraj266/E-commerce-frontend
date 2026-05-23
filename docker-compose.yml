@@ -17,7 +17,11 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      INTERNAL_API_URL: ${INTERNAL_API_URL}
       # PORT/HOSTNAME are already set in the Dockerfile but kept here so
       # changing them does NOT need a rebuild.
       PORT: 3000
       HOSTNAME: 0.0.0.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
