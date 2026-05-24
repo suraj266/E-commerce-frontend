@@ -66,6 +66,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CategorySortableList } from "./components/sortable-tree";
+import { CategoryCascader } from "@/components/category/category-cascader";
 import {
   Dialog,
   DialogContent,
@@ -643,38 +644,35 @@ export default function CategoriesPage() {
                 )}
               />
 
-              {/* Parent Category */}
+              {/* Parent Category — server-paginated cascader.
+                  Shows roots first, then drills into subs on demand. */}
               <FormField
                 control={form.control}
                 name="parentId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parent Category</FormLabel>
-                    <Select
-                      value={field.value ?? ""}
-                      onValueChange={(val) =>
-                        field.onChange(val === "none" ? "" : val)
-                      }
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="None (Root Category)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">None (Root Category)</SelectItem>
-                        {allCategories
-                          // Prevent selecting self or any of its descendants as a parent
-                          .filter((c) => !invalidParentIds.includes(c.id))
-                          .map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <CategoryCascader
+                        value={field.value || null}
+                        onChange={(id) => {
+                          // Block picking self or any descendant — would create
+                          // a cycle. invalidParentIds is computed from the full
+                          // categories cache.
+                          if (id && invalidParentIds.includes(id)) {
+                            toast.error(
+                              "Can't set a category (or its descendant) as its own parent.",
+                            );
+                            return;
+                          }
+                          field.onChange(id ?? "");
+                        }}
+                        rootPlaceholder="None (root category)"
+                      />
+                    </FormControl>
                     <FormDescription>
-                      Leave empty to make this a top-level category.
+                      Leave empty to make this a top-level category. Type to
+                      search at any level.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

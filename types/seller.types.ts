@@ -172,6 +172,12 @@ export interface GetMySellerData {
 export interface CreateMySellerData {
   createMySeller: Seller;
 }
+export interface AdminCreateSellerData {
+  adminCreateSeller: Seller;
+}
+export interface AdminUpdateSellerData {
+  adminUpdateSeller: Seller;
+}
 export interface UpdateMySellerData {
   updateMySeller: Seller;
 }

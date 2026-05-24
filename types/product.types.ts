@@ -313,6 +313,14 @@ export interface AdminSetProductStatusData {
   adminSetProductStatus: Product;
 }
 
+export interface AdminCreateProductData {
+  adminCreateProduct: Product;
+}
+
+export interface AdminUpdateProductData {
+  adminUpdateProduct: Product;
+}
+
 export interface AddMyProductImageData {
   addMyProductImage: ProductImage;
 }

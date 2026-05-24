@@ -152,10 +152,45 @@ export const GET_STORES = gql`
   }
 `;
 
+export const GET_STORE = gql`
+  ${STORE_FIELDS}
+  query GetStore($id: ID!) {
+    store(id: $id) {
+      ...StoreFields
+    }
+  }
+`;
+
 export const SET_STORE_STATUS = gql`
   ${STORE_FIELDS}
   mutation SetStoreStatus($setStoreStatusInput: SetStoreStatusInput!) {
     setStoreStatus(setStoreStatusInput: $setStoreStatusInput) {
+      ...StoreFields
+    }
+  }
+`;
+
+/**
+ * Admin creates a Store under any seller. The seller must exist and be
+ * VERIFIED. Store starts ACTIVE with a default placeholder warehouse.
+ */
+export const ADMIN_CREATE_STORE = gql`
+  ${STORE_FIELDS}
+  mutation AdminCreateStore($input: AdminCreateStoreInput!) {
+    adminCreateStore(input: $input) {
+      ...StoreFields
+    }
+  }
+`;
+
+/**
+ * Admin edits any store. Same partial-update shape as the seller self-edit;
+ * slug uniqueness + currency immutability rules still apply.
+ */
+export const ADMIN_UPDATE_STORE = gql`
+  ${STORE_FIELDS}
+  mutation AdminUpdateStore($input: UpdateStoreInput!) {
+    adminUpdateStore(input: $input) {
       ...StoreFields
     }
   }

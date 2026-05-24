@@ -148,6 +148,35 @@ export const SUBMIT_MY_SELLER_FOR_REVIEW = gql`
 // ---------------------------------------------------------------------------
 // Admin mutations
 // ---------------------------------------------------------------------------
+
+/**
+ * Admin creates a User (role=seller, pre-verified email) + Seller record
+ * atomically. Seller starts VERIFIED so they can immediately receive stores
+ * and products.
+ */
+export const ADMIN_CREATE_SELLER = gql`
+  ${SELLER_FIELDS}
+  mutation AdminCreateSeller($input: AdminCreateSellerInput!) {
+    adminCreateSeller(input: $input) {
+      ...SellerFields
+    }
+  }
+`;
+
+/**
+ * Admin edits any seller (any status, not just DRAFT/REJECTED). Uses the
+ * same UpdateSellerInput shape as the self-edit flow — the admin bypass
+ * lives in the backend service.
+ */
+export const ADMIN_UPDATE_SELLER = gql`
+  ${SELLER_FIELDS}
+  mutation AdminUpdateSeller($updateSellerInput: UpdateSellerInput!) {
+    adminUpdateSeller(updateSellerInput: $updateSellerInput) {
+      ...SellerFields
+    }
+  }
+`;
+
 export const VERIFY_SELLER_SECTION = gql`
   ${SELLER_FIELDS}
   mutation VerifySellerSection(

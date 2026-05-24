@@ -24,6 +24,8 @@ import {
   ExternalLink,
   Layers,
   Loader2,
+  Pencil,
+  Plus,
   ShieldCheck,
 } from "lucide-react";
 
@@ -227,14 +229,22 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <Box className="h-6 w-6 text-primary" />
-          Products
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Cross-store catalog. Filter, inspect, and force-archive any product.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Box className="h-6 w-6 text-primary" />
+            Products
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Cross-store catalog. Filter, inspect, and force-archive any product.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/products/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Product
+          </Link>
+        </Button>
       </div>
 
       <TableToolbar
@@ -386,6 +396,17 @@ export default function AdminProductsPage() {
                           onClick={() => setOpenProduct(product)}
                         >
                           <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Edit"
+                          asChild
+                        >
+                          <Link href={`/admin/products/${product.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
                         </Button>
                         <Button
                           variant="ghost"

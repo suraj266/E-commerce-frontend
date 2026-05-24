@@ -124,8 +124,20 @@ export interface GetStoresData {
   stores: Store[];
 }
 
+export interface GetStoreData {
+  store: Store;
+}
+
 export interface SetStoreStatusData {
   setStoreStatus: Store;
+}
+
+export interface AdminCreateStoreData {
+  adminCreateStore: Store;
+}
+
+export interface AdminUpdateStoreData {
+  adminUpdateStore: Store;
 }
 
 export interface AdminRemoveStoreData {

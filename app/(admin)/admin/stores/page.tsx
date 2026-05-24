@@ -18,9 +18,12 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   Eye,
   Loader2,
+  Pencil,
+  Plus,
   ShieldCheck,
   Store as StoreIcon,
   Trash2,
@@ -224,14 +227,22 @@ export default function AdminStoresPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <StoreIcon className="h-6 w-6 text-primary" />
-          Stores
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          All seller storefronts across the marketplace.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <StoreIcon className="h-6 w-6 text-primary" />
+            Stores
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            All seller storefronts across the marketplace.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/stores/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Store
+          </Link>
+        </Button>
       </div>
 
       <TableToolbar
@@ -326,6 +337,17 @@ export default function AdminStoresPage() {
                         onClick={() => setOpenStore(store)}
                       >
                         <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        title="Edit"
+                        asChild
+                      >
+                        <Link href={`/admin/stores/${store.id}/edit`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
                       </Button>
                       <Button
                         variant="ghost"

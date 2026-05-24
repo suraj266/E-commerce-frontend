@@ -54,7 +54,7 @@ export function CategoryShowcaseCarouselView(props: CategoryShowcaseProps) {
           <Link
             key={t.id}
             href={`/category/${t.slug}`}
-            className="group flex-shrink-0 w-[140px] sm:w-[180px] snap-start"
+            className="group flex-shrink-0 w-[80px] sm:w-[100px] snap-start"
           >
             <div className="relative aspect-square rounded-full overflow-hidden bg-muted">
               {t.imageUrl ? (
@@ -68,7 +68,7 @@ export function CategoryShowcaseCarouselView(props: CategoryShowcaseProps) {
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5" />
               )}
             </div>
-            <div className="mt-2 text-center text-sm font-medium line-clamp-2">
+            <div className="mt-2 text-center text-[11px] sm:text-xs font-medium line-clamp-2">
               {t.name}
             </div>
           </Link>

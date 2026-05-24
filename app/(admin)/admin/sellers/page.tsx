@@ -22,6 +22,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@/lib/forms/zod-resolver";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   Trash2,
   Loader2,
@@ -31,6 +32,8 @@ import {
   XCircle,
   Eye,
   MailCheck,
+  Pencil,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -319,14 +322,22 @@ export default function SellersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <StoreIcon className="h-6 w-6 text-primary" />
-          Sellers
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Full pipeline — registrations, KYC submissions, and verifications.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <StoreIcon className="h-6 w-6 text-primary" />
+            Sellers
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Full pipeline — registrations, KYC submissions, and verifications.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/admin/sellers/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Seller
+          </Link>
+        </Button>
       </div>
 
       <TableToolbar
@@ -448,6 +459,17 @@ export default function SellersPage() {
                               onClick={() => setOpenItem(it)}
                             >
                               <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Edit"
+                              asChild
+                            >
+                              <Link href={`/admin/sellers/${it.seller!.id}/edit`}>
+                                <Pencil className="h-4 w-4" />
+                              </Link>
                             </Button>
                             <Button
                               variant="ghost"

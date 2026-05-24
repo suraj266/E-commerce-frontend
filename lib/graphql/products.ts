@@ -229,12 +229,56 @@ export const GET_ADMIN_PRODUCTS = gql`
   }
 `;
 
+export const GET_ADMIN_PRODUCT = gql`
+  ${PRODUCT_FIELDS}
+  query GetAdminProduct($id: ID!) {
+    adminProduct(id: $id) {
+      ...ProductFields
+      variants {
+        id
+        sku
+        price
+        compareAtPrice
+        costPrice
+        status
+      }
+    }
+  }
+`;
+
 export const ADMIN_SET_PRODUCT_STATUS = gql`
   ${PRODUCT_FIELDS}
   mutation AdminSetProductStatus(
     $setProductStatusInput: SetProductStatusInput!
   ) {
     adminSetProductStatus(setProductStatusInput: $setProductStatusInput) {
+      ...ProductFields
+    }
+  }
+`;
+
+/**
+ * Admin creates a Product under any store. Bypasses seller-ownership check
+ * (admin selects the store from the picker). Status defaults to DRAFT;
+ * admin can pass ACTIVE to publish immediately.
+ */
+export const ADMIN_CREATE_PRODUCT = gql`
+  ${PRODUCT_FIELDS}
+  mutation AdminCreateProduct($input: AdminCreateProductInput!) {
+    adminCreateProduct(input: $input) {
+      ...ProductFields
+    }
+  }
+`;
+
+/**
+ * Admin edits any product. Accepts an optional `status` field to promote /
+ * demote in the same call (incl. ARCHIVED which is admin-only).
+ */
+export const ADMIN_UPDATE_PRODUCT = gql`
+  ${PRODUCT_FIELDS}
+  mutation AdminUpdateProduct($input: AdminUpdateProductInput!) {
+    adminUpdateProduct(input: $input) {
       ...ProductFields
     }
   }
