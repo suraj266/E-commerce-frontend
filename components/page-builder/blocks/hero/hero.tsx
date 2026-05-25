@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useFullscreenHeroMarker } from "@/store/fullscreen-hero.store";
 import type { HeroProps } from "./hero.schema";
 
 const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
@@ -19,6 +22,8 @@ const ALIGN_CLASS: Record<HeroProps["alignment"], string> = {
  * Default layout for the hero block.
  */
 export function HeroCenteredView(props: HeroProps) {
+  useFullscreenHeroMarker(props.height === "lg");
+
   const overlay = Math.max(0, Math.min(100, props.overlayOpacity)) / 100;
 
   return (

@@ -15,10 +15,12 @@
  * that opens MobileMenuDrawer.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
 import { ChevronDown, Menu as MenuIcon } from "lucide-react";
+
+import { useFullscreenHeroStore } from "@/store/fullscreen-hero.store";
 
 import { HeaderWishlistLink } from "@/components/wishlist/header-wishlist-link";
 import { HeaderCartLink } from "@/components/cart/header-cart-link";
@@ -101,6 +103,27 @@ function PrimaryItem({ item }: { item: MenuItem }) {
 export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // True when a fullscreen-hero variant (lg height) is mounted on this page.
+  // Drives the "hidden at top, slides in on scroll" mode.
+  const hasFullscreenHero = useFullscreenHeroStore((s) => s.count > 0);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!hasFullscreenHero) {
+      setScrolled(false);
+      return;
+    }
+    const onScroll = () => setScrolled(window.scrollY > 80);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [hasFullscreenHero]);
+
+  // Hide-at-top mode: header is fixed (out of flow) so the lg hero can fill
+  // the viewport, and we translate it offscreen until the user scrolls.
+  const overlayMode = hasFullscreenHero;
+  const hideAtTop = overlayMode && !scrolled;
+
   // Fetch HEADER_TOP separately so a missing/inactive top strip doesn't
   // block the rest of the header from rendering.
   const { data: topData } = useQuery<GetPublicMenuData>(GET_PUBLIC_MENU, {
@@ -122,9 +145,19 @@ export function SiteHeader() {
     (i) => i.visible !== false,
   );
 
+  const positionClass = overlayMode
+    ? "fixed top-0 left-0 right-0"
+    : "sticky top-0";
+  const bgClass = hideAtTop
+    ? "bg-transparent border-transparent"
+    : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b";
+  const transformClass = hideAtTop ? "-translate-y-full" : "translate-y-0";
+
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <header
+        className={`${positionClass} z-40 ${bgClass} ${transformClass} transition-transform duration-300 ease-out`}
+      >
         {/* Top strip */}
         {topItems.length > 0 && (
           <div className="bg-muted/30 border-b border-border/50">

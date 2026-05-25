@@ -21,6 +21,7 @@ import {
   parseSliderConfig,
   type SlideItem,
 } from "@/types/slider.types";
+import { useFullscreenHeroMarker } from "@/store/fullscreen-hero.store";
 import type { HeroProps } from "./hero.schema";
 
 const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
@@ -67,6 +68,8 @@ function SlidePicture({
 }
 
 export function HeroSliderView(props: HeroProps) {
+  useFullscreenHeroMarker(props.height === "lg");
+
   const sliderKey = props.sliderKey?.trim();
   const { data, loading, error } = useQuery<GetPublicSliderData>(
     GET_PUBLIC_SLIDER,

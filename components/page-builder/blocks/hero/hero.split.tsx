@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useFullscreenHeroMarker } from "@/store/fullscreen-hero.store";
 import type { HeroProps } from "./hero.schema";
 
 const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
@@ -18,6 +21,8 @@ const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
  * order; `center` stacks them on all viewports.
  */
 export function HeroSplitView(props: HeroProps) {
+  useFullscreenHeroMarker(props.height === "lg");
+
   const stackOnly = props.alignment === "center";
   const imageOnRight = props.alignment === "right";
 

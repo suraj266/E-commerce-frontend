@@ -15,6 +15,7 @@
 
 import Link from "next/link";
 import { ArrowRight, ShoppingCart } from "lucide-react";
+import { useFullscreenHeroMarker } from "@/store/fullscreen-hero.store";
 import type { HeroProps } from "./hero.schema";
 
 const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
@@ -24,6 +25,8 @@ const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
 };
 
 export function HeroSpotlightView(props: HeroProps) {
+  useFullscreenHeroMarker(props.height === "lg");
+
   const accents = (props.accents ?? []).filter((a) => a.label.trim());
   const thumbnails = (props.thumbnails ?? []).filter((t) => t.imageUrl);
   const hasSecondaryCta =
