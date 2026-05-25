@@ -20,7 +20,7 @@ import type { HeroProps } from "./hero.schema";
 const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
   sm: "min-h-[420px]",
   md: "min-h-[520px]",
-  lg: "min-h-[620px]",
+  lg: "min-h-screen",
 };
 
 export function HeroSpotlightView(props: HeroProps) {

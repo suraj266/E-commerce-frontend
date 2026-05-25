@@ -4,7 +4,7 @@ import type { HeroProps } from "./hero.schema";
 const HEIGHT_CLASS: Record<HeroProps["height"], string> = {
   sm: "min-h-[260px] sm:min-h-[320px]",
   md: "min-h-[360px] sm:min-h-[440px]",
-  lg: "min-h-[480px] sm:min-h-[560px]",
+  lg: "min-h-screen",
 };
 
 /**
