@@ -88,10 +88,15 @@ export function CategoryShowcaseEditor({
             <SelectContent>
               <SelectItem value="manual">Manual (curated)</SelectItem>
               <SelectItem value="auto">Auto (top-level)</SelectItem>
+              <SelectItem value="children-of">Children of category</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground mt-1">
-            Auto pulls active root categories by display order.
+            {props.source === "auto"
+              ? "Pulls active root categories by display order."
+              : props.source === "children-of"
+                ? "Pulls active sub-categories of the picked parent by display order."
+                : "Hand-pick tiles below."}
           </p>
         </div>
         <div>
@@ -108,6 +113,20 @@ export function CategoryShowcaseEditor({
           />
         </div>
       </div>
+
+      {props.source === "children-of" && (
+        <div>
+          <Label className="text-xs">Parent category</Label>
+          <CategoryCascader
+            value={props.parentCategoryId || null}
+            onChange={(id) => patch({ parentCategoryId: id ?? "" })}
+            rootPlaceholder="Pick the parent..."
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            The block renders this category&apos;s direct sub-categories.
+          </p>
+        </div>
+      )}
 
       {props.source === "manual" && (
         <div className="space-y-3">

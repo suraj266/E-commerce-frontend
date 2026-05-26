@@ -67,6 +67,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CategorySortableList } from "./components/sortable-tree";
 import { CategoryCascader } from "@/components/category/category-cascader";
+import { ImageUploader } from "@/components/media/image-uploader";
 import {
   Dialog,
   DialogContent,
@@ -567,7 +568,7 @@ export default function CategoriesPage() {
           CREATE / EDIT DIALOG
       ====================================================================== */}
       <Dialog open={isFormOpen} onOpenChange={(open) => !open && closeForm()}>
-        <DialogContent className="sm:max-w-3xl focus:ring-0">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto focus:ring-0">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? "Edit Category" : "Create Category"}
@@ -679,17 +680,23 @@ export default function CategoriesPage() {
                 )}
               />
 
-              {/* Image URL */}
+              {/* Image — drag-drop / click upload. URL is saved on
+                  the category once the upload completes. */}
               <FormField
                 control={form.control}
                 name="imageUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Image URL</FormLabel>
+                    <FormLabel>Image</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="https://example.com/image.png"
-                        {...field}
+                      <ImageUploader
+                        purpose="GENERIC"
+                        ownerType="CATEGORY"
+                        ownerId={editingCategory?.id}
+                        initialUrl={field.value || null}
+                        onUploaded={(img) => field.onChange(img.url)}
+                        onClear={() => field.onChange("")}
+                        aspectClass="h-32 w-32"
                       />
                     </FormControl>
                     <FormMessage />

@@ -44,6 +44,21 @@ export function useResolvedCategories(props: CategoryShowcaseProps): {
         slug: c.slug,
         imageUrl: c.imageUrl ?? null,
       }));
+  } else if (props.source === "children-of") {
+    const parentId = props.parentCategoryId || null;
+    tiles = parentId
+      ? all
+          .filter((c) => c.isActive && c.parentId === parentId)
+          .slice()
+          .sort((a, b) => a.displayOrder - b.displayOrder)
+          .slice(0, props.maxItems)
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            imageUrl: c.imageUrl ?? null,
+          }))
+      : [];
   } else {
     tiles = props.items
       .map((it) => {

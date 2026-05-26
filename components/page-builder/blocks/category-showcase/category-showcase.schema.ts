@@ -17,10 +17,14 @@ export const categoryShowcaseSchema = z.object({
   subtitle: z.string().default(""),
   items: z.array(categoryShowcaseItemSchema).default([]),
   /**
-   * Auto mode pulls top-level active categories instead of the curated list.
-   * Admins can flip this for a "set it and forget it" experience.
+   * Source drives what the tiles render:
+   *   - "manual"      — admin curates the list in `items[]`
+   *   - "auto"        — active root categories by displayOrder
+   *   - "children-of" — active children of `parentCategoryId` by displayOrder
    */
-  source: z.enum(["manual", "auto"]).default("manual"),
+  source: z.enum(["manual", "auto", "children-of"]).default("manual"),
+  /** Used only when source === "children-of". Empty means "no parent picked". */
+  parentCategoryId: z.string().default(""),
   maxItems: z.number().int().min(2).max(12).default(6),
 });
 
@@ -32,5 +36,6 @@ export const categoryShowcaseDefaults = (): CategoryShowcaseProps => ({
   subtitle: "",
   items: [],
   source: "manual",
+  parentCategoryId: "",
   maxItems: 6,
 });

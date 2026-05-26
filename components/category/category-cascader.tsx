@@ -142,6 +142,7 @@ function CategoryLevelPicker({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [openUp, setOpenUp] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Debounce so we don't fire on every keystroke
@@ -162,6 +163,19 @@ function CategoryLevelPicker({
     }
     if (open) document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  // Flip direction when opening — if the panel (~320px tall: search bar +
+  // max-h-64 list + padding) won't fit below the trigger, open upward.
+  useEffect(() => {
+    if (!open) return;
+    const trigger = containerRef.current?.querySelector("button");
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const PANEL_HEIGHT = 320;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setOpenUp(spaceBelow < PANEL_HEIGHT && spaceAbove > spaceBelow);
   }, [open]);
 
   const { data, loading } = useQuery<GetCategoryChildrenData>(
@@ -227,9 +241,13 @@ function CategoryLevelPicker({
         </div>
       </button>
 
-      {/* Panel */}
+      {/* Panel — flips up when there isn't enough room below */}
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-lg">
+        <div
+          className={`absolute z-50 w-full rounded-md border bg-popover shadow-lg ${
+            openUp ? "bottom-full mb-1" : "top-full mt-1"
+          }`}
+        >
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
