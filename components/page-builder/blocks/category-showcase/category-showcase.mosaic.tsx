@@ -17,7 +17,7 @@ export function CategoryShowcaseMosaicView(props: CategoryShowcaseProps) {
 
   if (loading && tiles.length === 0) {
     return (
-      <section className="px-4 py-10 sm:py-14 max-w-6xl mx-auto">
+      <section className={`px-4 py-10 sm:py-14 ${props.width === "full" ? "w-full" : "max-w-6xl mx-auto"}`}>
         {props.title && (
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">{props.title}</h2>
         )}
@@ -37,9 +37,16 @@ export function CategoryShowcaseMosaicView(props: CategoryShowcaseProps) {
 
   if (tiles.length === 0) return null;
 
+  const tileShapeClass =
+    props.tileShape === "circle"
+      ? "rounded-full"
+      : props.tileShape === "rounded"
+        ? "rounded-md"
+        : "";
+
   if (tiles.length < 5) {
     return (
-      <section className="px-4 py-10 sm:py-14 max-w-6xl mx-auto">
+      <section className={`px-4 py-10 sm:py-14 ${props.width === "full" ? "w-full" : "max-w-6xl mx-auto"}`}>
         {(props.title || props.subtitle) && (
           <header className="mb-6">
             {props.title && (
@@ -54,7 +61,12 @@ export function CategoryShowcaseMosaicView(props: CategoryShowcaseProps) {
         )}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {tiles.map((t) => (
-            <CategoryTile key={t.id} tile={t} className="aspect-square" />
+            <CategoryTile
+              key={t.id}
+              tile={t}
+              className="aspect-square"
+              shapeClass={tileShapeClass}
+            />
           ))}
         </div>
       </section>
@@ -65,7 +77,7 @@ export function CategoryShowcaseMosaicView(props: CategoryShowcaseProps) {
   const restFour = rest.slice(0, 4);
 
   return (
-    <section className="px-4 py-10 sm:py-14 max-w-6xl mx-auto">
+    <section className={`px-4 py-10 sm:py-14 ${props.width === "full" ? "w-full" : "max-w-6xl mx-auto"}`}>
       {(props.title || props.subtitle) && (
         <header className="mb-6">
           {props.title && (
@@ -83,9 +95,15 @@ export function CategoryShowcaseMosaicView(props: CategoryShowcaseProps) {
         <CategoryTile
           tile={hero}
           className="aspect-square lg:aspect-auto lg:row-span-2 lg:col-span-2 col-span-2"
+          shapeClass={tileShapeClass}
         />
         {restFour.map((t) => (
-          <CategoryTile key={t.id} tile={t} className="aspect-square lg:aspect-auto" />
+          <CategoryTile
+            key={t.id}
+            tile={t}
+            className="aspect-square lg:aspect-auto"
+            shapeClass={tileShapeClass}
+          />
         ))}
       </div>
     </section>
@@ -95,14 +113,17 @@ export function CategoryShowcaseMosaicView(props: CategoryShowcaseProps) {
 function CategoryTile({
   tile,
   className,
+  shapeClass,
 }: {
   tile: ResolvedCategoryTile;
   className?: string;
+  /** Pre-resolved Tailwind class for tile corner shape (e.g. "rounded-full"). */
+  shapeClass?: string;
 }) {
   return (
     <Link
       href={`/category/${tile.slug}`}
-      className={`group relative rounded-md overflow-hidden bg-muted ${className ?? ""}`}
+      className={`group relative overflow-hidden bg-muted ${shapeClass ?? ""} ${className ?? ""}`}
     >
       {tile.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element

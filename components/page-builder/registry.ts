@@ -67,10 +67,11 @@ import {
   imageGridDefaults,
 } from "./blocks/image-grid/image-grid.schema";
 
-// Category showcase — three layout variants (equal-grid / mosaic / carousel)
+// Category showcase — four layout variants (equal-grid / mosaic / carousel / soft-cards)
 import { CategoryShowcaseEqualGridView } from "./blocks/category-showcase/category-showcase.equal-grid";
 import { CategoryShowcaseMosaicView } from "./blocks/category-showcase/category-showcase.mosaic";
 import { CategoryShowcaseCarouselView } from "./blocks/category-showcase/category-showcase.carousel";
+import { CategoryShowcaseSoftCardsView } from "./blocks/category-showcase/category-showcase.soft-cards";
 import { CategoryShowcaseEditor } from "./blocks/category-showcase/category-showcase.editor";
 import {
   categoryShowcaseSchema,
@@ -210,6 +211,11 @@ export const BLOCK_REGISTRY: Record<string, BlockDefinition<any>> = {
         label: "Carousel",
         description: "Horizontal scroll of circular tiles",
         View: CategoryShowcaseCarouselView,
+      },
+      "soft-cards": {
+        label: "Soft cards (arrows)",
+        description: "Pastel rotating cards with image + name and Prev/Next arrows",
+        View: CategoryShowcaseSoftCardsView,
       },
     },
   },

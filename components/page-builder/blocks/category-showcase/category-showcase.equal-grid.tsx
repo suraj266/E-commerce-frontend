@@ -13,7 +13,7 @@ export function CategoryShowcaseEqualGridView(props: CategoryShowcaseProps) {
 
   if (loading && tiles.length === 0) {
     return (
-      <section className="px-4 py-10 sm:py-14 max-w-6xl mx-auto">
+      <section className={`px-4 py-10 sm:py-14 ${props.width === "full" ? "w-full" : "max-w-6xl mx-auto"}`}>
         {props.title && (
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">{props.title}</h2>
         )}
@@ -31,8 +31,15 @@ export function CategoryShowcaseEqualGridView(props: CategoryShowcaseProps) {
 
   if (tiles.length === 0) return null;
 
+  const tileShapeClass =
+    props.tileShape === "circle"
+      ? "rounded-full"
+      : props.tileShape === "rounded"
+        ? "rounded-md"
+        : "";
+
   return (
-    <section className="px-4 py-10 sm:py-14 max-w-6xl mx-auto">
+    <section className={`px-4 py-10 sm:py-14 ${props.width === "full" ? "w-full" : "max-w-6xl mx-auto"}`}>
       {(props.title || props.subtitle) && (
         <header className="mb-6 text-center">
           {props.title && (
@@ -51,7 +58,7 @@ export function CategoryShowcaseEqualGridView(props: CategoryShowcaseProps) {
           <Link
             key={t.id}
             href={`/category/${t.slug}`}
-            className="group relative aspect-square rounded-md overflow-hidden bg-muted"
+            className={`group relative aspect-square overflow-hidden bg-muted ${tileShapeClass}`}
           >
             {t.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element

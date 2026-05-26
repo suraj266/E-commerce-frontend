@@ -75,6 +75,56 @@ export function CategoryShowcaseEditor({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
+          <Label className="text-xs">Width</Label>
+          <Select
+            value={props.width}
+            onValueChange={(v) =>
+              patch({ width: v as CategoryShowcaseProps["width"] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="contained">Contained (default)</SelectItem>
+              <SelectItem value="full">Full screen width</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">
+            {props.width === "full"
+              ? "Spans edge-to-edge. Carousel loses the soft fade."
+              : "Capped at the page's standard content width."}
+          </p>
+        </div>
+        <div>
+          <Label className="text-xs">Tile shape</Label>
+          <Select
+            value={props.tileShape}
+            onValueChange={(v) =>
+              patch({ tileShape: v as CategoryShowcaseProps["tileShape"] })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="square">Square (default)</SelectItem>
+              <SelectItem value="rounded">Rounded</SelectItem>
+              <SelectItem value="circle">Circle</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">
+            {props.tileShape === "circle"
+              ? "Tiles render as circles (clips image corners)."
+              : props.tileShape === "rounded"
+                ? "Soft 6px corners."
+                : "Sharp 1:1 corners, full image visible."}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
           <Label className="text-xs">Source</Label>
           <Select
             value={props.source}

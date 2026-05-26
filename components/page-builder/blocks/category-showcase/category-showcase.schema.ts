@@ -26,6 +26,21 @@ export const categoryShowcaseSchema = z.object({
   /** Used only when source === "children-of". Empty means "no parent picked". */
   parentCategoryId: z.string().default(""),
   maxItems: z.number().int().min(2).max(12).default(6),
+  /**
+   * Block width:
+   *   - "contained" — capped at max-w-6xl (default; matches the rest of the page)
+   *   - "full"      — spans the full viewport width edge-to-edge. In the
+   *                   carousel variant this also drops the edge-fade mask
+   *                   so the marquee runs unbounded.
+   */
+  width: z.enum(["contained", "full"]).default("contained"),
+  /**
+   * Tile corner shape — applies across all 3 layout variants:
+   *   - "square"  — no rounding (default; shows the full 1:1 image)
+   *   - "rounded" — soft ~6px corners (rounded-md)
+   *   - "circle"  — fully circular (rounded-full)
+   */
+  tileShape: z.enum(["square", "rounded", "circle"]).default("square"),
 });
 
 export type CategoryShowcaseItem = z.infer<typeof categoryShowcaseItemSchema>;
@@ -38,4 +53,6 @@ export const categoryShowcaseDefaults = (): CategoryShowcaseProps => ({
   source: "manual",
   parentCategoryId: "",
   maxItems: 6,
+  width: "contained",
+  tileShape: "square",
 });

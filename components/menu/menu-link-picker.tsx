@@ -22,6 +22,7 @@ import {
   Hash,
   FolderTree,
   Loader2,
+  Sparkles,
   Tag as TagIcon,
   X,
   Search,
@@ -40,7 +41,27 @@ import type { Tag } from "@/types/tag.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-type Source = "page" | "category" | "brand" | "tag";
+type Source = "page" | "category" | "brand" | "tag" | "builtin";
+
+/**
+ * Built-in storefront routes that are NOT editable Page records — they're
+ * hardcoded React routes that any visitor can navigate to directly and
+ * see something useful. Exposed here so admins can add them to menus
+ * without typing the URL manually or mistakenly creating a duplicate Page.
+ *
+ * INCLUDED ONLY: stateless, no-prerequisite pages that work for any
+ * visitor — logged-in or guest — without needing cart items, auth, etc.
+ *
+ * EXCLUDED (state-dependent — pointless as menu items):
+ *   - /checkout       → empty cart redirects/errors
+ *   - /account        → unauth users get redirected to login
+ *   - /account/orders → same
+ *   These belong in the header user-dropdown, not nav menus.
+ */
+const BUILTIN_ROUTES: { label: string; url: string; hint: string }[] = [
+  { label: "Shop", url: "/shop", hint: "Full product catalog with filters" },
+  { label: "Search", url: "/search", hint: "Search results page" },
+];
 
 interface PickResult {
   label: string;
@@ -105,8 +126,17 @@ export function MenuLinkPicker({ onPick }: Props) {
           active={open === "tag"}
           onClick={() => setOpen(open === "tag" ? null : "tag")}
         />
+        <PickerButton
+          icon={<Sparkles className="h-3 w-3" />}
+          label="Built-in"
+          active={open === "builtin"}
+          onClick={() => setOpen(open === "builtin" ? null : "builtin")}
+        />
       </div>
 
+      {open === "builtin" && (
+        <BuiltinPanel onPick={pick} onClose={() => setOpen(null)} />
+      )}
       {open === "page" && <PagePanel onPick={pick} onClose={() => setOpen(null)} />}
       {open === "category" && (
         <CategoryPanel onPick={pick} onClose={() => setOpen(null)} />
@@ -224,6 +254,61 @@ function ResultsList<T>({
       )}
       {!loading && items.map((item, i) => <div key={i}>{renderItem(item)}</div>)}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Built-in storefront routes panel
+// ---------------------------------------------------------------------------
+
+function BuiltinPanel({
+  onPick,
+  onClose,
+}: {
+  onPick: (r: PickResult) => void;
+  onClose: () => void;
+}) {
+  const [search, setSearch] = useState("");
+  const q = search.trim().toLowerCase();
+  const items = q
+    ? BUILTIN_ROUTES.filter(
+        (r) =>
+          r.label.toLowerCase().includes(q) ||
+          r.url.toLowerCase().includes(q) ||
+          r.hint.toLowerCase().includes(q),
+      )
+    : BUILTIN_ROUTES;
+
+  return (
+    <PanelShell title="Built-in storefront pages" onClose={onClose}>
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Search shop / cart / wishlist..."
+      />
+      <ResultsList
+        items={items}
+        loading={false}
+        empty={`No matches for "${search}"`}
+        renderItem={(r) => (
+          <button
+            type="button"
+            onClick={() => onPick({ label: r.label, url: r.url })}
+            className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted/50 transition text-left gap-2"
+          >
+            <span className="flex-1 min-w-0">
+              <span className="block font-medium truncate">{r.label}</span>
+              <span className="block text-xs text-muted-foreground truncate">
+                {r.hint}
+              </span>
+            </span>
+            <span className="text-xs text-muted-foreground font-mono shrink-0">
+              {r.url}
+            </span>
+          </button>
+        )}
+      />
+    </PanelShell>
   );
 }
 
