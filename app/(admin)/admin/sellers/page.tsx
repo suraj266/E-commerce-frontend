@@ -806,6 +806,14 @@ function DetailGrid({
       <Field label="Legal name" value={seller.legalName} />
       <Field label="PAN" value={seller.panNumber} mono />
       <Field label="GSTIN" value={seller.gstin ?? "—"} mono />
+      <Field
+        label="GST state"
+        value={
+          seller.stateName
+            ? `${seller.stateName} (${seller.stateCode})`
+            : "Not set"
+        }
+      />
       <Field label="Business email" value={seller.businessEmail} />
       <Field label="Business phone" value={seller.businessPhone} />
       <Field label="Support email" value={seller.supportEmail ?? "—"} />

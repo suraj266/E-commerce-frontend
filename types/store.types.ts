@@ -78,6 +78,30 @@ export interface Store {
   updatedAt: string;
   deletedAt?: string | null;
   warehouses?: Warehouse[];
+  shippingConfig?: ShippingConfig;
+}
+
+/** Per-store shipping configuration (flat + free-over + per-kg, plus COD). */
+export interface ShippingConfig {
+  freeAbove?: number | null;
+  flatRate: number;
+  perKgRate?: number | null;
+  codEnabled: boolean;
+  codLimit?: number | null;
+  processingDays?: number | null;
+  excludedPincodes?: string[];
+}
+
+/** Input for the updateMyStoreShipping mutation (partial). */
+export interface UpdateStoreShippingInput {
+  storeId: string;
+  freeAbove?: number | null;
+  flatRate?: number;
+  perKgRate?: number | null;
+  codEnabled?: boolean;
+  codLimit?: number | null;
+  processingDays?: number | null;
+  excludedPincodes?: string[];
 }
 
 export interface StoreFormValues {

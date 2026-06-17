@@ -64,6 +64,8 @@ export interface ProductVariant {
   costPrice?: number | null;
   /** Price including tax (price + price × taxRate/100). Null if no tax assigned. */
   priceWithTax?: number | null;
+  /** GST portion alone (price × taxRate/100). Null if no tax assigned. */
+  taxAmount?: number | null;
   barcode?: string | null;
   weight?: number | null;
   length?: number | null;
@@ -126,6 +128,8 @@ export interface Product {
   costPrice?: number | null;
   /** Price including tax. Computed by backend. */
   priceWithTax?: number | null;
+  /** GST portion alone (price × taxRate/100). Computed by backend. */
+  taxAmount?: number | null;
   sku?: string | null;
 
   // Logistics
@@ -137,6 +141,10 @@ export interface Product {
   // Tax / Compliance
   /** HSN code — 4/6/8 digits. Required for GST invoicing. */
   hsnCode?: string | null;
+  /** ISO 3166-1 alpha-2 country code (e.g. "IN"). Required to publish. */
+  countryOfOrigin?: string | null;
+  /** True = stored price is MRP (inclusive of GST + cess). Default true. */
+  isPriceTaxInclusive: boolean;
 
   // SEO
   seoTitle?: string | null;
@@ -156,8 +164,22 @@ export interface Product {
   category?: Category | null;
   tax?: Pick<Tax, "id" | "name" | "rate"> | null;
   tags?: Tag[];
+  /** Computed badges (manual + auto labels), sorted by priority. */
+  labels?: ProductBadge[];
+  /** Raw MANUAL label ids assigned to the product (for the seller form picker). */
+  assignedLabelIds?: string[];
   /** Populated by PDP query; SIMPLE products have 1 default variant. */
   variants?: ProductVariant[];
+}
+
+/** A product badge (from the backend `labels` field — manual + auto, merged). */
+export interface ProductBadge {
+  key: string;
+  name: string;
+  color: string;
+  textColor?: string | null;
+  icon?: string | null;
+  priority: number;
 }
 
 // ---------------------------------------------------------------------------

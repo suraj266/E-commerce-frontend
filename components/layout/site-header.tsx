@@ -21,6 +21,8 @@ import { useQuery } from "@apollo/client/react";
 import { ChevronDown, Menu as MenuIcon } from "lucide-react";
 
 import { useFullscreenHeroStore } from "@/store/fullscreen-hero.store";
+import { useSiteSettings } from "@/lib/context/site-settings-context";
+import { SmartImage } from "@/components/media/smart-image";
 
 import { HeaderWishlistLink } from "@/components/wishlist/header-wishlist-link";
 import { HeaderCartLink } from "@/components/cart/header-cart-link";
@@ -138,6 +140,8 @@ export function SiteHeader() {
     errorPolicy: "ignore",
   });
 
+  const { logoUrl, brandName, logoHeight } = useSiteSettings();
+
   const topItems = parseMenuItems(topData?.publicMenu?.items).filter(
     (i) => i.visible !== false,
   );
@@ -186,10 +190,24 @@ export function SiteHeader() {
             <MenuIcon className="h-5 w-5" />
           </Button>
 
-          {/* Logo / wordmark */}
-          <Link href="/" className="font-bold text-lg shrink-0">
-            Ecommerce
-          </Link>
+          {/* Logo / wordmark — admin-managed logo with text fallback */}
+          {logoUrl ? (
+            <Link href="/" className="shrink-0 flex items-center">
+              <SmartImage
+                src={logoUrl}
+                alt={brandName}
+                purpose="LOGO"
+                priority
+                height={logoHeight}
+                className="w-auto object-contain"
+                style={{ height: logoHeight, width: "auto" }}
+              />
+            </Link>
+          ) : (
+            <Link href="/" className="font-bold text-lg shrink-0">
+              {brandName}
+            </Link>
+          )}
 
           {/* Primary nav (desktop). No flex-1 — the inline search input
               below takes the spare horizontal space instead. */}

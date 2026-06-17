@@ -10,6 +10,7 @@ const REVIEW_FIELDS = gql`
     productId
     customerId
     customerName
+    customerAvatarUrl
     rating
     title
     body

@@ -29,6 +29,8 @@ import { z } from "zod";
 import { zodResolver } from "@/lib/forms/zod-resolver";
 import { authApi } from "@/lib/api/auth.api";
 import { useAuthStore } from "@/store/auth.store";
+import { useSiteSettings } from "@/lib/context/site-settings-context";
+import { SmartImage } from "@/components/media/smart-image";
 import { Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -110,13 +112,26 @@ export default function AdminLoginPage() {
   // Render
   // ---------------------------------------------------------------------------
 
+  const { logoUrl, brandName, logoHeight } = useSiteSettings();
+
   return (
     <Card className="shadow-lg border-zinc-200 dark:border-zinc-800">
       <CardHeader className="space-y-3 text-center">
-        {/* Admin Badge */}
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Shield className="h-6 w-6 text-primary" />
-        </div>
+        {/* Brand logo, falling back to the admin shield badge */}
+        {logoUrl ? (
+          <SmartImage
+            src={logoUrl}
+            alt={brandName}
+            purpose="LOGO"
+            height={logoHeight}
+            className="mx-auto w-auto object-contain"
+            style={{ height: logoHeight, width: "auto" }}
+          />
+        ) : (
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Shield className="h-6 w-6 text-primary" />
+          </div>
+        )}
         <div className="space-y-1">
           <CardTitle className="text-2xl font-bold tracking-tight">
             Admin Portal

@@ -60,6 +60,7 @@ export function FeaturedProductsEditor({
             <SelectItem value="category">By category</SelectItem>
             <SelectItem value="brand">By brand</SelectItem>
             <SelectItem value="tag">By tag</SelectItem>
+            <SelectItem value="collection">By collection</SelectItem>
             <SelectItem value="manual">Manual list</SelectItem>
           </SelectContent>
         </Select>
@@ -107,6 +108,23 @@ export function FeaturedProductsEditor({
             onChange={(e) => patch({ tagSlug: e.target.value })}
             placeholder="e.g. trending"
           />
+        </div>
+      )}
+
+      {props.source === "collection" && (
+        <div>
+          <Label htmlFor="fp-collection" className="text-xs">
+            Collection slug
+          </Label>
+          <Input
+            id="fp-collection"
+            value={props.collectionSlug}
+            onChange={(e) => patch({ collectionSlug: e.target.value })}
+            placeholder="e.g. new-arrivals"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Find slug in /admin/collections (manual or smart)
+          </p>
         </div>
       )}
 

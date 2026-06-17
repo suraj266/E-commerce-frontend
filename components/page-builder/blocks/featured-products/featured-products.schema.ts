@@ -5,13 +5,15 @@ export const featuredProductsSchema = z.object({
   subtitle: z.string().default(""),
   /** Source of the products — manual list of slugs OR auto-by-relation. */
   source: z
-    .enum(["manual", "category", "brand", "tag"])
+    .enum(["manual", "category", "brand", "tag", "collection"])
     .default("category"),
   /** Comma-separated product slugs when source = "manual". */
   productSlugs: z.string().default(""),
   categorySlug: z.string().default(""),
   brandSlug: z.string().default(""),
   tagSlug: z.string().default(""),
+  /** Collection slug when source = "collection" (manual or smart membership). */
+  collectionSlug: z.string().default(""),
   maxItems: z.number().int().min(1).max(24).default(8),
   layout: z.enum(["grid", "carousel"]).default("grid"),
   columns: z.number().int().min(2).max(6).default(4),
@@ -29,6 +31,7 @@ export const featuredProductsDefaults = (): FeaturedProductsProps => ({
   categorySlug: "",
   brandSlug: "",
   tagSlug: "",
+  collectionSlug: "",
   maxItems: 8,
   layout: "grid",
   columns: 4,

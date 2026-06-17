@@ -40,6 +40,9 @@ import {
   Mail,
   BadgePercent,
   Star,
+  FileBadge,
+  ImagePlus,
+  Boxes,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -80,6 +83,16 @@ export const adminNavigation: NavGroup[] = [
         title: "Tags",
         href: "/admin/tags",
         icon: Hash,
+      },
+      {
+        title: "Labels",
+        href: "/admin/labels",
+        icon: BadgePercent,
+      },
+      {
+        title: "Collections",
+        href: "/admin/collections",
+        icon: Boxes,
       },
       {
         title: "Attributes",
@@ -176,6 +189,11 @@ export const adminNavigation: NavGroup[] = [
         href: "/admin/payments/logs",
         icon: Wallet,
       },
+      {
+        title: "Tax Invoices",
+        href: "/admin/invoices",
+        icon: FileBadge,
+      },
     ],
   },
   {
@@ -192,9 +210,19 @@ export const adminNavigation: NavGroup[] = [
         icon: Palette,
       },
       {
+        title: "Branding",
+        href: "/admin/settings/branding",
+        icon: ImagePlus,
+      },
+      {
         title: "Email",
         href: "/admin/settings/email",
         icon: Mail,
+      },
+      {
+        title: "Invoice Template",
+        href: "/admin/settings/invoices",
+        icon: FileBadge,
       },
     ],
   },

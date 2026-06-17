@@ -119,6 +119,8 @@ export interface Seller {
   registrationNumber?: string | null;
   panNumber: string;
   gstin?: string | null;
+  stateCode?: string | null;
+  stateName?: string | null;
   businessEmail: string;
   businessPhone: string;
   supportEmail?: string | null;
@@ -149,6 +151,8 @@ export interface SellerOnboardingFormValues {
   registrationNumber: string;
   panNumber: string;
   gstin: string;
+  stateCode: string;
+  stateName: string;
   businessEmail: string;
   businessPhone: string;
   supportEmail: string;

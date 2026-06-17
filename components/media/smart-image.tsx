@@ -29,6 +29,8 @@ interface SmartImageProps {
   fill?: boolean;
   width?: number;
   height?: number;
+  /** Inline styles forwarded to the underlying <Image> (e.g. a dynamic height). */
+  style?: React.CSSProperties;
 }
 
 const variantLoader = ({ src, width, quality }: ImageLoaderProps) => {
@@ -53,6 +55,7 @@ export function SmartImage({
   fill = false,
   width,
   height,
+  style,
 }: SmartImageProps) {
   const url = image?.url ?? src ?? "";
 
@@ -80,6 +83,7 @@ export function SmartImage({
         sizes={sizes ?? "100vw"}
         priority={priority}
         className={className}
+        style={style}
       />
     );
   }
@@ -94,6 +98,7 @@ export function SmartImage({
       sizes={sizes}
       priority={priority}
       className={className}
+      style={style}
     />
   );
 }

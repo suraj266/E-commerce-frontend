@@ -41,6 +41,7 @@ export interface Review {
   productId: string;
   customerId: string;
   customerName: string | null;
+  customerAvatarUrl: string | null;
   rating: number;
   title: string | null;
   body: string;

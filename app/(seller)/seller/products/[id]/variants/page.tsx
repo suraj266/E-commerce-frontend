@@ -502,21 +502,40 @@ function VariantsTable({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftPrice, setDraftPrice] = useState<string>("");
   const [draftSku, setDraftSku] = useState<string>("");
+  const [draftDims, setDraftDims] = useState({
+    weight: "",
+    length: "",
+    width: "",
+    height: "",
+  });
   const [deleting, setDeleting] = useState<ProductVariant | null>(null);
 
   function startEdit(v: ProductVariant) {
     setEditingId(v.id);
     setDraftPrice(String(v.price));
     setDraftSku(v.sku);
+    const s = (n?: number | null) => (n === null || n === undefined ? "" : String(n));
+    setDraftDims({
+      weight: s(v.weight),
+      length: s(v.length),
+      width: s(v.width),
+      height: s(v.height),
+    });
   }
 
   async function saveEdit(v: ProductVariant) {
+    const num = (s: string): number | undefined =>
+      s.trim() === "" ? undefined : Number(s);
     await updateVariant({
       variables: {
         updateVariantInput: {
           id: v.id,
           price: Number(draftPrice),
           sku: draftSku !== v.sku ? draftSku : undefined,
+          weight: num(draftDims.weight),
+          length: num(draftDims.length),
+          width: num(draftDims.width),
+          height: num(draftDims.height),
         },
       },
     });
@@ -725,26 +744,59 @@ function VariantsTable({
                     )}
                   </div>
 
-                  {/* Image uploader row — full-width below variant row */}
+                  {/* Edit sub-section — full-width below variant row */}
                   {isEdit && (
                     <div
-                      className="pl-12 pt-2"
+                      className="pl-12 pt-2 space-y-4"
                       style={{ gridColumn: "1 / -1" }}
                     >
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Variant-specific image (optional — falls back to product
-                        primary):
-                      </p>
-                      <div className="max-w-xs">
-                        <ImageUploader
-                          purpose="PRODUCT_GALLERY"
-                          ownerType="PRODUCT"
-                          ownerId={productId}
-                          initialUrl={v.imageUrl ?? null}
-                          onUploaded={(img) => setImage(v, img.url)}
-                          onClear={() => setImage(v, null)}
-                          aspectClass="aspect-square h-32"
-                        />
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Shipping (per variant — overrides the product&apos;s
+                          values for courier rates &amp; labels):
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-md">
+                          {([
+                            ["weight", "Weight (kg)"],
+                            ["length", "Length (cm)"],
+                            ["width", "Width (cm)"],
+                            ["height", "Height (cm)"],
+                          ] as const).map(([key, label]) => (
+                            <div key={key} className="space-y-1">
+                              <label className="text-[10px] uppercase text-muted-foreground">
+                                {label}
+                              </label>
+                              <Input
+                                type="number"
+                                min={0}
+                                step={0.01}
+                                value={draftDims[key]}
+                                onChange={(e) =>
+                                  setDraftDims((d) => ({ ...d, [key]: e.target.value }))
+                                }
+                                className="h-8"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Variant-specific image (optional — falls back to product
+                          primary):
+                        </p>
+                        <div className="max-w-xs">
+                          <ImageUploader
+                            purpose="PRODUCT_GALLERY"
+                            ownerType="PRODUCT"
+                            ownerId={productId}
+                            initialUrl={v.imageUrl ?? null}
+                            onUploaded={(img) => setImage(v, img.url)}
+                            onClear={() => setImage(v, null)}
+                            aspectClass="aspect-square h-32"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}

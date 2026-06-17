@@ -57,6 +57,11 @@ import {
   GSTIN_REGEX,
   PHONE_REGEX,
 } from "@/types/seller.types";
+import {
+  GST_STATES,
+  findStateByCode,
+  stateCodeFromGstin,
+} from "@/lib/constants/gst-states";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +110,11 @@ const fullSchema = z
       .refine((v) => !v || GSTIN_REGEX.test(v), {
         message: "Invalid GSTIN (must be 15 chars)",
       }),
+    stateCode: z
+      .string()
+      .regex(/^[0-9]{2}$/, "Select your registered state")
+      .refine((c) => !!findStateByCode(c), "Unknown state code"),
+    stateName: z.string().min(2),
 
     // Step 3
     businessEmail: z.string().email("Invalid email"),
@@ -148,6 +158,19 @@ const fullSchema = z
         });
       }
     }
+
+    // GSTIN prefix must agree with the selected state code (the first two
+    // chars of a GSTIN are always the state code).
+    if (data.gstin && data.stateCode) {
+      const gstinPrefix = data.gstin.slice(0, 2);
+      if (gstinPrefix !== data.stateCode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["stateCode"],
+          message: `State (${data.stateCode}) doesn't match GSTIN prefix (${gstinPrefix})`,
+        });
+      }
+    }
   });
 
 type WizardValues = z.infer<typeof fullSchema>;
@@ -187,6 +210,8 @@ export default function SellerOnboardingPage() {
       signatoryDesignation: "",
       panNumber: "",
       gstin: "",
+      stateCode: "",
+      stateName: "",
       businessEmail: "",
       businessPhone: "",
       supportEmail: "",
@@ -209,6 +234,8 @@ export default function SellerOnboardingPage() {
         signatoryDesignation: existing.signatoryDesignation ?? "",
         panNumber: existing.panNumber,
         gstin: existing.gstin ?? "",
+        stateCode: existing.stateCode ?? "",
+        stateName: existing.stateName ?? "",
         businessEmail: existing.businessEmail,
         businessPhone: existing.businessPhone,
         supportEmail: existing.supportEmail ?? "",
@@ -241,7 +268,7 @@ export default function SellerOnboardingPage() {
           : []),
       ];
     } else if (step === 2) {
-      fields = ["panNumber", "gstin"];
+      fields = ["panNumber", "gstin", "stateCode", "stateName"];
     } else if (step === 3) {
       fields = ["businessEmail", "businessPhone", "supportEmail"];
     }
@@ -274,6 +301,8 @@ export default function SellerOnboardingPage() {
       registrationNumber: values.registrationNumber || undefined,
       panNumber: values.panNumber.toUpperCase(),
       gstin: values.gstin ? values.gstin.toUpperCase() : undefined,
+      stateCode: values.stateCode || undefined,
+      stateName: values.stateName || undefined,
       businessEmail: values.businessEmail.toLowerCase(),
       businessPhone: values.businessPhone,
       supportEmail: values.supportEmail
@@ -368,7 +397,7 @@ export default function SellerOnboardingPage() {
           className="space-y-5 rounded-lg border bg-card p-6"
         >
           {step === 1 && <Step1Fields control={form.control} isEntity={isEntity} />}
-          {step === 2 && <Step2Fields control={form.control} />}
+          {step === 2 && <Step2Fields form={form} />}
           {step === 3 && <Step3Fields control={form.control} />}
           {step === 4 && (
             <ReviewStep values={form.getValues()} isEntity={isEntity} />
@@ -625,7 +654,29 @@ function Step1Fields({ control, isEntity }: { control: any; isEntity: boolean })
 // Step 2 — Tax Info
 // ---------------------------------------------------------------------------
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function Step2Fields({ control }: { control: any }) {
+function Step2Fields({ form }: { form: any }) {
+  const control = form.control;
+  // Auto-derive state from GSTIN's first 2 characters when present. The
+  // state field stays editable when no GSTIN is set (sellers can register
+  // pre-GSTIN with just a PAN), but locks the moment a valid GSTIN is
+  // entered to enforce the GSTIN ↔ state agreement rule.
+  const gstinValue: string = form.watch("gstin") ?? "";
+  const stateLockedToGstin = (() => {
+    const derived = stateCodeFromGstin(gstinValue.toUpperCase());
+    return derived;
+  })();
+
+  useEffect(() => {
+    if (stateLockedToGstin) {
+      const s = findStateByCode(stateLockedToGstin);
+      if (s) {
+        form.setValue("stateCode", s.code, { shouldValidate: true });
+        form.setValue("stateName", s.name, { shouldValidate: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateLockedToGstin]);
+
   return (
     <>
       <FormField
@@ -667,6 +718,46 @@ function Step2Fields({ control }: { control: any }) {
             </FormControl>
             <FormDescription className="text-xs">
               Mandatory before going live. You can add it after onboarding.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="stateCode"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>State of registration *</FormLabel>
+            <Select
+              onValueChange={(value) => {
+                field.onChange(value);
+                const s = findStateByCode(value);
+                form.setValue("stateName", s?.name ?? "", {
+                  shouldValidate: true,
+                });
+              }}
+              value={field.value}
+              disabled={!!stateLockedToGstin}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select state…" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent className="max-h-80">
+                {GST_STATES.map((s) => (
+                  <SelectItem key={s.code} value={s.code}>
+                    {s.name} ({s.code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormDescription className="text-xs">
+              {stateLockedToGstin
+                ? "Auto-detected from your GSTIN — locked."
+                : "GST place-of-supply identity. Determines whether buyer purchases attract CGST + SGST or IGST."}
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -758,6 +849,12 @@ function ReviewStep({
     { label: "Registration Number", value: values.registrationNumber || "—" },
     { label: "PAN", value: values.panNumber },
     { label: "GSTIN", value: values.gstin || "— (will add later)" },
+    {
+      label: "State (place of supply)",
+      value: values.stateName
+        ? `${values.stateName} (${values.stateCode})`
+        : "—",
+    },
     { label: "Business Email", value: values.businessEmail },
     { label: "Business Phone", value: values.businessPhone },
     { label: "Support Email", value: values.supportEmail || "—" },

@@ -61,6 +61,8 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { GET_BRANDS } from "@/lib/graphql/brands";
 import { GET_TAGS } from "@/lib/graphql/tags";
+import { GET_LABELS } from "@/lib/graphql/labels";
+import type { Label } from "@/types/label.types";
 import { GET_MY_STORES } from "@/lib/graphql/stores";
 import { GET_TAXES } from "@/lib/graphql/taxes";
 import {
@@ -118,6 +120,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { COUNTRIES } from "@/lib/constants/countries";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -170,11 +173,22 @@ const productSchema = z.object({
     .optional()
     .or(z.literal("")),
 
+  /** ISO 3166-1 alpha-2 country code (CP-EC Rules 2020 mandatory disclosure). */
+  countryOfOrigin: z
+    .string()
+    .regex(/^[A-Z]{2}$/, "Pick a country")
+    .optional()
+    .or(z.literal("")),
+
+  /** True = stored price is MRP. False = exclusive (rare). Default true. */
+  isPriceTaxInclusive: z.boolean().default(true),
+
   seoTitle: z.string().max(70).optional(),
   seoDescription: z.string().max(200).optional(),
   seoKeywords: z.array(z.string()).default([]),
 
   tagIds: z.array(z.string().uuid()).default([]),
+  labelIds: z.array(z.string().uuid()).default([]),
 });
 type ProductFormValues = z.infer<typeof productSchema>;
 
@@ -197,6 +211,9 @@ export function ProductForm({ product }: ProductFormProps) {
   });
   // Categories are fetched lazily by the CategoryCascader per level; no need
   // for a top-level full-tree query here anymore.
+  const { data: labelsData } = useQuery<{ labels: Label[] }>(GET_LABELS, {
+    fetchPolicy: "cache-first",
+  });
   const { data: tagsData } = useQuery<{ tags: Tag[] }>(GET_TAGS, {
     fetchPolicy: "cache-first",
   });
@@ -208,6 +225,9 @@ export function ProductForm({ product }: ProductFormProps) {
   const activeStores = stores.filter((s) => s.status === "ACTIVE");
   const brands = brandsData?.brands ?? [];
   const tags = tagsData?.tags ?? [];
+  const allLabels = labelsData?.labels ?? [];
+  const manualLabels = allLabels.filter((l) => l.type === "MANUAL");
+  const autoLabels = allLabels.filter((l) => l.type === "AUTO");
   const taxes: Tax[] = taxesData?.taxes ?? [];
 
   // -- Specifications state (separate from form because dynamic) --
@@ -243,10 +263,13 @@ export function ProductForm({ product }: ProductFormProps) {
       isDigital: product?.isDigital ?? false,
       taxId: product?.taxId ?? "",
       hsnCode: product?.hsnCode ?? "",
+      countryOfOrigin: product?.countryOfOrigin ?? "IN",
+      isPriceTaxInclusive: product?.isPriceTaxInclusive ?? true,
       seoTitle: product?.seoTitle ?? "",
       seoDescription: product?.seoDescription ?? "",
       seoKeywords: product?.seoKeywords ?? [],
       tagIds: product?.tags?.map((t) => t.id) ?? [],
+      labelIds: product?.assignedLabelIds ?? [],
     },
   });
 
@@ -314,11 +337,14 @@ export function ProductForm({ product }: ProductFormProps) {
       isDigital: values.isDigital,
       taxId: values.taxId || undefined,
       hsnCode: values.hsnCode || undefined,
+      countryOfOrigin: values.countryOfOrigin || undefined,
+      isPriceTaxInclusive: values.isPriceTaxInclusive,
       seoTitle: values.seoTitle || undefined,
       seoDescription: values.seoDescription || undefined,
       seoKeywords: values.seoKeywords,
       specifications: serializeSpecifications(specs),
       tagIds: values.tagIds,
+      labelIds: values.labelIds,
     };
 
     try {
@@ -860,6 +886,62 @@ export function ProductForm({ product }: ProductFormProps) {
                   </FormItem>
                 )}
               />
+
+              {/* Labels — assign MANUAL badges; AUTO badges shown read-only. */}
+              <FormField
+                control={form.control}
+                name="labelIds"
+                render={({ field }) => (
+                  <FormItem className="mt-5">
+                    <FormLabel>Labels (badges)</FormLabel>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      {manualLabels.length === 0 ? (
+                        <p className="text-sm text-muted-foreground italic">
+                          No manual labels available. Admin manages these at
+                          /admin/labels.
+                        </p>
+                      ) : (
+                        manualLabels.map((l) => {
+                          const selected = field.value?.includes(l.id);
+                          return (
+                            <button
+                              key={l.id}
+                              type="button"
+                              onClick={() => {
+                                const cur = field.value ?? [];
+                                field.onChange(
+                                  selected
+                                    ? cur.filter((id) => id !== l.id)
+                                    : [...cur, l.id],
+                                );
+                              }}
+                              className="px-3 py-1 rounded-full text-xs font-semibold border transition"
+                              style={
+                                selected
+                                  ? {
+                                      backgroundColor: l.color,
+                                      color: l.textColor ?? "#fff",
+                                      borderColor: l.color,
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {l.name}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                    {autoLabels.length > 0 && (
+                      <FormDescription className="text-xs mt-2">
+                        Auto badges (applied by rule, not assignable here):{" "}
+                        {autoLabels.map((l) => l.name).join(", ")}.
+                      </FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
@@ -1042,7 +1124,7 @@ export function ProductForm({ product }: ProductFormProps) {
                 name="hsnCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>HSN Code</FormLabel>
+                    <FormLabel>HSN Code *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="e.g. 8517 or 851712 or 85171290"
@@ -1053,7 +1135,7 @@ export function ProductForm({ product }: ProductFormProps) {
                     </FormControl>
                     <FormDescription className="text-xs">
                       4, 6, or 8-digit Harmonized System of Nomenclature code.
-                      Required on GST invoices.{" "}
+                      Required to publish — every tax invoice prints this.{" "}
                       <a
                         href="https://services.gst.gov.in/services/searchhsnsac"
                         target="_blank"
@@ -1067,6 +1149,48 @@ export function ProductForm({ product }: ProductFormProps) {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="countryOfOrigin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country of origin *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select country…" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-80">
+                        {COUNTRIES.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.name} ({c.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription className="text-xs">
+                      Required by Consumer Protection (E-Commerce) Rules 2020.
+                      Surfaced on the product page and tax invoice.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Note: the entered price is always the pre-tax BASE; GST is
+                  added on top at checkout, and the "show price with tax" site
+                  setting controls whether the storefront displays the price
+                  inclusive of GST. (The legacy isPriceTaxInclusive flag no
+                  longer affects pricing.) */}
+              <p className="text-xs text-muted-foreground">
+                Enter the <strong>pre-tax base price</strong>. GST is added on
+                top at checkout based on the product&apos;s tax rate.
+              </p>
             </CardContent>
           </Card>
 

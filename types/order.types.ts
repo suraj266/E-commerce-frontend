@@ -132,6 +132,18 @@ export interface SellerOrder {
   shippedAt?: string | null;
   deliveredAt?: string | null;
   cancelledAt?: string | null;
+  // Fulfillment tracking — captured when the seller marks the order shipped.
+  trackingNumber?: string | null;
+  carrier?: string | null;
+  trackingUrl?: string | null;
+  dispatchedAt?: string | null;
+  expectedDeliveryAt?: string | null;
+  // Courier integration (Phase B).
+  awbCode?: string | null;
+  labelUrl?: string | null;
+  shippingProvider?: string | null;
+  shippingRateSource?: string | null;
+  selectedCourierName?: string | null;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -141,6 +153,13 @@ export interface SellerOrder {
   parentOrderNumber?: string | null;
   shippingAddress?: OrderAddressSnapshot | null;
   customerName?: string | null;
+  // Phase 1 — place of supply + tax invoice
+  placeOfSupplyStateCode?: string | null;
+  placeOfSupplyStateName?: string | null;
+  taxKind?: 'INTRA_STATE' | 'INTER_STATE' | string | null;
+  invoiceNumber?: string | null;
+  invoiceDate?: string | null;
+  invoiceUrl?: string | null;
 }
 
 export interface Order {
@@ -159,6 +178,9 @@ export interface Order {
   shippingAddress?: OrderAddressSnapshot | null;
   billingAddress?: OrderAddressSnapshot | null;
   customerNotes?: string | null;
+  buyerGstin?: string | null;
+  placeOfSupplyStateCode?: string | null;
+  placeOfSupplyStateName?: string | null;
   placedAt: string;
   cancelledAt?: string | null;
   deliveredAt?: string | null;

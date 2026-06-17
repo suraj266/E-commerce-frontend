@@ -29,6 +29,13 @@ interface SiteSetting {
   valueType: string;
 }
 
+/** Fallback brand name used wherever `platform_name` is unset. */
+const DEFAULT_BRAND_NAME = "Ecommerce";
+/** Default logo height (px) and the bounds we clamp the admin value to. */
+const DEFAULT_LOGO_HEIGHT = 32;
+const MIN_LOGO_HEIGHT = 16;
+const MAX_LOGO_HEIGHT = 96;
+
 interface SiteSettingsContextValue {
   /** All GENERAL group settings as a key→value map. */
   settings: Record<string, string>;
@@ -39,6 +46,12 @@ interface SiteSettingsContextValue {
     price: number | null | undefined,
     priceWithTax: number | null | undefined,
   ) => number;
+  /** Global brand logo URL, or null when unset (callers fall back to brandName). */
+  logoUrl: string | null;
+  /** Global brand name (falls back to "Ecommerce" when unset). */
+  brandName: string;
+  /** Rendered logo height in px (clamped), applied across the UI surfaces. */
+  logoHeight: number;
   /** True while the initial fetch is in-flight. */
   loading: boolean;
 }
@@ -47,6 +60,9 @@ const SiteSettingsContext = createContext<SiteSettingsContextValue>({
   settings: {},
   showPriceWithTax: false,
   getDisplayPrice: (price) => price ?? 0,
+  logoUrl: null,
+  brandName: DEFAULT_BRAND_NAME,
+  logoHeight: DEFAULT_LOGO_HEIGHT,
   loading: true,
 });
 
@@ -69,6 +85,14 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
     }
 
     const showPriceWithTax = settingsMap["show_price_with_tax"] === "true";
+    const rawLogo = settingsMap["platform_logo_url"]?.trim();
+    const logoUrl = rawLogo ? rawLogo : null;
+    const brandName = settingsMap["platform_name"]?.trim() || DEFAULT_BRAND_NAME;
+
+    const parsedHeight = Number(settingsMap["platform_logo_height"]);
+    const logoHeight = Number.isFinite(parsedHeight)
+      ? Math.min(MAX_LOGO_HEIGHT, Math.max(MIN_LOGO_HEIGHT, parsedHeight))
+      : DEFAULT_LOGO_HEIGHT;
 
     return {
       settings: settingsMap,
@@ -77,6 +101,9 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
         if (showPriceWithTax && priceWithTax != null) return priceWithTax;
         return price ?? 0;
       },
+      logoUrl,
+      brandName,
+      logoHeight,
       loading,
     };
   }, [data, loading]);

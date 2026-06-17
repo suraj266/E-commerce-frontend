@@ -15,15 +15,20 @@
 
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { sellerNavigation } from "@/config/seller.nav";
+import { useSiteSettings } from "@/lib/context/site-settings-context";
 
 export function SellerSidebar() {
+  const { logoUrl, brandName, logoHeight } = useSiteSettings();
+
   return (
     <AppSidebar
       brand={{
-        name: "MultiMart",
+        name: brandName,
         subtitle: "Seller Portal",
         initials: "MM",
         homeHref: "/seller/dashboard",
+        logoUrl,
+        logoHeight,
       }}
       navigation={sellerNavigation}
       logoutRedirect="/seller/login"

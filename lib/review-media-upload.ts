@@ -49,13 +49,19 @@ export async function uploadReviewMedia(
     throw new Error(message);
   }
 
-  const body = (await res.json()) as {
+  // The REST API wraps every successful response in a global envelope
+  // ({ success, data, message, ... } — see backend ResponseInterceptor), so
+  // the actual payload lives under `.data`. Unwrap defensively, falling back
+  // to the root in case the envelope is ever removed.
+  type UploadBody = {
     url: string;
     type: "IMAGE" | "VIDEO";
     sizeBytes: number;
     width?: number;
     height?: number;
   };
+  const raw = (await res.json()) as { data?: UploadBody } & Partial<UploadBody>;
+  const body = (raw.data ?? raw) as UploadBody;
   return {
     type: body.type,
     url: body.url,

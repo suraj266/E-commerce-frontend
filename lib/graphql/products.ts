@@ -32,7 +32,16 @@ export const PRODUCT_SUMMARY_FIELDS = gql`
     price
     compareAtPrice
     priceWithTax
+    taxAmount
     createdAt
+    labels {
+      key
+      name
+      color
+      textColor
+      icon
+      priority
+    }
     images {
       ...ProductImageFields
     }
@@ -58,12 +67,15 @@ export const PRODUCT_FIELDS = gql`
     compareAtPrice
     costPrice
     priceWithTax
+    taxAmount
     sku
     weight
     length
     width
     height
     hsnCode
+    countryOfOrigin
+    isPriceTaxInclusive
     seoTitle
     seoDescription
     seoKeywords
@@ -95,6 +107,15 @@ export const PRODUCT_FIELDS = gql`
       name
       slug
     }
+    labels {
+      key
+      name
+      color
+      textColor
+      icon
+      priority
+    }
+    assignedLabelIds
   }
 `;
 
@@ -297,6 +318,7 @@ export const GET_PUBLIC_PRODUCT = gql`
         sku
         price
         priceWithTax
+        taxAmount
         compareAtPrice
         imageUrl
         status
@@ -322,6 +344,7 @@ export const GET_PUBLIC_PRODUCTS = gql`
     $brandSlug: String
     $tagSlug: String
     $categorySlug: String
+    $collectionSlug: String
     $sort: ProductSortOrder
     $limit: Float
   ) {
@@ -330,15 +353,25 @@ export const GET_PUBLIC_PRODUCTS = gql`
       brandSlug: $brandSlug
       tagSlug: $tagSlug
       categorySlug: $categorySlug
+      collectionSlug: $collectionSlug
       sort: $sort
       limit: $limit
     ) {
       ...ProductSummaryFields
       variants {
         id
+        name
         price
         priceWithTax
+        taxAmount
+        compareAtPrice
+        imageUrl
         availableQuantity
+        stockState
+        attributes {
+          attributeName
+          value
+        }
       }
     }
   }
@@ -351,6 +384,7 @@ export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
     $brandSlug: String
     $tagSlug: String
     $categorySlug: String
+    $collectionSlug: String
     $minPrice: Float
     $maxPrice: Float
     $sort: ProductSortOrder
@@ -363,6 +397,7 @@ export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
       brandSlug: $brandSlug
       tagSlug: $tagSlug
       categorySlug: $categorySlug
+      collectionSlug: $collectionSlug
       minPrice: $minPrice
       maxPrice: $maxPrice
       sort: $sort
@@ -374,9 +409,18 @@ export const GET_PAGINATED_PUBLIC_PRODUCTS = gql`
         ...ProductSummaryFields
         variants {
           id
+          name
           price
           priceWithTax
+          taxAmount
+          compareAtPrice
+          imageUrl
           availableQuantity
+          stockState
+          attributes {
+            attributeName
+            value
+          }
         }
       }
       totalCount
@@ -414,7 +458,7 @@ export const SEARCH_SUGGESTIONS = gql`
 `;
 
 // ---------------------------------------------------------------------------
-// Variant queries + mutations (Phase B)
+// Variant queries + mutations
 // ---------------------------------------------------------------------------
 
 export const VARIANT_FIELDS = gql`

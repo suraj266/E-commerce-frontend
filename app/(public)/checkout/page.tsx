@@ -36,10 +36,13 @@ import {
 import { GET_MY_CART } from "@/lib/graphql/cart";
 import { GET_MY_ADDRESSES } from "@/lib/graphql/account";
 import {
+  CANCEL_CHECKOUT,
   GET_ACTIVE_PAYMENT_GATEWAYS,
   INITIATE_CHECKOUT,
   VERIFY_PAYMENT,
 } from "@/lib/graphql/payments";
+import { GET_SHIPPING_QUOTE } from "@/lib/graphql/shipping";
+import { ShippingQuoteData } from "@/types/shipping.types";
 import { MyCartData } from "@/types/cart.types";
 import { Address, MyAddressesData } from "@/types/account.types";
 import {
@@ -114,6 +117,14 @@ export default function CheckoutPage() {
   );
   const [notes, setNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  // B2B GSTIN capture. When the customer toggles the "buying for business"
+  // checkbox we reveal a GSTIN field; valid input is forwarded to the
+  // backend and printed on the seller's tax invoice as the recipient GSTIN.
+  const [b2bChecked, setB2bChecked] = useState(false);
+  const [buyerGstin, setBuyerGstin] = useState("");
+  const GSTIN_REGEX =
+    /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z][Z][0-9A-Z]$/;
+  const buyerGstinValid = !b2bChecked || GSTIN_REGEX.test(buyerGstin);
 
   // Applied coupon — persisted from cart, re-validated against current cart.
   const {
@@ -123,6 +134,24 @@ export default function CheckoutPage() {
     customerTotal: couponCustomerTotal,
   } = useAppliedCoupon({ cartSignal: cart?.subtotal });
   const clearAppliedCoupon = useCouponStore((s) => s.clear);
+
+  // ---- Shipping quote (per-seller charge + COD eligibility + serviceability)
+  // Reuses the same engine as placement, so the quoted total == what's charged.
+  const shippingQ = useQuery<ShippingQuoteData>(GET_SHIPPING_QUOTE, {
+    skip: !isAuthed || !selectedAddressId,
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "ignore",
+    variables: {
+      input: {
+        addressId: selectedAddressId,
+        couponCode: appliedCouponCode ?? undefined,
+      },
+    },
+  });
+  const quote = shippingQ.data?.shippingQuote ?? null;
+  const shippingTotal = quote?.shippingTotal ?? 0;
+  const quoteServiceable = quote ? quote.serviceable : true;
+  const quoteCodEligible = quote ? quote.codEligible : true;
 
   // Auto-select default address
   useEffect(() => {
@@ -145,6 +174,7 @@ export default function CheckoutPage() {
     INITIATE_CHECKOUT
   );
   const [verifyPayment] = useMutation<VerifyPaymentData>(VERIFY_PAYMENT);
+  const [cancelCheckout] = useMutation(CANCEL_CHECKOUT);
 
   // ---- Computed ----
   const activeGateway = useMemo(
@@ -193,24 +223,35 @@ export default function CheckoutPage() {
             // Order is redeemed — clear the persisted coupon.
             clearAppliedCoupon();
             toast.success("Payment successful! Redirecting...");
-            router.push(`/account/orders/${orderId}`);
+            router.push(`/checkout/success/${orderId}`);
           } catch (err) {
             toast.error(
               err instanceof Error
                 ? err.message
                 : "Payment verification failed."
             );
+            // Verification failed — treat as a failed payment so the order
+            // doesn't linger as a seller-actionable PENDING order.
+            await cancelCheckout({ variables: { orderId } }).catch(() => {});
+            router.push(`/checkout/failed/${orderId}?reason=failed`);
           } finally {
             setIsProcessing(false);
           }
         },
         modal: {
-          ondismiss: () => {
-            toast.info(
-              "Payment cancelled. Your order is saved — you can retry from your orders."
-            );
-            setIsProcessing(false);
-            router.push(`/account/orders/${orderId}`);
+          ondismiss: async () => {
+            // Customer closed the gateway without paying. Cancel the order
+            // server-side (releases reserved stock) so it can't be fulfilled,
+            // then send them to the failed page. The webhook is the backstop
+            // if this call doesn't land.
+            try {
+              await cancelCheckout({ variables: { orderId } });
+            } catch {
+              // best-effort; the payment.failed webhook will reconcile.
+            } finally {
+              setIsProcessing(false);
+              router.push(`/checkout/failed/${orderId}?reason=cancelled`);
+            }
           },
         },
         theme: {
@@ -221,7 +262,7 @@ export default function CheckoutPage() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     },
-    [verifyPayment, router, clearAppliedCoupon]
+    [verifyPayment, cancelCheckout, router, clearAppliedCoupon]
   );
 
   // ---- Place Order Handler ----
@@ -232,6 +273,10 @@ export default function CheckoutPage() {
     }
     if (!selectedGateway) {
       toast.error("Please select a payment method.");
+      return;
+    }
+    if (b2bChecked && !buyerGstinValid) {
+      toast.error("Enter a valid 15-character GSTIN or uncheck B2B.");
       return;
     }
 
@@ -245,6 +290,9 @@ export default function CheckoutPage() {
             gateway: selectedGateway,
             customerNotes: notes || undefined,
             couponCode: appliedCouponCode ?? undefined,
+            buyerGstin: b2bChecked
+              ? buyerGstin.toUpperCase().trim()
+              : undefined,
           },
         },
       });
@@ -262,7 +310,7 @@ export default function CheckoutPage() {
         // unique CouponRedemption.orderId so a retry can't double-apply.
         clearAppliedCoupon();
         toast.success(`Order ${result.orderNumber} placed successfully!`);
-        router.push(`/account/orders/${result.orderId}`);
+        router.push(`/checkout/success/${result.orderId}`);
         return;
       }
 
@@ -424,6 +472,68 @@ export default function CheckoutPage() {
               {notes.length} / 500
             </p>
           </section>
+
+          {/* B2B GSTIN — optional. When ticked, the entered GSTIN is
+              printed as the recipient on each seller's tax invoice so
+              the buyer can claim input tax credit. */}
+          <section className="rounded-lg border bg-card p-6">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={b2bChecked}
+                onChange={(e) => {
+                  setB2bChecked(e.target.checked);
+                  if (!e.target.checked) setBuyerGstin("");
+                }}
+                className="mt-1 h-4 w-4 rounded border-input"
+              />
+              <div>
+                <span className="text-sm font-medium">
+                  I&apos;m buying for business (GSTIN invoice)
+                </span>
+                <p className="text-xs text-foreground/60 mt-0.5">
+                  Your GSTIN appears on each seller&apos;s tax invoice so
+                  you can claim input tax credit.
+                </p>
+              </div>
+            </label>
+
+            {b2bChecked && (
+              <div className="mt-4 ml-7">
+                <label
+                  htmlFor="buyerGstin"
+                  className="block text-xs font-medium mb-1.5"
+                >
+                  GSTIN *
+                </label>
+                <input
+                  id="buyerGstin"
+                  type="text"
+                  value={buyerGstin}
+                  onChange={(e) =>
+                    setBuyerGstin(
+                      e.target.value.toUpperCase().slice(0, 15),
+                    )
+                  }
+                  placeholder="27AABCS1234A1Z5"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono outline-none focus:border-brand transition"
+                  maxLength={15}
+                  aria-invalid={!buyerGstinValid}
+                />
+                <p
+                  className={`mt-1 text-xs ${
+                    buyerGstinValid
+                      ? "text-foreground/50"
+                      : "text-destructive"
+                  }`}
+                >
+                  {buyerGstinValid
+                    ? "Will be printed on your tax invoice."
+                    : "Enter a valid 15-character GSTIN."}
+                </p>
+              </div>
+            )}
+          </section>
         </div>
 
         {/* ------------- RIGHT: Mini cart + Place order ------------- */}
@@ -489,6 +599,12 @@ export default function CheckoutPage() {
                   }, 0)
                 : cart.subtotal;
 
+              // GST estimate across the cart (per-line taxAmount = unit tax × qty).
+              const taxEstimate = cart.items.reduce(
+                (sum, item) => sum + (item.taxAmount ?? 0),
+                0
+              );
+
               // Match the discount line to the display mode. Pre-tax mode
               // shows ₹X off; tax-inclusive mode shows the effective ₹X +
               // GST reduction, which is the real customer saving.
@@ -496,13 +612,30 @@ export default function CheckoutPage() {
                 ? couponDiscountInclTax
                 : couponDiscountPreTax;
 
-              // Base total: prefer the server's customerTotal in tax-inclusive
-              // mode (it accounts for GST recomputing on the discounted base),
-              // otherwise fall back to subtotal − discount.
-              let displayTotal =
-                showPriceWithTax && couponCustomerTotal != null
+              // Goods total is always tax-INCLUSIVE (the stored price is base;
+              // GST is always charged). Prefer the server's customerTotal (it
+              // recomputes GST on the discounted base), else base + GST. When
+              // the toggle is ON the subtotal already carries GST.
+              const goodsTotalInclTax =
+                couponCustomerTotal != null
                   ? couponCustomerTotal
-                  : Math.max(0, displaySubtotal - couponDiscount);
+                  : showPriceWithTax
+                    ? displaySubtotal
+                    : Math.max(0, displaySubtotal - couponDiscount) + taxEstimate;
+
+              // When the subtotal is shown pre-tax, surface GST as its own line
+              // so Subtotal − Discount + Tax + Shipping reconciles to the total.
+              const taxLine = !showPriceWithTax
+                ? Math.max(
+                    0,
+                    goodsTotalInclTax - (displaySubtotal - couponDiscount)
+                  )
+                : null;
+
+              let displayTotal = goodsTotalInclTax;
+
+              // Shipping (tax-inclusive) — a flat add on the goods total.
+              displayTotal += shippingTotal;
 
               // Processing fee tacks on top of whichever base we chose.
               if (
@@ -528,9 +661,40 @@ export default function CheckoutPage() {
                       label={`Subtotal${showPriceWithTax ? " (incl. tax)" : ""}`}
                       value={formatPrice(displaySubtotal)}
                     />
-                    <Row label="Shipping" value="Free" />
-                    {!showPriceWithTax && (
-                      <Row label="Tax" value="Calculated by seller" />
+                    <Row
+                      label={
+                        (() => {
+                          const couriers = Array.from(
+                            new Set(
+                              (quote?.sellers ?? [])
+                                .filter((s) => s.rateSource === "LIVE" && s.courierName)
+                                .map((s) => s.courierName as string),
+                            ),
+                          );
+                          return couriers.length > 0
+                            ? `Shipping (via ${couriers.join(", ")})`
+                            : "Shipping";
+                        })()
+                      }
+                      value={
+                        !selectedAddressId
+                          ? "Select an address"
+                          : shippingQ.loading && !quote
+                            ? "Calculating…"
+                            : shippingTotal > 0
+                              ? formatPrice(shippingTotal)
+                              : "Free"
+                      }
+                    />
+                    {taxLine != null && (
+                      <Row
+                        label="Tax (GST)"
+                        value={
+                          taxLine > 0
+                            ? formatPrice(taxLine)
+                            : "Calculated by seller"
+                        }
+                      />
                     )}
                     {couponDiscount > 0 && (
                       <Row
@@ -560,6 +724,29 @@ export default function CheckoutPage() {
               );
             })()}
 
+            {/* Serviceability + COD eligibility warnings */}
+            {selectedAddressId && !quoteServiceable && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 flex items-start gap-2 text-xs text-destructive">
+                <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                <span>
+                  One or more items can&apos;t be delivered to this address.
+                  Try a different address.
+                </span>
+              </div>
+            )}
+            {selectedAddressId &&
+              quoteServiceable &&
+              selectedGateway === "COD" &&
+              !quoteCodEligible && (
+                <div className="mt-3 rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 flex items-start gap-2 text-xs text-amber-700">
+                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    Cash on Delivery isn&apos;t available for this order. Please
+                    choose another payment method.
+                  </span>
+                </div>
+              )}
+
             {/* Selected gateway summary */}
             {activeGateway && (
               <div className="mt-3 rounded-md bg-muted/50 px-3 py-2 flex items-center gap-2 text-xs">
@@ -581,7 +768,9 @@ export default function CheckoutPage() {
                 cart.needsReview ||
                 addresses.length === 0 ||
                 !selectedAddressId ||
-                !selectedGateway
+                !selectedGateway ||
+                (!!selectedAddressId && !quoteServiceable) ||
+                (selectedGateway === "COD" && !quoteCodEligible)
               }
               className="mt-5 w-full inline-flex items-center justify-center rounded-md bg-brand text-white px-6 py-3 text-sm font-semibold shadow hover:bg-brand/90 transition disabled:opacity-60"
             >

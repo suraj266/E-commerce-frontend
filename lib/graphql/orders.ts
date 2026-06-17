@@ -75,6 +75,16 @@ export const SELLER_ORDER_FIELDS = gql`
     shippedAt
     deliveredAt
     cancelledAt
+    trackingNumber
+    carrier
+    trackingUrl
+    dispatchedAt
+    expectedDeliveryAt
+    awbCode
+    labelUrl
+    shippingProvider
+    shippingRateSource
+    selectedCourierName
     createdAt
     updatedAt
     itemCount
@@ -90,6 +100,12 @@ export const SELLER_ORDER_FIELDS = gql`
       ...OrderAddressFields
     }
     customerName
+    placeOfSupplyStateCode
+    placeOfSupplyStateName
+    taxKind
+    invoiceNumber
+    invoiceDate
+    invoiceUrl
   }
 `;
 
@@ -112,6 +128,9 @@ export const ORDER_FIELDS = gql`
     totalAmount
     currencyCode
     customerNotes
+    buyerGstin
+    placeOfSupplyStateCode
+    placeOfSupplyStateName
     placedAt
     cancelledAt
     deliveredAt
@@ -209,6 +228,40 @@ export const UPDATE_SELLER_ORDER_STATUS = gql`
   mutation UpdateSellerOrderStatus($input: UpdateSellerOrderStatusInput!) {
     updateSellerOrderStatus(input: $input) {
       ...SellerOrderFields
+    }
+  }
+`;
+
+// ---- Admin: invoice regeneration ----
+//
+// Force a fresh PDF render for the given SellerOrder. Keeps the original
+// invoiceNumber (legally a number is never re-issued); only the bytes
+// behind it change. Returns the new public URL.
+export const REGENERATE_SELLER_ORDER_INVOICE = gql`
+  mutation RegenerateSellerOrderInvoice($sellerOrderId: ID!) {
+    regenerateSellerOrderInvoice(sellerOrderId: $sellerOrderId)
+  }
+`;
+
+export const GET_ADMIN_SELLER_ORDERS_WITH_INVOICES = gql`
+  ${SELLER_ORDER_FIELDS}
+  query GetAdminSellerOrdersWithInvoices(
+    $page: Int
+    $pageSize: Int
+    $onlyMissingInvoice: Boolean
+  ) {
+    adminSellerOrdersWithInvoices(
+      page: $page
+      pageSize: $pageSize
+      onlyMissingInvoice: $onlyMissingInvoice
+    ) {
+      items {
+        ...SellerOrderFields
+      }
+      totalCount
+      totalPages
+      currentPage
+      pageSize
     }
   }
 `;

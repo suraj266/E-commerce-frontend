@@ -194,3 +194,14 @@ export const VERIFY_PAYMENT = gql`
     }
   }
 `;
+
+export const CANCEL_CHECKOUT = gql`
+  mutation CancelCheckout($orderId: ID!) {
+    cancelCheckout(orderId: $orderId) {
+      id
+      orderNumber
+      status
+      paymentStatus
+    }
+  }
+`;

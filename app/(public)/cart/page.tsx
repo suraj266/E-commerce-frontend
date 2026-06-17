@@ -26,6 +26,7 @@ import { formatPrice } from "@/lib/utils/currency";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
 import { ApplyCouponPanel } from "@/components/coupon/apply-coupon-panel";
 import { useAppliedCoupon } from "@/components/coupon/use-applied-coupon";
+import { DeliveryCheck } from "@/components/cart/delivery-check";
 import type { CartItem } from "@/types/cart.types";
 
 export default function CartPage() {
@@ -128,10 +129,10 @@ export default function CartPage() {
           <h2 className="text-lg font-semibold">Order summary</h2>
 
           {(() => {
-            // When prices are shown tax-inclusive, use the server-computed
-            // numbers from validateCoupon — they account for the GST
-            // reduction on the discounted taxable value (CGST Act §15(3)(a))
-            // and tie out exactly to what placement will charge.
+            // The stored price is the pre-tax base; GST is always added at
+            // checkout. The show_price_with_tax toggle only decides whether the
+            // SUBTOTAL is shown base or tax-inclusive — the charged total is the
+            // same either way (base + GST − discount, server-authoritative).
             const displaySubtotal = showPriceWithTax
               ? items.reduce((sum, item) => {
                   const unitPrice = getDisplayPrice(
@@ -142,18 +143,33 @@ export default function CartPage() {
                 }, 0)
               : (cart?.subtotal ?? 0);
 
-            // Pick the right discount + total for the current display mode.
+            // GST estimate across the cart (per-line taxAmount = unit tax × qty).
+            const taxEstimate = items.reduce(
+              (sum, item) => sum + (item.taxAmount ?? 0),
+              0,
+            );
+
+            // Discount shown in the same mode as the subtotal.
             const couponDiscount = showPriceWithTax
               ? couponDiscountInclTax
               : couponDiscountPreTax;
 
-            // Prefer the server's customerTotal (post-GST, post-discount) when
-            // we're in tax-inclusive mode and a coupon is applied. Falls back
-            // to subtotal−discount otherwise.
+            // Estimated total (excl. shipping) is always tax-INCLUSIVE: prefer
+            // the server customerTotal (post-GST, post-discount) when a coupon
+            // is applied, else base + GST. When the toggle is ON the subtotal
+            // already carries GST, so no estimate to add.
             const estimatedTotal =
-              showPriceWithTax && couponCustomerTotal != null
+              couponCustomerTotal != null
                 ? couponCustomerTotal
-                : Math.max(0, displaySubtotal - couponDiscount);
+                : showPriceWithTax
+                  ? displaySubtotal
+                  : displaySubtotal + taxEstimate;
+
+            // When the subtotal is shown pre-tax, surface the GST as its own
+            // line so Subtotal − Discount + Tax reconciles to the total.
+            const taxLine = !showPriceWithTax
+              ? Math.max(0, estimatedTotal - (displaySubtotal - couponDiscount))
+              : null;
 
             return (
               <>
@@ -165,8 +181,15 @@ export default function CartPage() {
                     value={formatPrice(displaySubtotal)}
                   />
                   <SummaryRow label="Shipping" value="Calculated at checkout" />
-                  {!showPriceWithTax && (
-                    <SummaryRow label="Tax" value="Calculated at checkout" />
+                  {taxLine != null && (
+                    <SummaryRow
+                      label="Tax (GST)"
+                      value={
+                        taxLine > 0
+                          ? formatPrice(taxLine)
+                          : "Calculated at checkout"
+                      }
+                    />
                   )}
                   {couponDiscount > 0 && (
                     <SummaryRow
@@ -175,6 +198,8 @@ export default function CartPage() {
                     />
                   )}
                 </div>
+
+                <DeliveryCheck />
 
                 <ApplyCouponPanel cartSignal={cart?.subtotal} />
 

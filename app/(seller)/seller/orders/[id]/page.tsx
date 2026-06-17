@@ -16,13 +16,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useMutation, useQuery, useLazyQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   Loader2,
   Package,
   Store as StoreIcon,
+  Truck,
 } from "lucide-react";
 
 import {
@@ -30,6 +31,15 @@ import {
   GET_MY_SELLER_ORDERS,
   UPDATE_SELLER_ORDER_STATUS,
 } from "@/lib/graphql/orders";
+import {
+  GET_MY_COURIER_ACCOUNTS,
+  GET_COURIER_OPTIONS_FOR_ORDER,
+  SHIP_VIA_COURIER,
+} from "@/lib/graphql/courier";
+import type {
+  MyCourierAccountsData,
+  CourierOptionsForOrderData,
+} from "@/types/courier.types";
 import {
   MySellerOrderData,
   ORDER_STATUS_LABEL,
@@ -40,6 +50,7 @@ import {
 import { formatPrice } from "@/lib/utils/currency";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
+import { InvoiceCard } from "@/components/orders/invoice-card";
 
 import {
   AlertDialog,
@@ -51,6 +62,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 /**
  * Allowed forward transitions per current status. Mirrors the backend
@@ -82,6 +104,13 @@ export default function SellerOrderDetailPage() {
   const id = params.id;
 
   const [confirmAction, setConfirmAction] = useState<OrderStatus | null>(null);
+  const [shipOpen, setShipOpen] = useState(false);
+  const [ship, setShip] = useState({
+    carrier: "",
+    trackingNumber: "",
+    trackingUrl: "",
+    expectedDeliveryAt: "",
+  });
 
   const { data, loading, error } = useQuery<MySellerOrderData>(
     GET_MY_SELLER_ORDER,
@@ -103,9 +132,39 @@ export default function SellerOrderDetailPage() {
           `Marked ${ORDER_STATUS_LABEL[res.updateSellerOrderStatus.status]}`,
         );
         setConfirmAction(null);
+        setShipOpen(false);
       },
       onError: (err) => toast.error(err.message),
     });
+
+  const { data: courierData } = useQuery<MyCourierAccountsData>(
+    GET_MY_COURIER_ACCOUNTS,
+    { fetchPolicy: "cache-and-network" },
+  );
+  const hasCourier = (courierData?.myCourierAccounts ?? []).some((a) => a.isEnabled);
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [chosenCourier, setChosenCourier] = useState<string>("");
+  const [loadCourierOptions, { data: optionsData, loading: optionsLoading }] =
+    useLazyQuery<CourierOptionsForOrderData>(GET_COURIER_OPTIONS_FOR_ORDER, {
+      fetchPolicy: "network-only",
+    });
+  const options = optionsData?.courierOptionsForOrder;
+
+  const [shipCourier, { loading: shippingCourier }] = useMutation(SHIP_VIA_COURIER, {
+    refetchQueries: [{ query: GET_MY_SELLER_ORDER, variables: { id } }],
+    onCompleted: () => {
+      toast.success("Shipped via courier — AWB generated");
+      setPickerOpen(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const openCourierPicker = (sellerOrderId: string) => {
+    setChosenCourier("");
+    setPickerOpen(true);
+    loadCourierOptions({ variables: { sellerOrderId } });
+  };
 
   if (loading && !data) {
     return (
@@ -131,8 +190,38 @@ export default function SellerOrderDetailPage() {
   }
 
   const so = data.mySellerOrder;
-  const allowed = NEXT_TRANSITIONS[so.status] ?? [];
+  // A prepaid order whose payment hasn't been captured yet (customer is still
+  // paying, or abandoned the gateway) must not be fulfilled — the only action
+  // we allow is cancellation. The backend enforces this too; this just hides
+  // the buttons. COD orders are PENDING (never AWAITING_PAYMENT) so unaffected.
+  const awaitingPayment = so.paymentStatus === "AWAITING_PAYMENT";
+  const allowedRaw = NEXT_TRANSITIONS[so.status] ?? [];
+  const allowed = awaitingPayment
+    ? allowedRaw.filter((s) => s === "CANCELLED")
+    : allowedRaw;
   const requiresConfirm = (s: OrderStatus) => s === "CANCELLED";
+  const requiresShipDetails = (s: OrderStatus) => s === "SHIPPED";
+
+  const submitShip = () => {
+    if (!ship.trackingNumber.trim()) {
+      toast.error("Tracking number is required");
+      return;
+    }
+    updateStatus({
+      variables: {
+        input: {
+          sellerOrderId: so.id,
+          status: "SHIPPED",
+          trackingNumber: ship.trackingNumber.trim(),
+          carrier: ship.carrier.trim() || undefined,
+          trackingUrl: ship.trackingUrl.trim() || undefined,
+          expectedDeliveryAt: ship.expectedDeliveryAt
+            ? new Date(ship.expectedDeliveryAt).toISOString()
+            : undefined,
+        },
+      },
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -187,6 +276,15 @@ export default function SellerOrderDetailPage() {
           <OrderStatusTimeline status={so.status} />
         </div>
 
+        {awaitingPayment && (
+          <div className="mt-6 pt-5 border-t">
+            <div className="rounded-md border border-amber-300/50 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-sm text-amber-900 dark:text-amber-300">
+              Awaiting payment — this prepaid order can&apos;t be fulfilled until
+              the customer&apos;s payment is confirmed. You can still cancel it.
+            </div>
+          </div>
+        )}
+
         {allowed.length > 0 && (
           <div className="mt-6 pt-5 border-t flex flex-wrap items-center gap-2">
             <span className="text-sm font-semibold mr-2">Next step:</span>
@@ -200,6 +298,33 @@ export default function SellerOrderDetailPage() {
                 >
                   {ACTION_LABEL[s]}
                 </button>
+              ) : requiresShipDetails(s) ? (
+                <div key={s} className="flex items-center gap-2">
+                  {hasCourier && (
+                    <button
+                      type="button"
+                      onClick={() => openCourierPicker(so.id)}
+                      disabled={shippingCourier}
+                      className="rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-60 inline-flex items-center"
+                    >
+                      <Truck className="mr-1.5 h-3.5 w-3.5" />
+                      Ship with courier
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShipOpen(true)}
+                    disabled={updating}
+                    className={`rounded-md px-3 py-1.5 text-sm font-semibold transition disabled:opacity-60 inline-flex items-center ${
+                      hasCourier
+                        ? "border hover:bg-muted"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    }`}
+                  >
+                    <Truck className="mr-1.5 h-3.5 w-3.5" />
+                    {hasCourier ? "Manual" : ACTION_LABEL[s]}
+                  </button>
+                </div>
               ) : (
                 <button
                   key={s}
@@ -224,6 +349,16 @@ export default function SellerOrderDetailPage() {
           </div>
         )}
       </div>
+
+      <InvoiceCard
+        invoiceNumber={so.invoiceNumber}
+        invoiceDate={so.invoiceDate}
+        invoiceUrl={so.invoiceUrl}
+        placeOfSupplyStateCode={so.placeOfSupplyStateCode}
+        placeOfSupplyStateName={so.placeOfSupplyStateName}
+        taxKind={so.taxKind}
+        hasReachedInvoiceTrigger={so.status !== "PENDING"}
+      />
 
       <section className="rounded-lg border bg-card overflow-hidden">
         <div className="px-5 py-3 border-b bg-muted/20 text-sm font-semibold">
@@ -270,6 +405,47 @@ export default function SellerOrderDetailPage() {
             <p className="text-sm text-muted-foreground">
               No address recorded.
             </p>
+          )}
+
+          {so.trackingNumber && (
+            <div className="mt-4 pt-4 border-t text-sm">
+              <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                <Truck className="h-4 w-4 text-primary" />
+                Tracking
+              </div>
+              <div className="mt-1 text-foreground/80">
+                {so.carrier && <span>{so.carrier} · </span>}
+                <span className="font-mono">{so.trackingNumber}</span>
+              </div>
+              <div className="flex items-center gap-3 mt-0.5">
+                {so.trackingUrl && (
+                  <a
+                    href={so.trackingUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline text-xs"
+                  >
+                    Track shipment ↗
+                  </a>
+                )}
+                {so.labelUrl && (
+                  <a
+                    href={so.labelUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline text-xs"
+                  >
+                    Download label ↗
+                  </a>
+                )}
+              </div>
+              {so.expectedDeliveryAt && (
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  Est. delivery{" "}
+                  {new Date(so.expectedDeliveryAt).toLocaleDateString()}
+                </div>
+              )}
+            </div>
           )}
         </section>
 
@@ -369,6 +545,164 @@ export default function SellerOrderDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Courier picker — choose from live Shiprocket serviceability */}
+      <Dialog open={pickerOpen} onOpenChange={(o) => !o && setPickerOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Choose a courier
+            </DialogTitle>
+            <DialogDescription>
+              Live rates from your courier for this pickup → delivery. Pick one to
+              generate the AWB + label and ship.
+            </DialogDescription>
+          </DialogHeader>
+
+          {optionsLoading ? (
+            <div className="py-8 text-center">
+              <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+              <p className="mt-2 text-xs text-muted-foreground">Fetching available couriers…</p>
+            </div>
+          ) : !options || options.couriers.length === 0 ? (
+            <p className="py-6 text-sm text-muted-foreground text-center">
+              No couriers available for this route. Try manual shipping.
+            </p>
+          ) : (
+            <div className="max-h-80 overflow-y-auto space-y-2">
+              {options.couriers.map((c) => {
+                const isChoice = c.courierId === options.selectedCourierId;
+                const sel = chosenCourier === c.courierId;
+                return (
+                  <button
+                    key={c.courierId}
+                    type="button"
+                    onClick={() => setChosenCourier(c.courierId)}
+                    className={`w-full text-left rounded-md border px-3 py-2.5 transition ${
+                      sel ? "border-primary ring-1 ring-primary bg-primary/5" : "hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm">{c.courierName}</span>
+                        {c.recommended && (
+                          <span className="text-[10px] rounded-full bg-green-100 text-green-700 px-2 py-0.5 font-semibold">
+                            Recommended
+                          </span>
+                        )}
+                        {isChoice && (
+                          <span className="text-[10px] rounded-full bg-blue-100 text-blue-700 px-2 py-0.5 font-semibold">
+                            Customer&apos;s choice
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-bold whitespace-nowrap">
+                        {formatPrice(c.rate)}
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {c.estimatedDays != null ? `~${c.estimatedDays} days` : "ETA n/a"}
+                      {c.codAvailable ? " · COD ok" : " · Prepaid only"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPickerOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                shipCourier({ variables: { sellerOrderId: so.id, courierId: chosenCourier } })
+              }
+              disabled={!chosenCourier || shippingCourier}
+            >
+              {shippingCourier && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Ship with this courier
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mark-as-shipped: capture tracking */}
+      <Dialog open={shipOpen} onOpenChange={(o) => !o && setShipOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Ship this order
+            </DialogTitle>
+            <DialogDescription>
+              Add the courier and tracking number so the customer can follow
+              their delivery. Marking shipped also commits inventory.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>
+                Tracking number <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                value={ship.trackingNumber}
+                onChange={(e) =>
+                  setShip((s) => ({ ...s, trackingNumber: e.target.value }))
+                }
+                placeholder="e.g. SR1234567890"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Courier</Label>
+                <Input
+                  value={ship.carrier}
+                  onChange={(e) =>
+                    setShip((s) => ({ ...s, carrier: e.target.value }))
+                  }
+                  placeholder="e.g. Delhivery"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Expected delivery</Label>
+                <Input
+                  type="date"
+                  value={ship.expectedDeliveryAt}
+                  onChange={(e) =>
+                    setShip((s) => ({
+                      ...s,
+                      expectedDeliveryAt: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tracking URL</Label>
+              <Input
+                value={ship.trackingUrl}
+                onChange={(e) =>
+                  setShip((s) => ({ ...s, trackingUrl: e.target.value }))
+                }
+                placeholder="https://…"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShipOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={submitShip} disabled={updating}>
+              {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Mark as shipped
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

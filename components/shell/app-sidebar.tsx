@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { SmartImage } from "@/components/media/smart-image";
 import { useAuthStore } from "@/store/auth.store";
 import { authApi } from "@/lib/api/auth.api";
 import { refreshAccessToken } from "@/lib/auth/refresh-manager";
@@ -54,6 +55,10 @@ export interface AppSidebarBrand {
   initials: string;
   /** Where the brand link routes to. */
   homeHref: string;
+  /** Optional logo URL — when set, ONLY the logo renders (no name/subtitle). */
+  logoUrl?: string | null;
+  /** Rendered logo height in px (defaults to 32). */
+  logoHeight?: number;
 }
 
 interface AppSidebarProps {
@@ -101,15 +106,29 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href={brand.homeHref}>
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-                  {brand.initials}
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">{brand.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {brand.subtitle}
-                  </span>
-                </div>
+                {brand.logoUrl ? (
+                  /* Logo set → show ONLY the logo (no name/subtitle text). */
+                  <SmartImage
+                    src={brand.logoUrl}
+                    alt={brand.name}
+                    purpose="LOGO"
+                    height={brand.logoHeight ?? 32}
+                    className="w-auto max-w-full object-contain"
+                    style={{ height: brand.logoHeight ?? 32, width: "auto" }}
+                  />
+                ) : (
+                  <>
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+                      {brand.initials}
+                    </div>
+                    <div className="flex flex-col gap-0.5 leading-none">
+                      <span className="font-semibold">{brand.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {brand.subtitle}
+                      </span>
+                    </div>
+                  </>
+                )}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

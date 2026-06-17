@@ -38,6 +38,8 @@ export const SELLER_FIELDS = gql`
     registrationNumber
     panNumber
     gstin
+    stateCode
+    stateName
     businessEmail
     businessPhone
     supportEmail
@@ -141,6 +143,40 @@ export const SUBMIT_MY_SELLER_FOR_REVIEW = gql`
   mutation SubmitMySellerForReview($id: ID!) {
     submitMySellerForReview(id: $id) {
       ...SellerFields
+    }
+  }
+`;
+
+// ---------------------------------------------------------------------------
+// Self payout-account mutations (seller must be VERIFIED)
+// ---------------------------------------------------------------------------
+export const CREATE_MY_PAYOUT_ACCOUNT = gql`
+  ${PAYOUT_ACCOUNT_FIELDS}
+  mutation CreateMyPayoutAccount(
+    $createPayoutAccountInput: CreatePayoutAccountInput!
+  ) {
+    createMyPayoutAccount(createPayoutAccountInput: $createPayoutAccountInput) {
+      ...PayoutAccountFields
+    }
+  }
+`;
+
+export const UPDATE_MY_PAYOUT_ACCOUNT = gql`
+  ${PAYOUT_ACCOUNT_FIELDS}
+  mutation UpdateMyPayoutAccount(
+    $updatePayoutAccountInput: UpdatePayoutAccountInput!
+  ) {
+    updateMyPayoutAccount(updatePayoutAccountInput: $updatePayoutAccountInput) {
+      ...PayoutAccountFields
+    }
+  }
+`;
+
+export const REMOVE_MY_PAYOUT_ACCOUNT = gql`
+  ${PAYOUT_ACCOUNT_FIELDS}
+  mutation RemoveMyPayoutAccount($id: ID!) {
+    removeMyPayoutAccount(id: $id) {
+      ...PayoutAccountFields
     }
   }
 `;

@@ -17,6 +17,8 @@ export interface CartItem {
   unitPriceCurrent: number;
   priceChanged: boolean;
   lineTotal: number;
+  /** GST portion for the whole line (unit tax × quantity). Null if no tax. */
+  taxAmount?: number | null;
   availableQuantity: number;
   stockState: CartStockState;
   createdAt: string;

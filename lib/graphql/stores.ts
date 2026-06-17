@@ -47,6 +47,15 @@ export const STORE_FIELDS = gql`
     isFeatured
     createdAt
     updatedAt
+    shippingConfig {
+      freeAbove
+      flatRate
+      perKgRate
+      codEnabled
+      codLimit
+      processingDays
+      excludedPincodes
+    }
     warehouses {
       ...WarehouseFields
     }
@@ -87,6 +96,15 @@ export const UPDATE_MY_STORE = gql`
   ${STORE_FIELDS}
   mutation UpdateMyStore($updateStoreInput: UpdateStoreInput!) {
     updateMyStore(updateStoreInput: $updateStoreInput) {
+      ...StoreFields
+    }
+  }
+`;
+
+export const UPDATE_MY_STORE_SHIPPING = gql`
+  ${STORE_FIELDS}
+  mutation UpdateMyStoreShipping($input: UpdateStoreShippingInput!) {
+    updateMyStoreShipping(input: $input) {
       ...StoreFields
     }
   }

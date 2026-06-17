@@ -116,7 +116,7 @@ export default function PublicProductPage() {
 // ---------------------------------------------------------------------------
 function ProductDetail({ product }: { product: Product }) {
   const { add: addToCart, busy: cartBusy } = useCart();
-  const { getDisplayPrice } = useSiteSettings();
+  const { getDisplayPrice, showPriceWithTax } = useSiteSettings();
 
   const currency =
     (product as unknown as { metadata?: { currencyCode?: string } }).metadata
@@ -215,6 +215,9 @@ function ProductDetail({ product }: { product: Product }) {
   const displayPriceWithTax = isVariable
     ? selectedVariant?.priceWithTax ?? product.priceWithTax
     : product.priceWithTax;
+  const displayTaxAmount = isVariable
+    ? selectedVariant?.taxAmount ?? product.taxAmount
+    : product.taxAmount;
   const displayCompareAt = isVariable
     ? selectedVariant?.compareAtPrice ?? null
     : product.compareAtPrice;
@@ -482,6 +485,22 @@ function ProductDetail({ product }: { product: Product }) {
               )}
             </div>
 
+            {/* Tax disclosure — Consumer Protection (E-Commerce) Rules 2020
+                requires the customer to know whether the displayed price is
+                inclusive of taxes. The price shown is base; GST is always added
+                at checkout. When the "show price with tax" toggle is ON, the
+                displayed figure already includes GST, so we say so; when OFF we
+                surface the tax that will be added. */}
+            {!(isVariable && !selectedVariant) && (
+              <p className="text-xs text-muted-foreground">
+                {showPriceWithTax
+                  ? "Inclusive of all taxes"
+                  : displayTaxAmount != null && displayTaxAmount > 0
+                    ? `+ ${formatPrice(displayTaxAmount, currency)} tax at checkout`
+                    : "Tax extra at checkout"}
+              </p>
+            )}
+
             {/* Stock state — SIMPLE products show it here; VARIABLE shows it
                 next to the SKU once a variant is picked. */}
             {!isVariable && (outOfStock || lowStockBadge) && (
@@ -565,11 +584,44 @@ function ProductDetail({ product }: { product: Product }) {
         )}
 
         {/* Specifications */}
-        {specs.length > 0 && (
+        {(specs.length > 0 || product.countryOfOrigin || product.hsnCode) && (
           <Card>
             <CardContent className="py-6 space-y-4">
               <h2 className="font-semibold text-lg">Specifications</h2>
               <div className="space-y-4">
+                {/* Compliance disclosures — country of origin per CP-EC
+                    Rules 2020, HSN for buyer transparency. Always at top
+                    so customers can find them at a glance. */}
+                {(product.countryOfOrigin || product.hsnCode) && (
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm">Product details</h3>
+                    <div className="border rounded-md overflow-hidden">
+                      {product.countryOfOrigin && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-4 py-2 text-sm bg-muted/30">
+                          <dt className="text-muted-foreground">
+                            Country of Origin
+                          </dt>
+                          <dd className="sm:col-span-2 font-medium">
+                            {product.countryOfOrigin}
+                          </dd>
+                        </div>
+                      )}
+                      {product.hsnCode && (
+                        <div
+                          className={`grid grid-cols-1 sm:grid-cols-3 gap-2 px-4 py-2 text-sm ${
+                            product.countryOfOrigin ? "" : "bg-muted/30"
+                          }`}
+                        >
+                          <dt className="text-muted-foreground">HSN Code</dt>
+                          <dd className="sm:col-span-2 font-medium font-mono">
+                            {product.hsnCode}
+                          </dd>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {specs
                   .slice()
                   .sort((a, b) => a.order - b.order)

@@ -29,6 +29,7 @@ import type {
 } from "@/types/review.types";
 import { REVIEW_SORT_LABEL, REVIEW_SORT_OPTIONS } from "@/types/review.types";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -213,30 +214,62 @@ export function ProductReviewsSection({ productId, productName }: Props) {
               reviews.map((r) => (
                 <article
                   key={r.id}
-                  className="border-b last:border-b-0 pb-5 last:pb-0"
+                  className="border-b last:border-b-0 pb-6 last:pb-0"
                 >
-                  <div className="flex items-center gap-3">
-                    <StarRating value={r.rating} size={14} />
+                  {/* Reviewer name + verified purchase */}
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                      {r.customerAvatarUrl && (
+                        <AvatarImage
+                          src={r.customerAvatarUrl}
+                          alt={r.customerName ?? "Reviewer"}
+                        />
+                      )}
+                      <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
+                        {reviewerInitials(r.customerName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium text-foreground">
+                      {r.customerName ?? "Anonymous"}
+                    </span>
                     {r.verifiedPurchase && (
                       <span
                         className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5"
                         title="This reviewer purchased the product"
                       >
                         <CheckCircle2 className="h-3 w-3" />
-                        Verified
+                        Verified Purchase
                       </span>
                     )}
                   </div>
-                  {r.title && (
-                    <h3 className="mt-2 font-semibold text-sm">{r.title}</h3>
-                  )}
-                  <p className="mt-1 text-sm whitespace-pre-line text-foreground/80 leading-relaxed">
+
+                  {/* Stars + review title */}
+                  <div className="mt-2 flex items-center gap-2">
+                    <StarRating value={r.rating} size={14} />
+                    {r.title && (
+                      <h3 className="font-semibold text-sm">{r.title}</h3>
+                    )}
+                  </div>
+
+                  {/* Purchased product name */}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {productName}
+                  </p>
+
+                  {/* Review body */}
+                  <p className="mt-2 text-sm whitespace-pre-line text-foreground/80 leading-relaxed">
                     {r.body}
                   </p>
+
+                  {/* Images / videos */}
                   {r.media.length > 0 && <ReviewMediaStrip media={r.media} />}
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    {r.customerName ?? "Anonymous"} ·{" "}
-                    {new Date(r.createdAt).toLocaleDateString()}
+
+                  {/* Date — Month Year */}
+                  <div className="mt-3 text-xs text-muted-foreground">
+                    {new Date(r.createdAt).toLocaleDateString(undefined, {
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </div>
                 </article>
               ))
@@ -278,6 +311,17 @@ export function ProductReviewsSection({ productId, productName }: Props) {
       />
     </section>
   );
+}
+
+// ---------------------------------------------------------------------------
+
+/** Up to two-letter initials for the avatar fallback; "?" when no name. */
+function reviewerInitials(name?: string | null): string {
+  if (!name?.trim()) return "?";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.charAt(0) ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : "";
+  return (first + last).toUpperCase();
 }
 
 // ---------------------------------------------------------------------------

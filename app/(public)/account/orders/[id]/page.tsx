@@ -17,7 +17,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Package, Store } from "lucide-react";
+import { ArrowLeft, Loader2, Package, Store, Truck } from "lucide-react";
 import { useState } from "react";
 
 import {
@@ -36,6 +36,7 @@ import {
 import { formatPrice } from "@/lib/utils/currency";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
+import { InvoiceCard } from "@/components/orders/invoice-card";
 import { WriteReviewDialog } from "@/components/reviews/write-review-dialog";
 
 import {
@@ -169,7 +170,12 @@ export default function OrderDetailPage() {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Items by seller</h2>
         {order.sellerOrders.map((so) => (
-          <SellerOrderCard key={so.id} sellerOrder={so} />
+          <SellerOrderCard
+            key={so.id}
+            sellerOrder={so}
+            orderPaymentMethod={order.paymentMethod}
+            orderPaymentStatus={order.paymentStatus}
+          />
         ))}
       </section>
 
@@ -195,30 +201,49 @@ export default function OrderDetailPage() {
       )}
 
       {/* ----- Totals ----- */}
-      <section className="rounded-lg border bg-card p-5 max-w-md ml-auto space-y-2 text-sm">
-        <SummaryRow label="Subtotal" value={formatPrice(order.subtotal)} />
-        {order.taxAmount > 0 && (
-          <SummaryRow label="Tax" value={formatPrice(order.taxAmount)} />
-        )}
-        {order.shippingAmount > 0 && (
-          <SummaryRow
-            label="Shipping"
-            value={formatPrice(order.shippingAmount)}
-          />
-        )}
-        {order.discountAmount > 0 && (
-          <SummaryRow
-            label="Discount"
-            value={`- ${formatPrice(order.discountAmount)}`}
-          />
-        )}
-        <div className="border-t pt-2 flex items-baseline justify-between">
-          <span className="text-base font-semibold">Total</span>
-          <span className="text-lg font-bold">
-            {formatPrice(order.totalAmount)}
-          </span>
-        </div>
-      </section>
+      {(() => {
+        // The stored price is the pre-tax base, so the summary reconciles as
+        // Subtotal(base) − Discount + GST + Shipping = Total. The "GST" line is
+        // the MERCHANDISE tax only (sum of per-item taxAmount); shipping carries
+        // its own GST inside the tax-inclusive shipping charge, so adding
+        // order.taxAmount (which also includes the shipping GST) would double-count.
+        const merchandiseTax = (order.items ?? []).reduce(
+          (sum, it) => sum + (it.taxAmount ?? 0),
+          0,
+        );
+        return (
+          <section className="rounded-lg border bg-card p-5 max-w-md ml-auto space-y-2 text-sm">
+            <SummaryRow
+              label="Subtotal"
+              value={formatPrice(order.subtotal)}
+            />
+            {order.discountAmount > 0 && (
+              <SummaryRow
+                label="Discount"
+                value={`- ${formatPrice(order.discountAmount)}`}
+              />
+            )}
+            {merchandiseTax > 0 && (
+              <SummaryRow
+                label="Tax (GST)"
+                value={formatPrice(Math.round(merchandiseTax * 100) / 100)}
+              />
+            )}
+            {order.shippingAmount > 0 && (
+              <SummaryRow
+                label="Shipping (incl. GST)"
+                value={formatPrice(order.shippingAmount)}
+              />
+            )}
+            <div className="border-t pt-2 flex items-baseline justify-between">
+              <span className="text-base font-semibold">Total</span>
+              <span className="text-lg font-bold">
+                {formatPrice(order.totalAmount)}
+              </span>
+            </div>
+          </section>
+        );
+      })()}
 
       <AlertDialog
         open={confirmCancel}
@@ -254,7 +279,23 @@ export default function OrderDetailPage() {
 
 /* -------------------------------------------------------------------------- */
 
-function SellerOrderCard({ sellerOrder }: { sellerOrder: SellerOrder }) {
+function SellerOrderCard({
+  sellerOrder,
+  orderPaymentMethod,
+  orderPaymentStatus,
+}: {
+  sellerOrder: SellerOrder;
+  orderPaymentMethod?: string | null;
+  orderPaymentStatus?: string | null;
+}) {
+  // Invoice generation is expected to have fired once payment is captured
+  // (online) or seller has confirmed (COD). If we've passed either bar and
+  // the URL is still absent, surface the "still generating" copy so the
+  // customer isn't left guessing.
+  const hasReachedInvoiceTrigger =
+    orderPaymentStatus === "PAID" ||
+    (orderPaymentMethod === "COD" && sellerOrder.status !== "PENDING");
+
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       <div className="p-5 border-b bg-muted/20 flex items-center justify-between gap-3 flex-wrap">
@@ -278,8 +319,48 @@ function SellerOrderCard({ sellerOrder }: { sellerOrder: SellerOrder }) {
         ))}
       </ul>
 
-      <div className="border-t bg-muted/10 p-4">
+      <div className="border-t bg-muted/10 p-4 space-y-3">
         <OrderStatusTimeline status={sellerOrder.status} />
+        {sellerOrder.trackingNumber && (
+          <div className="rounded-md border bg-card px-3 py-2 text-sm">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <Truck className="h-4 w-4 text-primary" />
+              Shipment tracking
+            </div>
+            <div className="mt-1 text-foreground/80">
+              {sellerOrder.carrier && <span>{sellerOrder.carrier} · </span>}
+              <span className="font-mono">{sellerOrder.trackingNumber}</span>
+            </div>
+            <div className="flex items-center gap-3 mt-0.5">
+              {sellerOrder.trackingUrl && (
+                <a
+                  href={sellerOrder.trackingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline text-xs"
+                >
+                  Track shipment ↗
+                </a>
+              )}
+              {sellerOrder.expectedDeliveryAt && (
+                <span className="text-xs text-muted-foreground">
+                  Est. delivery{" "}
+                  {new Date(sellerOrder.expectedDeliveryAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        <InvoiceCard
+          invoiceNumber={sellerOrder.invoiceNumber}
+          invoiceDate={sellerOrder.invoiceDate}
+          invoiceUrl={sellerOrder.invoiceUrl}
+          placeOfSupplyStateCode={sellerOrder.placeOfSupplyStateCode}
+          placeOfSupplyStateName={sellerOrder.placeOfSupplyStateName}
+          taxKind={sellerOrder.taxKind}
+          paymentMethod={orderPaymentMethod}
+          hasReachedInvoiceTrigger={hasReachedInvoiceTrigger}
+        />
       </div>
     </div>
   );

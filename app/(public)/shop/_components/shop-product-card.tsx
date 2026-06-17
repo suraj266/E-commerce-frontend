@@ -24,15 +24,16 @@
  */
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Minus, Plus, ShoppingCart } from "lucide-react";
+import { Loader2, Minus, Plus, ShoppingCart, SlidersHorizontal } from "lucide-react";
 import { formatPrice } from "@/lib/utils/currency";
 import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button";
+import { ProductLabels } from "@/components/products/product-labels";
+import { VariantPickerDialog } from "@/components/products/variant-picker-dialog";
 import { useCart } from "@/components/cart/use-cart";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
 import type { Product } from "@/types/product.types";
-
-const NEW_ARRIVAL_DAYS = 30;
 
 interface CardProps {
   product: Product;
@@ -42,25 +43,29 @@ export function ShopProductCard({ product }: CardProps) {
   const router = useRouter();
   const { cart, add, updateQty, busy } = useCart();
   const { getDisplayPrice } = useSiteSettings();
+  const [pickerOpen, setPickerOpen] = useState(false);
   const primary = product.images?.find((i) => i.isPrimary) ?? product.images?.[0];
-  const badge = deriveBadge(product);
   const onSale = isOnSale(product);
   const defaultVariant = product.variants?.[0];
-  const isVariable =
-    product.productType === "VARIABLE" || (product.variants?.length ?? 0) > 1;
+  // Multiple variants → open a chooser popup. A single variant (even on a
+  // VARIABLE product) adds straight to the cart.
+  const hasMultipleVariants = (product.variants?.length ?? 0) > 1;
   const pdpHref = `/product/${product.slug}`;
 
-  // For SIMPLE products, look up whether the default variant is already
-  // in the cart so we can render a stepper instead of the Add button.
-  // VARIABLE products always show "View options" — different variants
-  // may be in the cart and we can't tell which from a card.
-  const inCartItem = !isVariable && defaultVariant
+  // For single-variant products, look up whether that variant is already in
+  // the cart so we can render a stepper instead of the Add button. Multi-variant
+  // cards show "View options" — we can't tell which variant is in the cart.
+  const inCartItem = !hasMultipleVariants && defaultVariant
     ? cart?.items.find((i) => i.variantId === defaultVariant.id)
     : undefined;
   const inCartQty = inCartItem?.quantity ?? 0;
 
   async function handleAdd() {
-    if (isVariable || !defaultVariant) {
+    if (hasMultipleVariants) {
+      setPickerOpen(true);
+      return;
+    }
+    if (!defaultVariant) {
       router.push(pdpHref);
       return;
     }
@@ -103,13 +108,10 @@ export function ShopProductCard({ product }: CardProps) {
           )}
         </Link>
 
-        {badge && (
-          <span
-            className={`absolute top-3 left-3 z-10 text-[10px] uppercase tracking-wide font-semibold px-2.5 py-1 ${badge.className}`}
-          >
-            {badge.label}
-          </span>
-        )}
+        <ProductLabels
+          labels={product.labels}
+          className="absolute top-3 left-3 z-10"
+        />
 
         <WishlistHeartButton productId={product.id} />
 
@@ -126,7 +128,7 @@ export function ShopProductCard({ product }: CardProps) {
             />
           ) : (
             <HoverAddButton
-              isVariable={isVariable}
+              hasOptions={hasMultipleVariants}
               busy={busy}
               onClick={handleAdd}
             />
@@ -157,6 +159,14 @@ export function ShopProductCard({ product }: CardProps) {
           )}
         </p>
       </div>
+
+      {hasMultipleVariants && (
+        <VariantPickerDialog
+          product={product}
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+        />
+      )}
     </article>
   );
 }
@@ -225,11 +235,11 @@ function CartStepper({
 /* -------------------------------------------------------------------------- */
 
 function HoverAddButton({
-  isVariable,
+  hasOptions,
   busy,
   onClick,
 }: {
-  isVariable: boolean;
+  hasOptions: boolean;
   busy: boolean;
   onClick: () => void;
 }) {
@@ -240,11 +250,11 @@ function HoverAddButton({
         onClick={onClick}
         disabled={busy}
         className="w-full inline-flex items-center justify-center gap-2 bg-brand text-brand-foreground px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-lg hover:bg-brand/90 transition disabled:opacity-60"
-        aria-label={isVariable ? "View options" : "Add to cart"}
+        aria-label={hasOptions ? "View options" : "Add to cart"}
       >
-        {isVariable ? (
+        {hasOptions ? (
           <>
-            <Plus className="h-3.5 w-3.5" />
+            <SlidersHorizontal className="h-3.5 w-3.5" />
             View options
           </>
         ) : (
@@ -262,28 +272,10 @@ function HoverAddButton({
 /*  Helpers                                                                   */
 /* -------------------------------------------------------------------------- */
 
+/** Drives the strike-through original price display (not the badge). */
 function isOnSale(product: Product): boolean {
   return (
     product.compareAtPrice != null &&
     Number(product.compareAtPrice) > Number(product.price)
   );
-}
-
-function deriveBadge(
-  product: Product,
-): { label: string; className: string } | null {
-  if (isOnSale(product)) {
-    return { label: "Sale", className: "bg-sale text-sale-foreground" };
-  }
-  const ageDays = ageInDays(product.createdAt);
-  if (ageDays != null && ageDays <= NEW_ARRIVAL_DAYS) {
-    return { label: "New", className: "bg-cta text-cta-foreground" };
-  }
-  return null;
-}
-
-function ageInDays(iso: string): number | null {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return null;
-  return (Date.now() - t) / 86_400_000;
 }

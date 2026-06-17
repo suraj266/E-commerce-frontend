@@ -18,6 +18,7 @@ export const CART_FIELDS = gql`
       unitPriceCurrent
       priceChanged
       lineTotal
+      taxAmount
       availableQuantity
       stockState
       createdAt
@@ -30,6 +31,7 @@ export const CART_FIELDS = gql`
         name
         price
         priceWithTax
+        taxAmount
         imageUrl
         attributes {
           attributeId

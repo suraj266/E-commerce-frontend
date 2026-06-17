@@ -15,15 +15,20 @@
 
 import { AppSidebar } from "@/components/shell/app-sidebar";
 import { adminNavigation } from "@/config/admin.nav";
+import { useSiteSettings } from "@/lib/context/site-settings-context";
 
 export function AdminSidebar() {
+  const { logoUrl, brandName, logoHeight } = useSiteSettings();
+
   return (
     <AppSidebar
       brand={{
-        name: "Ecommerce",
+        name: brandName,
         subtitle: "Admin Panel",
         initials: "EC",
         homeHref: "/admin/dashboard",
+        logoUrl,
+        logoHeight,
       }}
       navigation={adminNavigation}
       logoutRedirect="/admin/login"

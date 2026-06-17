@@ -17,6 +17,10 @@ import {
   Boxes,
   ShieldCheck,
   Package,
+  Wallet,
+  BarChart3,
+  Settings,
+  Truck,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -29,6 +33,11 @@ export const sellerNavigation: NavGroup[] = [
         title: "Dashboard",
         href: "/seller/dashboard",
         icon: LayoutDashboard,
+      },
+      {
+        title: "Analytics",
+        href: "/seller/analytics",
+        icon: BarChart3,
       },
     ],
   },
@@ -60,6 +69,16 @@ export const sellerNavigation: NavGroup[] = [
         href: "/seller/orders",
         icon: Package,
       },
+      {
+        title: "Shipping",
+        href: "/seller/shipping",
+        icon: Truck,
+      },
+      {
+        title: "Payouts",
+        href: "/seller/payouts",
+        icon: Wallet,
+      },
     ],
   },
   {
@@ -69,6 +88,11 @@ export const sellerNavigation: NavGroup[] = [
         title: "KYC",
         href: "/seller/onboarding",
         icon: ShieldCheck,
+      },
+      {
+        title: "Settings",
+        href: "/seller/settings",
+        icon: Settings,
       },
     ],
   },
