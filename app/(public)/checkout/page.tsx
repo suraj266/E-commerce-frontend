@@ -15,7 +15,7 @@
  * the admin has enabled shows up here automatically.
  */
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -176,6 +176,14 @@ export default function CheckoutPage() {
   const [verifyPayment] = useMutation<VerifyPaymentData>(VERIFY_PAYMENT);
   const [cancelCheckout] = useMutation(CANCEL_CHECKOUT);
 
+  // Idempotency key for the current checkout attempt. Generated lazily on the
+  // first submit and kept stable across double-clicks / network retries so the
+  // server (OrderPlacementService) never creates a duplicate order. Reset once
+  // the attempt reaches a terminal outcome (placed / paid / cancelled) so the
+  // next order gets a fresh key. Kept on an initiateCheckout error so a retry
+  // recovers the same order if the response was lost after it was created.
+  const checkoutRequestId = useRef<string | null>(null);
+
   // ---- Computed ----
   const activeGateway = useMemo(
     () => gateways.find((g) => g.gateway === selectedGateway) ?? null,
@@ -221,6 +229,7 @@ export default function CheckoutPage() {
               },
             });
             // Order is redeemed — clear the persisted coupon.
+            checkoutRequestId.current = null; // attempt complete
             clearAppliedCoupon();
             toast.success("Payment successful! Redirecting...");
             router.push(`/checkout/success/${orderId}`);
@@ -231,7 +240,9 @@ export default function CheckoutPage() {
                 : "Payment verification failed."
             );
             // Verification failed — treat as a failed payment so the order
-            // doesn't linger as a seller-actionable PENDING order.
+            // doesn't linger as a seller-actionable PENDING order. Reset the
+            // key so a fresh retry creates a new order (this one is cancelled).
+            checkoutRequestId.current = null;
             await cancelCheckout({ variables: { orderId } }).catch(() => {});
             router.push(`/checkout/failed/${orderId}?reason=failed`);
           } finally {
@@ -245,6 +256,7 @@ export default function CheckoutPage() {
             // then send them to the failed page. The webhook is the backstop
             // if this call doesn't land.
             try {
+              checkoutRequestId.current = null; // attempt cancelled — next is fresh
               await cancelCheckout({ variables: { orderId } });
             } catch {
               // best-effort; the payment.failed webhook will reconcile.
@@ -282,6 +294,11 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
+    // Stable per-attempt idempotency key (generated once, reused on retry).
+    if (!checkoutRequestId.current) {
+      checkoutRequestId.current = crypto.randomUUID();
+    }
+
     try {
       const res = await initiateCheckout({
         variables: {
@@ -293,6 +310,7 @@ export default function CheckoutPage() {
             buyerGstin: b2bChecked
               ? buyerGstin.toUpperCase().trim()
               : undefined,
+            clientRequestId: checkoutRequestId.current,
           },
         },
       });
@@ -308,6 +326,7 @@ export default function CheckoutPage() {
         // COD — order placed immediately. Clear the persisted coupon now
         // that it's redeemed; the server enforces idempotency via the
         // unique CouponRedemption.orderId so a retry can't double-apply.
+        checkoutRequestId.current = null; // attempt complete — next order is fresh
         clearAppliedCoupon();
         toast.success(`Order ${result.orderNumber} placed successfully!`);
         router.push(`/checkout/success/${result.orderId}`);

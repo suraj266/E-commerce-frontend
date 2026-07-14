@@ -39,8 +39,8 @@ export default function Home() {
   if (loading && !data) {
     return (
       <div className="px-4 py-12 max-w-6xl mx-auto space-y-3">
-        <div className="h-64 w-full bg-muted animate-pulse rounded" />
-        <div className="h-32 w-full bg-muted animate-pulse rounded" />
+        <div className="h-64 w-full bg-muted rounded-xl skeleton-shimmer" />
+        <div className="h-32 w-full bg-muted rounded-xl skeleton-shimmer" />
       </div>
     );
   }

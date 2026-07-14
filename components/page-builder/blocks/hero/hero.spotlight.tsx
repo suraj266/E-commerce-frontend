@@ -40,7 +40,7 @@ export function HeroSpotlightView(props: HeroProps) {
         {/* ---------------- Left: Text + CTA ---------------- */}
         <div className="space-y-6 sm:space-y-8 order-2 lg:order-1">
           {props.headline && (
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-pink-600 leading-[1.05]">
+            <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-brand leading-[1.05]">
               {props.headline}
             </h1>
           )}
@@ -61,7 +61,7 @@ export function HeroSpotlightView(props: HeroProps) {
             <div className="pt-2">
               <Link
                 href={props.ctaHref}
-                className="inline-flex items-center gap-3 rounded-full bg-feature hover:bg-feature/90 text-white px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold shadow-lg shadow-feature/20 transition"
+                className="inline-flex min-h-11 items-center gap-3 rounded-full bg-accent-brand hover:bg-accent-brand/90 text-accent-brand-foreground px-6 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-semibold shadow-lg shadow-accent-brand/25 transition-all hover:-translate-y-0.5 active:translate-y-0"
               >
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/20">
                   <ShoppingCart className="h-3.5 w-3.5" />
@@ -85,7 +85,7 @@ export function HeroSpotlightView(props: HeroProps) {
               The peach gradient is the fallback when no image is set —
               and also doubles as a soft tint behind transparent PNGs.
             */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-200 via-orange-100 to-rose-100" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent-brand/25 via-brand/10 to-accent-brand/5" />
 
             {props.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -127,7 +127,7 @@ export function HeroSpotlightView(props: HeroProps) {
                   {t.href ? (
                     <Link
                       href={t.href}
-                      className="block h-20 w-20 xl:h-24 xl:w-24 rounded-3xl overflow-hidden bg-white shadow-lg ring-1 ring-black/5 hover:ring-amber-500 transition"
+                      className="block h-20 w-20 xl:h-24 xl:w-24 rounded-3xl overflow-hidden bg-white shadow-lg ring-1 ring-black/5 hover:ring-accent-brand transition"
                     >
                       <ThumbnailImage url={t.imageUrl} index={i} />
                     </Link>

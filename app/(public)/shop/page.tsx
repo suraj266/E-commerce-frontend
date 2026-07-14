@@ -35,6 +35,7 @@ import {
 } from "./_components/shop-filters";
 import { ShopProductCard } from "./_components/shop-product-card";
 import { ShopPagination } from "./_components/shop-pagination";
+import { Reveal } from "@/components/ui/reveal";
 
 const PAGE_SIZE = 9;
 
@@ -200,8 +201,10 @@ function ShopGrid({ items }: { items: Product[] }) {
   // Uniform grid — every card the same size. Density: 2 / 3 / 4 cols.
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8 sm:gap-y-10">
-      {items.map((p) => (
-        <ShopProductCard key={p.id} product={p} />
+      {items.map((p, i) => (
+        <Reveal key={p.id} index={i % 8}>
+          <ShopProductCard product={p} />
+        </Reveal>
       ))}
     </div>
   );
@@ -213,7 +216,7 @@ function SkeletonGrid() {
       {Array.from({ length: 8 }).map((_, i) => (
         <div
           key={i}
-          className="aspect-[4/5] bg-muted animate-pulse"
+          className="aspect-[4/5] rounded-xl bg-muted skeleton-shimmer"
         />
       ))}
     </div>

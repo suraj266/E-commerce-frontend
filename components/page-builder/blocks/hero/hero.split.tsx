@@ -48,13 +48,13 @@ export function HeroSplitView(props: HeroProps) {
               className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/5" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand/25 via-accent-brand/10 to-accent-brand/5" />
           )}
         </div>
 
         <div className="flex flex-col justify-center gap-4">
           {props.headline && (
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight">
+            <h1 className="font-heading text-4xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
               {props.headline}
             </h1>
           )}
@@ -67,7 +67,7 @@ export function HeroSplitView(props: HeroProps) {
             <div>
               <Link
                 href={props.ctaHref}
-                className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow hover:bg-primary/90 transition"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent-brand text-accent-brand-foreground px-7 py-3.5 text-sm sm:text-base font-semibold shadow-lg transition-all hover:bg-accent-brand/90 hover:-translate-y-0.5 active:translate-y-0"
               >
                 {props.ctaLabel}
               </Link>

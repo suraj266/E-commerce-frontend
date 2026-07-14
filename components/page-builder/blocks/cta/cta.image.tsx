@@ -17,12 +17,12 @@ export function CtaImageView(props: CtaProps) {
             <div className="absolute inset-0 bg-black/55" />
           </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/70 to-primary/40" />
+          <div className="absolute inset-0 bg-gradient-to-br from-brand/70 to-accent-brand/50" />
         )}
 
         <div className="relative z-10 px-6 py-12 sm:py-16 text-center space-y-4">
           {props.headline && (
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight drop-shadow">
+            <h2 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight drop-shadow">
               {props.headline}
             </h2>
           )}
@@ -32,7 +32,7 @@ export function CtaImageView(props: CtaProps) {
           {props.buttonLabel && props.buttonHref && (
             <Link
               href={props.buttonHref}
-              className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 text-sm font-semibold transition"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent-brand text-accent-brand-foreground hover:bg-accent-brand/90 px-7 py-3.5 text-sm sm:text-base font-semibold shadow-lg transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
               {props.buttonLabel}
             </Link>

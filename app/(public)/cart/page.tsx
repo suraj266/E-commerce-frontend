@@ -18,7 +18,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Loader2, Minus, Plus, ShoppingBag, Trash2, AlertCircle } from "lucide-react";
+import { Loader2, Minus, Plus, ShoppingBag, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
 
 import { useCart } from "@/components/cart/use-cart";
 import { useAuthStore } from "@/store/auth.store";
@@ -91,13 +91,13 @@ export default function CartPage() {
       </header>
 
       {cart?.needsReview && (
-        <div className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 text-sm">
-          <AlertCircle className="h-4 w-4 text-feature mt-0.5 shrink-0" />
+        <div className="mb-6 rounded-md border border-warning/40 bg-warning/10 px-4 py-3 flex items-start gap-3 text-sm">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
           <div>
-            <strong className="font-semibold text-amber-900">
+            <strong className="font-semibold text-foreground">
               Some items need your attention.
             </strong>{" "}
-            <span className="text-amber-800">
+            <span className="text-foreground/70">
               Prices may have changed or stock may be low. Review each line
               before checking out.
             </span>
@@ -303,23 +303,31 @@ function CartLine({
           </p>
         )}
 
-        {/* Per-line warnings */}
+        {/* Per-line warnings. Warning (price/low-stock) is amber + triangle;
+            out-of-stock is the sale red + alert. Icons make state legible
+            without relying on color alone, and the copy stays foreground-dark
+            so it's readable on the white card (amber-as-text fails AA). */}
         <div className="mt-1 space-y-0.5 text-xs">
           {item.priceChanged && (
-            <p className="text-feature/90">
-              Price changed: was {formatPrice(item.unitPriceSnapshot)}, now{" "}
-              <span className="font-semibold">
-                {formatPrice(item.unitPriceCurrent)}
+            <p className="flex items-center gap-1 text-foreground/80">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
+              <span>
+                Price changed: was {formatPrice(item.unitPriceSnapshot)}, now{" "}
+                <span className="font-semibold">
+                  {formatPrice(item.unitPriceCurrent)}
+                </span>
               </span>
             </p>
           )}
           {oos && (
-            <p className="text-sale font-medium">
+            <p className="flex items-center gap-1 text-sale font-medium">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
               Out of stock — remove or save for later.
             </p>
           )}
           {!oos && lowStock && (
-            <p className="text-feature/90">
+            <p className="flex items-center gap-1 text-foreground/80">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" />
               Only {item.availableQuantity} left in stock.
             </p>
           )}

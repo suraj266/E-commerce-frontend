@@ -49,7 +49,7 @@ function SlidePicture({
   if (!desktop && !tablet && !mobile) {
     return (
       <div
-        className={`absolute inset-0 bg-gradient-to-br from-primary/30 to-primary/5 ${className ?? ""}`}
+        className={`absolute inset-0 bg-gradient-to-br from-brand/30 via-accent-brand/10 to-accent-brand/5 ${className ?? ""}`}
       />
     );
   }
@@ -168,7 +168,7 @@ export function HeroSliderView(props: HeroProps) {
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative z-10 flex flex-col items-center justify-center text-center h-full px-4 sm:px-12 max-w-6xl mx-auto gap-4">
             {slide.title && (
-              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white drop-shadow">
+              <h1 className="font-heading text-4xl sm:text-6xl font-bold tracking-tight leading-[1.05] text-white drop-shadow">
                 {slide.title}
               </h1>
             )}
@@ -185,14 +185,14 @@ export function HeroSliderView(props: HeroProps) {
                       href={slide.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow hover:bg-primary/90 transition"
+                      className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent-brand text-accent-brand-foreground px-7 py-3.5 text-sm sm:text-base font-semibold shadow-lg transition-all hover:bg-accent-brand/90 hover:-translate-y-0.5 active:translate-y-0"
                     >
                       {slide.ctaLabel}
                     </a>
                   ) : (
                     <Link
                       href={slide.link}
-                      className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow hover:bg-primary/90 transition"
+                      className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent-brand text-accent-brand-foreground px-7 py-3.5 text-sm sm:text-base font-semibold shadow-lg transition-all hover:bg-accent-brand/90 hover:-translate-y-0.5 active:translate-y-0"
                     >
                       {slide.ctaLabel}
                     </Link>

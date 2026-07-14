@@ -18,13 +18,14 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
+  AlertTriangle,
   Box,
   ChevronRight,
   ShoppingCart,
@@ -80,12 +81,12 @@ export default function PublicProductPage() {
   if (loading) {
     return (
       <div className="max-w-6xl mx-auto p-4 sm:p-8 grid md:grid-cols-2 gap-8">
-        <div className="aspect-square animate-pulse rounded-lg bg-muted" />
+        <div className="aspect-square rounded-xl bg-muted skeleton-shimmer" />
         <div className="space-y-4">
-          <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-          <div className="h-10 w-full animate-pulse rounded bg-muted" />
-          <div className="h-8 w-40 animate-pulse rounded bg-muted" />
-          <div className="h-24 w-full animate-pulse rounded bg-muted" />
+          <div className="h-6 w-32 rounded bg-muted skeleton-shimmer" />
+          <div className="h-10 w-full rounded bg-muted skeleton-shimmer" />
+          <div className="h-8 w-40 rounded bg-muted skeleton-shimmer" />
+          <div className="h-24 w-full rounded bg-muted skeleton-shimmer" />
         </div>
       </div>
     );
@@ -280,6 +281,21 @@ function ProductDetail({ product }: { product: Product }) {
     if (ok) window.location.href = "/cart";
   }
 
+  // Sticky mobile buy bar — revealed once the inline CTAs scroll out of view,
+  // so the buy action is always one thumb-tap away on long PDPs.
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { rootMargin: "0px 0px -40px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div className="bg-muted/20 min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">
@@ -331,7 +347,7 @@ function ProductDetail({ product }: { product: Product }) {
                     onClick={() => setActiveImage(img)}
                     className={`relative aspect-square rounded-md border overflow-hidden transition ${
                       activeImage?.id === img.id
-                        ? "border-primary ring-2 ring-primary"
+                        ? "border-brand ring-2 ring-brand"
                         : "border-border hover:border-foreground/40"
                     }`}
                   >
@@ -361,7 +377,7 @@ function ProductDetail({ product }: { product: Product }) {
               </Link>
             )}
 
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h1 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight">
               {product.name}
             </h1>
 
@@ -424,7 +440,7 @@ function ProductDetail({ product }: { product: Product }) {
                             }
                             className={`px-3 py-1.5 rounded-md text-sm border transition ${
                               selected
-                                ? "bg-primary text-primary-foreground border-primary"
+                                ? "bg-brand text-brand-foreground border-brand"
                                 : disabled
                                   ? "bg-muted text-muted-foreground border-border opacity-50 cursor-not-allowed line-through"
                                   : "bg-background text-foreground border-border hover:border-foreground"
@@ -448,10 +464,8 @@ function ProductDetail({ product }: { product: Product }) {
                       </Badge>
                     )}
                     {lowStockBadge && (
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300 border-amber-300/50"
-                      >
+                      <Badge className="gap-1 border-transparent bg-warning text-warning-foreground text-[10px]">
+                        <AlertTriangle className="h-3 w-3" />
                         Only {stockAvailable} left
                       </Badge>
                     )}
@@ -510,10 +524,8 @@ function ProductDetail({ product }: { product: Product }) {
                     Out of stock
                   </Badge>
                 ) : (
-                  <Badge
-                    variant="secondary"
-                    className="text-xs bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300 border-amber-300/50"
-                  >
+                  <Badge className="gap-1 border-transparent bg-warning text-warning-foreground text-xs">
+                    <AlertTriangle className="h-3.5 w-3.5" />
                     Only {stockAvailable} left
                   </Badge>
                 )}
@@ -537,10 +549,12 @@ function ProductDetail({ product }: { product: Product }) {
 
             <Separator />
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* CTAs — emerald "Add to cart" (the buy color) + indigo "Buy now",
+                both at the 44px storefront size for comfortable tapping. */}
+            <div ref={ctaRef} className="flex flex-col sm:flex-row gap-3">
               <Button
-                size="lg"
+                size="xl"
+                variant="cta"
                 onClick={handleAddToCart}
                 disabled={outOfStock || cartBusy}
                 className="flex-1"
@@ -553,8 +567,8 @@ function ProductDetail({ product }: { product: Product }) {
                     : "Add to Cart"}
               </Button>
               <Button
-                size="lg"
-                variant="outline"
+                size="xl"
+                variant="brand"
                 onClick={handleBuyNow}
                 disabled={outOfStock || cartBusy}
                 className="flex-1"
@@ -663,6 +677,32 @@ function ProductDetail({ product }: { product: Product }) {
           />
         </section>
       </div>
+
+      {/* Sticky mobile buy bar (hidden on desktop) */}
+      {showStickyBar && (
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 dark:bg-surface-2/70 dark:supports-[backdrop-filter]:bg-surface-2/55 dark:border-border-strong md:hidden animate-in slide-in-from-bottom-2">
+          <div className="min-w-0">
+            <div className="font-heading text-base font-bold leading-tight truncate">
+              {isVariable && !selectedVariant
+                ? `From ${formatPrice(getDisplayPrice(product.price, product.priceWithTax), currency)}`
+                : formatPrice(getDisplayPrice(displayPrice, displayPriceWithTax), currency)}
+            </div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              {product.name}
+            </div>
+          </div>
+          <Button
+            size="xl"
+            variant="cta"
+            onClick={handleAddToCart}
+            disabled={outOfStock || cartBusy}
+            className="ml-auto shrink-0"
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            {outOfStock ? "Out of stock" : "Add to cart"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

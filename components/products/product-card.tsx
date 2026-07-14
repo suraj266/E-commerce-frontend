@@ -34,8 +34,8 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
     // Image + title areas each get their own <Link>. We can't wrap the whole
     // card in one <Link> because the wishlist heart is a <button> and
     // <button> inside <a> is invalid HTML. Same pattern as shop-product-card.
-    <div className="group relative">
-      <Card className="overflow-hidden hover:shadow-md transition-shadow h-full">
+    <div className="group relative transition-transform duration-300 ease-out hover:-translate-y-1">
+      <Card className="overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 h-full dark:border-border-strong dark:shadow-none dark:group-hover:glow-accent">
         <Link
           href={pdpHref}
           className="relative aspect-square bg-muted block"
@@ -47,7 +47,7 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
               alt={primaryImage.altText ?? product.name}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="h-full w-full flex items-center justify-center">
@@ -72,7 +72,7 @@ export function ProductCard({ product, currency = "INR" }: ProductCardProps) {
             </div>
           )}
           <Link href={pdpHref}>
-            <div className="font-medium text-sm line-clamp-2 min-h-[2.5rem] hover:underline">
+            <div className="font-heading font-semibold text-sm line-clamp-2 min-h-[2.5rem] hover:underline">
               {product.name}
             </div>
           </Link>

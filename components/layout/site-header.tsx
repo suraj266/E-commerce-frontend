@@ -28,6 +28,7 @@ import { HeaderWishlistLink } from "@/components/wishlist/header-wishlist-link";
 import { HeaderCartLink } from "@/components/cart/header-cart-link";
 import { HeaderAccountLink } from "@/components/auth/header-account-link";
 import { SearchTrigger } from "@/components/layout/search-trigger";
+import { StoreThemeToggle } from "@/components/layout/store-theme-toggle";
 import { GET_PUBLIC_MENU } from "@/lib/graphql/menus";
 import {
   GetPublicMenuData,
@@ -154,7 +155,7 @@ export function SiteHeader() {
     : "sticky top-0";
   const bgClass = hideAtTop
     ? "bg-transparent border-transparent"
-    : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b";
+    : "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b dark:bg-surface-2/55 dark:supports-[backdrop-filter]:bg-surface-2/40 dark:border-border-strong";
   const transformClass = hideAtTop ? "-translate-y-full" : "translate-y-0";
 
   return (
@@ -224,6 +225,7 @@ export function SiteHeader() {
 
           {/* Right-side actions */}
           <div className="ml-auto md:ml-0 flex items-center gap-1 shrink-0">
+            <StoreThemeToggle />
             <HeaderAccountLink />
             <HeaderWishlistLink />
             <HeaderCartLink />

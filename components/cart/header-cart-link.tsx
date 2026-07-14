@@ -20,8 +20,10 @@ export function HeaderCartLink() {
         <ShoppingCart className="h-5 w-5" />
         {count > 0 && (
           <span
+            // Re-mount on count change so the badge bumps when items are added.
+            key={count}
             aria-hidden="true"
-            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center"
+            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-cta text-cta-foreground text-[10px] font-bold flex items-center justify-center animate-pop"
           >
             {count > 99 ? "99+" : count}
           </span>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ApolloWrapper } from "@/lib/apollo/ApolloWrapper";
 import { SiteSettingsProvider } from "@/lib/context/site-settings-context";
 import { Toaster } from "@/components/ui/sonner";
@@ -7,6 +7,15 @@ import "./globals.css";
 
 const inter = Inter({
   variable: "--font-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+// Display/heading voice — geometric, contemporary, gives the storefront a
+// recognizable personality instead of "default Inter everywhere". Consumed via
+// the `--font-heading` token (globals.css) → `font-heading` utility.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
 });
@@ -30,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
       // Browser extensions (Grammarly, Scribe Recorder, dark-mode forcers,
       // password managers, etc.) routinely mutate <html>/<body> attributes
       // before React hydrates, which triggers a noisy mismatch warning.

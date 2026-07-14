@@ -83,8 +83,8 @@ export function MobileMenuDrawer({ open, onClose, items, topItems }: Props) {
         aria-hidden="true"
       />
 
-      {/* Panel */}
-      <div className="absolute inset-y-0 left-0 w-[85%] max-w-sm bg-background shadow-xl flex flex-col animate-in slide-in-from-left">
+      {/* Panel — frosted glass in NeoDark (dark only); solid in light. */}
+      <div className="absolute inset-y-0 left-0 w-[85%] max-w-sm bg-background shadow-xl flex flex-col animate-in slide-in-from-left dark:bg-transparent dark:glass">
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <span className="font-bold text-lg">Menu</span>
           <Button

@@ -41,9 +41,11 @@ export function WishlistHeartButton({
       className={`${baseClass} ${className}`}
     >
       <Heart
+        // Re-mount on toggle so the fill state pops once when favorited.
+        key={active ? "on" : "off"}
         className={`h-4 w-4 transition ${
           active
-            ? "fill-sale text-sale"
+            ? "fill-sale text-sale animate-pop"
             : "text-foreground/70"
         }`}
       />

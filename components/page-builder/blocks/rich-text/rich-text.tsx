@@ -17,18 +17,18 @@ const WIDTH_CLASS: Record<RichTextProps["maxWidth"], string> = {
 const COMPONENTS: Components = {
   h1: ({ ...rest }) => (
     <h1
-      className="text-3xl sm:text-4xl font-bold tracking-tight mt-8 mb-4"
+      className="font-heading text-3xl sm:text-4xl font-bold tracking-tight mt-8 mb-4"
       {...rest}
     />
   ),
   h2: ({ ...rest }) => (
     <h2
-      className="text-2xl sm:text-3xl font-bold tracking-tight mt-7 mb-3"
+      className="font-heading text-2xl sm:text-3xl font-bold tracking-tight mt-7 mb-3"
       {...rest}
     />
   ),
   h3: ({ ...rest }) => (
-    <h3 className="text-xl sm:text-2xl font-semibold mt-6 mb-2" {...rest} />
+    <h3 className="font-heading text-xl sm:text-2xl font-semibold mt-6 mb-2" {...rest} />
   ),
   p: ({ ...rest }) => (
     <p className="text-base leading-relaxed my-3 text-foreground/90" {...rest} />

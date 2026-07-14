@@ -47,7 +47,7 @@ export function AppHeader({ breadcrumbRoot }: AppHeaderProps) {
   const formattedPage = overrideTitle ?? titleCase(fallback);
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b px-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:bg-surface-2/55 dark:supports-[backdrop-filter]:bg-surface-2/40 dark:border-border-strong">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 !h-4" />
@@ -72,7 +72,7 @@ export function AppHeader({ breadcrumbRoot }: AppHeaderProps) {
 
         <Button variant="ghost" size="icon" className="relative h-9 w-9">
           <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
           <span className="sr-only">Notifications</span>
         </Button>
       </div>

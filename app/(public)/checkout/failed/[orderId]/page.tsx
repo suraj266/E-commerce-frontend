@@ -38,8 +38,8 @@ function CheckoutFailedContent() {
     reason === "failed" ? "Payment failed" : "Payment cancelled";
   const blurb =
     reason === "failed"
-      ? "Your payment couldn't be completed at the gateway, so this order was cancelled and the items were released back to stock."
-      : "You cancelled the payment, so this order was cancelled and the items were released back to stock.";
+      ? "Your payment couldn't be completed at the gateway, so this order was cancelled."
+      : "You cancelled the payment, so this order was cancelled.";
 
   return (
     <div className="mx-auto max-w-xl px-4 py-12">

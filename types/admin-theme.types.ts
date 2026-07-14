@@ -28,8 +28,11 @@ export interface AdminTheme {
  */
 export const ADMIN_THEME_DEFAULTS: AdminTheme = {
   id: "global",
-  primaryLight: "oklch(0.205 0 0)",
-  primaryDark: "oklch(0.922 0 0)",
+  // Brand indigo by default (matches the storefront --brand) so the admin
+  // panel is on-brand out of the box. Admins can still pick any preset or a
+  // custom color in /admin/settings/appearance.
+  primaryLight: "oklch(0.42 0.16 264)",
+  primaryDark: "oklch(0.62 0.18 264)",
   accentLight: "oklch(0.97 0 0)",
   accentDark: "oklch(0.269 0 0)",
   sidebarLight: "oklch(0.985 0 0)",
