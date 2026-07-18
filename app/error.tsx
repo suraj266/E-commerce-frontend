@@ -1,5 +1,6 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
 import { useEffect } from "react";
 
 export default function GlobalError({
@@ -10,8 +11,9 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Surface to browser console in dev; in prod this is where you'd
-    // forward to Sentry / your error tracker.
+    // Forward to Sentry (no-op when the DSN is unset) and surface to the
+    // browser console for local debugging.
+    Sentry.captureException(error);
     // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);

@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // In development, Next.js image proxy tries to fetch localhost:7000 from
 // the server side — but localhost resolves to a private IP (127.0.0.1),
@@ -26,4 +27,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// withSentryConfig is inert without a DSN/auth token: source-map upload only
+// runs when SENTRY_AUTH_TOKEN + org/project are set, so this is a safe no-op
+// in dev and in DSN-less builds.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  disableLogger: true,
+});

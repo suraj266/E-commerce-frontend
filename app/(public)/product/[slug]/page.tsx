@@ -1,708 +1,164 @@
 /**
- * Public Product Detail Page — /product/[slug]
+ * Public Product Detail Page — /product/[slug]  (Server Component)
  *
- * Phase A scope:
- *   - Image gallery (main + thumbnails, click to swap)
- *   - Brand chip linking to /brand/[slug]
- *   - Category breadcrumb
- *   - Price block with comparePrice strikethrough + discount %
- *   - Short + full description
- *   - Tag chips → /tag/[slug]
- *   - Specifications grouped table
- *   - Add-to-Cart + Buy Now stubs (toast "Coming in Sprint 3")
- *   - 404 if not ACTIVE
+ * Server-renders SEO metadata (title / description / canonical / Open Graph)
+ * and Product + BreadcrumbList JSON-LD, then hands the product data to the
+ * interactive client island (`product-detail-client.tsx`) which owns the
+ * gallery, variant picker, add-to-cart and sticky buy bar.
  *
- * SEO meta via document.title (matches existing /store /brand /tag pattern).
- * Server-component metadata generation deferred.
+ * A missing or non-ACTIVE product renders the 404 page via `notFound()`.
  */
 
-"use client";
-
-import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useParams } from "next/navigation";
-import { useQuery } from "@apollo/client/react";
-import { toast } from "sonner";
-import {
-  AlertTriangle,
-  Box,
-  ChevronRight,
-  ShoppingCart,
-  Zap,
-} from "lucide-react";
+import { cache } from "react";
+import { print } from "graphql";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { GET_PUBLIC_PRODUCT } from "@/lib/graphql/products";
-import {
-  GetPublicProductData,
-  parseSpecifications,
-  Product,
-} from "@/types/product.types";
-import { discountPercent, formatPrice } from "@/lib/utils/currency";
+import type { GetPublicProductData, Product } from "@/types/product.types";
+import { serverGraphQL } from "@/lib/graphql/server-fetch";
+import { absoluteUrl, getSiteName } from "@/lib/seo/site";
+import { JsonLd } from "@/lib/seo/json-ld";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/components/cart/use-cart";
-import { useSiteSettings } from "@/lib/context/site-settings-context";
-import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button";
-import { InlineRatingLink } from "@/components/reviews/inline-rating-link";
-import { ProductReviewsSection } from "@/components/reviews/product-reviews-section";
+import { ProductDetailClient } from "./product-detail-client";
 
-export default function PublicProductPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+const PRODUCT_QUERY = print(GET_PUBLIC_PRODUCT);
 
-  const { data, loading, error } = useQuery<GetPublicProductData>(
-    GET_PUBLIC_PRODUCT,
-    { variables: { slug }, errorPolicy: "all" },
-  );
+// Memoized per request so `generateMetadata` and the page body share one fetch.
+const loadProduct = cache(async (slug: string): Promise<Product | null> => {
+  const data = await serverGraphQL<GetPublicProductData>(PRODUCT_QUERY, {
+    slug,
+  });
+  const product = data?.publicProduct ?? null;
+  if (!product || product.status !== "ACTIVE") return null;
+  return product;
+});
 
-  const product = data?.publicProduct;
-
-  // SEO meta
-  useEffect(() => {
-    if (product && typeof document !== "undefined") {
-      document.title = `${product.seoTitle || product.name} | MultiMart`;
-      const desc = product.seoDescription || product.shortDescription;
-      if (desc) {
-        let meta = document.querySelector('meta[name="description"]');
-        if (!meta) {
-          meta = document.createElement("meta");
-          meta.setAttribute("name", "description");
-          document.head.appendChild(meta);
-        }
-        meta.setAttribute("content", desc);
-      }
-    }
-  }, [product]);
-
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto p-4 sm:p-8 grid md:grid-cols-2 gap-8">
-        <div className="aspect-square rounded-xl bg-muted skeleton-shimmer" />
-        <div className="space-y-4">
-          <div className="h-6 w-32 rounded bg-muted skeleton-shimmer" />
-          <div className="h-10 w-full rounded bg-muted skeleton-shimmer" />
-          <div className="h-8 w-40 rounded bg-muted skeleton-shimmer" />
-          <div className="h-24 w-full rounded bg-muted skeleton-shimmer" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="max-w-3xl mx-auto p-8">
-        <Card>
-          <CardContent className="py-12 text-center space-y-3">
-            <Box className="h-12 w-12 mx-auto text-muted-foreground/50" />
-            <h1 className="text-xl font-semibold">Product not found</h1>
-            <p className="text-sm text-muted-foreground">
-              &ldquo;{slug}&rdquo; doesn&apos;t exist or is no longer available.
-            </p>
-            <Button asChild variant="outline">
-              <Link href="/">Back to home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  return <ProductDetail product={product} />;
+function primaryImageUrl(product: Product): string | undefined {
+  const images = product.images ?? [];
+  const primary = images.find((i) => i.isPrimary) ?? images[0];
+  return primary?.imageUrl;
 }
 
-// ---------------------------------------------------------------------------
-function ProductDetail({ product }: { product: Product }) {
-  const { add: addToCart, busy: cartBusy } = useCart();
-  const { getDisplayPrice, showPriceWithTax } = useSiteSettings();
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await loadProduct(slug);
+  if (!product) return {};
 
+  const title = product.seoTitle || product.name;
+  const description =
+    product.seoDescription ||
+    product.shortDescription ||
+    `Buy ${product.name} online.`;
+  const canonical = absoluteUrl(`/product/${product.slug}`);
+  const image = primaryImageUrl(product);
+
+  return {
+    title,
+    description,
+    keywords: product.seoKeywords?.length ? product.seoKeywords : undefined,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: canonical,
+      images: image ? [{ url: image, alt: product.name }] : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
+
+export default async function PublicProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const product = await loadProduct(slug);
+  if (!product) notFound();
+
+  const siteName = await getSiteName();
+  const canonical = absoluteUrl(`/product/${product.slug}`);
   const currency =
     (product as unknown as { metadata?: { currencyCode?: string } }).metadata
       ?.currencyCode ?? "INR";
-
-  const images = product.images ?? [];
-  const sortedImages = useMemo(
-    () =>
-      [...images].sort((a, b) => {
-        if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
-        return a.displayOrder - b.displayOrder;
-      }),
-    [images],
-  );
-
-  const [activeImage, setActiveImage] = useState(sortedImages[0]);
-  useEffect(() => {
-    setActiveImage(sortedImages[0]);
-  }, [sortedImages]);
-
-  // -- Variant selection (VARIABLE products) --
-  const isVariable = product.productType === "VARIABLE";
-  const variants = (product.variants ?? []).filter(
-    (v) => v.status !== "INACTIVE",
-  );
-
-  // Build axis → values map from the available variants
-  const variantAxes = useMemo(() => {
-    if (!isVariable) return [];
-    const seen = new Map<
-      string,
-      { attributeId: string; attributeName: string; values: Map<string, string> }
-    >();
-    for (const v of variants) {
-      for (const a of v.attributes) {
-        if (!seen.has(a.attributeId)) {
-          seen.set(a.attributeId, {
-            attributeId: a.attributeId,
-            attributeName: a.attributeName,
-            values: new Map(),
-          });
-        }
-        seen.get(a.attributeId)!.values.set(a.attributeValueId, a.value);
-      }
-    }
-    return Array.from(seen.values()).map((axis) => ({
-      attributeId: axis.attributeId,
-      attributeName: axis.attributeName,
-      values: Array.from(axis.values.entries()).map(([id, label]) => ({
-        id,
-        label,
-      })),
-    }));
-  }, [variants, isVariable]);
-
-  // User's chosen value per axis (only for VARIABLE)
-  const [selectedValues, setSelectedValues] = useState<Record<string, string>>({});
-
-  // Auto-pick the first available combination on load
-  useEffect(() => {
-    if (!isVariable || variants.length === 0) return;
-    const first = variants[0];
-    const initial: Record<string, string> = {};
-    for (const a of first.attributes) {
-      initial[a.attributeId] = a.attributeValueId;
-    }
-    setSelectedValues(initial);
-  }, [isVariable, variants.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Find the variant matching ALL selected axis values
-  const selectedVariant = useMemo(() => {
-    if (!isVariable) return variants[0];
-    if (Object.keys(selectedValues).length === 0) return null;
-    return variants.find((v) =>
-      v.attributes.every(
-        (a) => selectedValues[a.attributeId] === a.attributeValueId,
-      ),
-    );
-  }, [variants, selectedValues, isVariable]);
-
-  // When variant changes and has its own image, swap the active image
-  useEffect(() => {
-    if (selectedVariant?.imageUrl) {
-      const variantImg = sortedImages.find(
-        (i) => i.imageUrl === selectedVariant.imageUrl,
-      );
-      if (variantImg) setActiveImage(variantImg);
-    }
-  }, [selectedVariant, sortedImages]);
-
-  // Display price — selected variant if VARIABLE, else product (which equals
-  // the default-variant price for SIMPLE products)
-  const displayPrice = isVariable
-    ? selectedVariant?.price ?? product.price
-    : product.price;
-  const displayPriceWithTax = isVariable
-    ? selectedVariant?.priceWithTax ?? product.priceWithTax
-    : product.priceWithTax;
-  const displayTaxAmount = isVariable
-    ? selectedVariant?.taxAmount ?? product.taxAmount
-    : product.taxAmount;
-  const displayCompareAt = isVariable
-    ? selectedVariant?.compareAtPrice ?? null
-    : product.compareAtPrice;
-  const displaySku = isVariable ? selectedVariant?.sku : product.sku;
-
-  const pct = discountPercent(displayPrice, displayCompareAt);
-  const specs = parseSpecifications(product.specifications);
-
-  // ---- Stock awareness (Sprint 2.6 M3) ----
-  // For SIMPLE products the default variant is the only one. For VARIABLE,
-  // the selectedVariant decides; without a selection we fall back to the
-  // aggregate "any variant has stock?" check used to gate the whole listing.
-  const stockReferenceVariant = isVariable ? selectedVariant : variants[0];
-  const stockAvailable = stockReferenceVariant?.availableQuantity ?? null;
-  const stockState = stockReferenceVariant?.stockState ?? null;
-  const anyVariantInStock = variants.some(
+  const price = product.priceWithTax ?? product.price;
+  const inStock = (product.variants ?? []).some(
     (v) => (v.availableQuantity ?? 0) > 0,
   );
-  const outOfStock = isVariable
-    ? selectedVariant
-      ? (stockAvailable ?? 0) <= 0
-      : !anyVariantInStock
-    : (stockAvailable ?? 0) <= 0;
-  const lowStockBadge =
-    !outOfStock &&
-    stockReferenceVariant != null &&
-    typeof stockAvailable === "number" &&
-    stockAvailable > 0 &&
-    stockAvailable <= 5;
 
-  // The variant we'll send to the cart. For SIMPLE products that's the
-  // auto-created default; for VARIABLE the user must have picked all axes.
-  const cartTargetVariant = isVariable ? selectedVariant : variants[0];
+  const productLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description:
+      product.seoDescription || product.shortDescription || undefined,
+    sku: product.sku || undefined,
+    image: (product.images ?? []).map((i) => i.imageUrl),
+    ...(product.brand
+      ? { brand: { "@type": "Brand", name: product.brand.name } }
+      : {}),
+    ...(price != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            price,
+            priceCurrency: currency,
+            availability: inStock
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+            url: canonical,
+          },
+        }
+      : {}),
+  };
 
-  async function handleAddToCart() {
-    if (isVariable && !selectedVariant) {
-      toast.error("Pick all options first");
-      return;
-    }
-    if (outOfStock) {
-      toast.error("Out of stock");
-      return;
-    }
-    if (!cartTargetVariant) return;
-    await addToCart(cartTargetVariant.id, 1);
-  }
-  async function handleBuyNow() {
-    if (isVariable && !selectedVariant) {
-      toast.error("Pick all options first");
-      return;
-    }
-    if (outOfStock) {
-      toast.error("Out of stock");
-      return;
-    }
-    if (!cartTargetVariant) return;
-    // Add to cart, then bounce to /cart. Phase 5 (checkout) will jump
-    // straight to a checkout flow with this single item.
-    const ok = await addToCart(cartTargetVariant.id, 1, { silent: true });
-    if (ok) window.location.href = "/cart";
-  }
-
-  // Sticky mobile buy bar — revealed once the inline CTAs scroll out of view,
-  // so the buy action is always one thumb-tap away on long PDPs.
-  const ctaRef = useRef<HTMLDivElement>(null);
-  const [showStickyBar, setShowStickyBar] = useState(false);
-  useEffect(() => {
-    const el = ctaRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting),
-      { rootMargin: "0px 0px -40px 0px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
+  const breadcrumbLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: siteName, item: absoluteUrl("/") },
+      ...(product.category
+        ? [
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: product.category.name,
+              item: absoluteUrl(`/category/${product.category.slug}`),
+            },
+            {
+              "@type": "ListItem",
+              position: 3,
+              name: product.name,
+              item: canonical,
+            },
+          ]
+        : [
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: product.name,
+              item: canonical,
+            },
+          ]),
+    ],
+  };
 
   return (
-    <div className="bg-muted/20 min-h-screen">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">
-        {/* Breadcrumb */}
-        <nav className="text-sm text-muted-foreground flex items-center gap-1 flex-wrap">
-          <Link href="/" className="hover:text-foreground">
-            Home
-          </Link>
-          {product.category && (
-            <>
-              <ChevronRight className="h-3 w-3" />
-              <Link
-                href={`/category/${product.category.slug}`}
-                className="hover:text-foreground"
-              >
-                {product.category.name}
-              </Link>
-            </>
-          )}
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground font-medium truncate">
-            {product.name}
-          </span>
-        </nav>
-
-        {/* Hero — image gallery + buy block */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
-          {/* Gallery */}
-          <div className="space-y-3">
-            <div className="relative aspect-square rounded-lg bg-card border overflow-hidden flex items-center justify-center">
-              {activeImage ? (
-                <Image
-                  src={activeImage.imageUrl}
-                  alt={activeImage.altText ?? product.name}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover"
-                />
-              ) : (
-                <Box className="h-16 w-16 text-muted-foreground/40" />
-              )}
-            </div>
-            {sortedImages.length > 1 && (
-              <div className="grid grid-cols-5 gap-2">
-                {sortedImages.map((img) => (
-                  <button
-                    type="button"
-                    key={img.id}
-                    onClick={() => setActiveImage(img)}
-                    className={`relative aspect-square rounded-md border overflow-hidden transition ${
-                      activeImage?.id === img.id
-                        ? "border-brand ring-2 ring-brand"
-                        : "border-border hover:border-foreground/40"
-                    }`}
-                  >
-                    <Image
-                      src={img.imageUrl}
-                      alt=""
-                      fill
-                      sizes="20vw"
-                      className="object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Buy block */}
-          <div className="space-y-4">
-            {product.brand && (
-              <Link
-                href={`/brand/${product.brand.slug}`}
-                className="inline-flex items-center gap-2"
-              >
-                <Badge variant="outline" className="text-xs">
-                  {product.brand.name}
-                </Badge>
-              </Link>
-            )}
-
-            <h1 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight">
-              {product.name}
-            </h1>
-
-            <InlineRatingLink productId={product.id} />
-
-            {product.shortDescription && (
-              <p className="text-muted-foreground">{product.shortDescription}</p>
-            )}
-
-            {/* Variant selectors (VARIABLE products) */}
-            {isVariable && variantAxes.length > 0 && (
-              <div className="space-y-3 pt-2">
-                {variantAxes.map((axis) => (
-                  <div key={axis.attributeId} className="space-y-1.5">
-                    <div className="text-sm font-medium">
-                      {axis.attributeName}:{" "}
-                      <span className="text-muted-foreground font-normal">
-                        {axis.values.find(
-                          (v) => v.id === selectedValues[axis.attributeId],
-                        )?.label ?? "—"}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {axis.values.map((v) => {
-                        const selected = selectedValues[axis.attributeId] === v.id;
-                        // Disable if no available variant exists with this combo
-                        const hypothetical = {
-                          ...selectedValues,
-                          [axis.attributeId]: v.id,
-                        };
-                        const matchedVariant = variants.find((variant) =>
-                          variant.attributes.every(
-                            (a) =>
-                              hypothetical[a.attributeId] ===
-                              a.attributeValueId,
-                          ),
-                        );
-                        const exists = matchedVariant != null;
-                        const variantOos =
-                          matchedVariant != null &&
-                          (matchedVariant.availableQuantity ?? 0) <= 0;
-                        const disabled = !exists || variantOos;
-                        return (
-                          <button
-                            key={v.id}
-                            type="button"
-                            disabled={disabled}
-                            title={
-                              !exists
-                                ? "Combination unavailable"
-                                : variantOos
-                                  ? "Out of stock"
-                                  : undefined
-                            }
-                            onClick={() =>
-                              setSelectedValues((prev) => ({
-                                ...prev,
-                                [axis.attributeId]: v.id,
-                              }))
-                            }
-                            className={`px-3 py-1.5 rounded-md text-sm border transition ${
-                              selected
-                                ? "bg-brand text-brand-foreground border-brand"
-                                : disabled
-                                  ? "bg-muted text-muted-foreground border-border opacity-50 cursor-not-allowed line-through"
-                                  : "bg-background text-foreground border-border hover:border-foreground"
-                            }`}
-                          >
-                            {v.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-                {selectedVariant && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-xs text-muted-foreground font-mono">
-                      SKU: {displaySku}
-                    </p>
-                    {stockState === "OUT_OF_STOCK" && (
-                      <Badge variant="destructive" className="text-[10px]">
-                        Out of stock
-                      </Badge>
-                    )}
-                    {lowStockBadge && (
-                      <Badge className="gap-1 border-transparent bg-warning text-warning-foreground text-[10px]">
-                        <AlertTriangle className="h-3 w-3" />
-                        Only {stockAvailable} left
-                      </Badge>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Price block */}
-            <div className="flex items-baseline gap-3 flex-wrap pt-2">
-              {isVariable && !selectedVariant ? (
-                <span className="text-2xl font-bold text-muted-foreground">
-                  Starting from {formatPrice(getDisplayPrice(product.price, product.priceWithTax), currency)}
-                </span>
-              ) : (
-                <>
-                  <span className="text-3xl font-bold">
-                    {formatPrice(getDisplayPrice(displayPrice, displayPriceWithTax), currency)}
-                  </span>
-                  {displayCompareAt != null && pct != null && (
-                    <>
-                      <span className="text-lg text-muted-foreground line-through">
-                        {formatPrice(displayCompareAt, currency)}
-                      </span>
-                      <Badge variant="destructive" className="text-sm">
-                        -{pct}% OFF
-                      </Badge>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Tax disclosure — Consumer Protection (E-Commerce) Rules 2020
-                requires the customer to know whether the displayed price is
-                inclusive of taxes. The price shown is base; GST is always added
-                at checkout. When the "show price with tax" toggle is ON, the
-                displayed figure already includes GST, so we say so; when OFF we
-                surface the tax that will be added. */}
-            {!(isVariable && !selectedVariant) && (
-              <p className="text-xs text-muted-foreground">
-                {showPriceWithTax
-                  ? "Inclusive of all taxes"
-                  : displayTaxAmount != null && displayTaxAmount > 0
-                    ? `+ ${formatPrice(displayTaxAmount, currency)} tax at checkout`
-                    : "Tax extra at checkout"}
-              </p>
-            )}
-
-            {/* Stock state — SIMPLE products show it here; VARIABLE shows it
-                next to the SKU once a variant is picked. */}
-            {!isVariable && (outOfStock || lowStockBadge) && (
-              <div>
-                {outOfStock ? (
-                  <Badge variant="destructive" className="text-xs">
-                    Out of stock
-                  </Badge>
-                ) : (
-                  <Badge className="gap-1 border-transparent bg-warning text-warning-foreground text-xs">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    Only {stockAvailable} left
-                  </Badge>
-                )}
-              </div>
-            )}
-
-            {/* Tags */}
-            {(product.tags?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {product.tags?.map((tag) => (
-                  <Link
-                    key={tag.id}
-                    href={`/tag/${tag.slug}`}
-                    className="text-xs px-2.5 py-1 rounded-full bg-muted hover:bg-muted/80 transition"
-                  >
-                    #{tag.name}
-                  </Link>
-                ))}
-              </div>
-            )}
-
-            <Separator />
-
-            {/* CTAs — emerald "Add to cart" (the buy color) + indigo "Buy now",
-                both at the 44px storefront size for comfortable tapping. */}
-            <div ref={ctaRef} className="flex flex-col sm:flex-row gap-3">
-              <Button
-                size="xl"
-                variant="cta"
-                onClick={handleAddToCart}
-                disabled={outOfStock || cartBusy}
-                className="flex-1"
-              >
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                {outOfStock
-                  ? "Out of stock"
-                  : cartBusy
-                    ? "Adding..."
-                    : "Add to Cart"}
-              </Button>
-              <Button
-                size="xl"
-                variant="brand"
-                onClick={handleBuyNow}
-                disabled={outOfStock || cartBusy}
-                className="flex-1"
-              >
-                <Zap className="mr-2 h-5 w-5" />
-                Buy Now
-              </Button>
-              <WishlistHeartButton
-                productId={product.id}
-                variant="inline"
-                className="h-11 w-11"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Description */}
-        {product.description && (
-          <Card>
-            <CardContent className="py-6 space-y-2">
-              <h2 className="font-semibold text-lg">Description</h2>
-              <p className="text-sm whitespace-pre-line text-muted-foreground">
-                {product.description}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Specifications */}
-        {(specs.length > 0 || product.countryOfOrigin || product.hsnCode) && (
-          <Card>
-            <CardContent className="py-6 space-y-4">
-              <h2 className="font-semibold text-lg">Specifications</h2>
-              <div className="space-y-4">
-                {/* Compliance disclosures — country of origin per CP-EC
-                    Rules 2020, HSN for buyer transparency. Always at top
-                    so customers can find them at a glance. */}
-                {(product.countryOfOrigin || product.hsnCode) && (
-                  <div className="space-y-2">
-                    <h3 className="font-medium text-sm">Product details</h3>
-                    <div className="border rounded-md overflow-hidden">
-                      {product.countryOfOrigin && (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 px-4 py-2 text-sm bg-muted/30">
-                          <dt className="text-muted-foreground">
-                            Country of Origin
-                          </dt>
-                          <dd className="sm:col-span-2 font-medium">
-                            {product.countryOfOrigin}
-                          </dd>
-                        </div>
-                      )}
-                      {product.hsnCode && (
-                        <div
-                          className={`grid grid-cols-1 sm:grid-cols-3 gap-2 px-4 py-2 text-sm ${
-                            product.countryOfOrigin ? "" : "bg-muted/30"
-                          }`}
-                        >
-                          <dt className="text-muted-foreground">HSN Code</dt>
-                          <dd className="sm:col-span-2 font-medium font-mono">
-                            {product.hsnCode}
-                          </dd>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {specs
-                  .slice()
-                  .sort((a, b) => a.order - b.order)
-                  .map((group, gi) => (
-                    <div key={gi} className="space-y-2">
-                      <h3 className="font-medium text-sm">{group.name}</h3>
-                      <div className="border rounded-md overflow-hidden">
-                        {group.items
-                          .slice()
-                          .sort((a, b) => a.order - b.order)
-                          .map((item, ii) => (
-                            <div
-                              key={ii}
-                              className={`grid grid-cols-1 sm:grid-cols-3 gap-2 px-4 py-2 text-sm ${
-                                ii % 2 === 0 ? "bg-muted/30" : ""
-                              }`}
-                            >
-                              <dt className="text-muted-foreground">
-                                {item.label}
-                              </dt>
-                              <dd className="sm:col-span-2 font-medium">
-                                {item.value}
-                              </dd>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Reviews — anchored so the inline rating link can scroll here */}
-        <section id="reviews" className="scroll-mt-24">
-          <ProductReviewsSection
-            productId={product.id}
-            productName={product.name}
-          />
-        </section>
-      </div>
-
-      {/* Sticky mobile buy bar (hidden on desktop) */}
-      {showStickyBar && (
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 dark:bg-surface-2/70 dark:supports-[backdrop-filter]:bg-surface-2/55 dark:border-border-strong md:hidden animate-in slide-in-from-bottom-2">
-          <div className="min-w-0">
-            <div className="font-heading text-base font-bold leading-tight truncate">
-              {isVariable && !selectedVariant
-                ? `From ${formatPrice(getDisplayPrice(product.price, product.priceWithTax), currency)}`
-                : formatPrice(getDisplayPrice(displayPrice, displayPriceWithTax), currency)}
-            </div>
-            <div className="text-[11px] text-muted-foreground truncate">
-              {product.name}
-            </div>
-          </div>
-          <Button
-            size="xl"
-            variant="cta"
-            onClick={handleAddToCart}
-            disabled={outOfStock || cartBusy}
-            className="ml-auto shrink-0"
-          >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            {outOfStock ? "Out of stock" : "Add to cart"}
-          </Button>
-        </div>
-      )}
-    </div>
+    <>
+      <JsonLd data={productLd} />
+      <JsonLd data={breadcrumbLd} />
+      <ProductDetailClient product={product} />
+    </>
   );
 }

@@ -50,6 +50,10 @@ export async function getAdminTheme(): Promise<AdminTheme> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ query: QUERY }),
       cache: "no-store",
+      // Fail fast to the theme defaults if the backend is slow/unreachable —
+      // without this an unreachable backend (e.g. during `next build`, when the
+      // API isn't up) hangs each page's prerender until Next's 60s limit.
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return ADMIN_THEME_DEFAULTS;
     const json = (await res.json()) as GraphQLResponse;

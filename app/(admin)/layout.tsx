@@ -34,6 +34,13 @@ import { getAdminTheme } from "@/lib/theme/get-admin-theme";
 import { buildThemeCss } from "@/lib/theme/build-theme-css";
 import { getAppThemeMode } from "@/lib/theme/mode";
 
+// The admin panel is authenticated + per-request (it server-fetches the live
+// theme and gates on the session), so there is nothing to statically prerender.
+// force-dynamic keeps it out of build-time static generation — otherwise every
+// admin page tries to prerender against a backend that isn't up at build time
+// and stalls the build. Runtime behavior is unchanged (these routes are dynamic).
+export const dynamic = "force-dynamic";
+
 // ---------------------------------------------------------------------------
 // SEO Metadata for Admin Panel
 // ---------------------------------------------------------------------------

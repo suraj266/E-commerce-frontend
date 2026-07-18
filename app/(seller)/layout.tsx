@@ -25,6 +25,11 @@ import { getAdminTheme } from "@/lib/theme/get-admin-theme";
 import { buildThemeCss } from "@/lib/theme/build-theme-css";
 import { getAppThemeMode } from "@/lib/theme/mode";
 
+// Authenticated seller dashboard — per-request, nothing to statically
+// prerender. Keeps it out of build-time static generation (see the admin
+// layout for the rationale); runtime behavior is unchanged.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Seller Portal | Ecommerce",
   description: "Manage your seller profile, products, orders, and payouts.",

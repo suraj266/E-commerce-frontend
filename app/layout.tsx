@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import { ApolloWrapper } from "@/lib/apollo/ApolloWrapper";
 import { SiteSettingsProvider } from "@/lib/context/site-settings-context";
 import { Toaster } from "@/components/ui/sonner";
+import { getSiteName, SITE_URL } from "@/lib/seo/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -26,10 +27,22 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Ecommerce Platform",
-  description: "Multi-seller ecommerce platform - Admin, Seller & Customer",
-};
+// Async so the brand name comes from the `platform_name` site setting rather
+// than a hardcoded literal. `metadataBase` lets child segments use relative
+// canonical / Open Graph URLs; the title `template` appends the brand to every
+// page title ("Product name | Brand"), with `default` used for pages that set
+// no title of their own (e.g. the home page).
+export async function generateMetadata(): Promise<Metadata> {
+  const siteName = await getSiteName();
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: siteName,
+      template: `%s | ${siteName}`,
+    },
+    description: "Multi-seller ecommerce platform - Admin, Seller & Customer",
+  };
+}
 
 export default function RootLayout({
   children,

@@ -1,60 +1,93 @@
-"use client";
-
 /**
- * Public homepage at `/`.
+ * Public homepage at `/`.  (Server Component)
  *
- * CMS-driven: fetches the `home` slug via `publicPage` and renders its
- * blocks. Falls back to a minimal welcome screen if the page isn't seeded
- * yet (e.g. fresh DB) so the site is never broken.
+ * CMS-driven: server-fetches the `home` slug via `publicPage` and renders its
+ * blocks through the (client) BlockRenderer. Metadata comes from the page's
+ * meta fields, and WebSite JSON-LD (with SearchAction) is emitted for rich
+ * results. Falls back to a minimal welcome screen when the page isn't seeded
+ * yet, so the site is never broken.
  */
 
-import { useEffect } from "react";
+import { cache } from "react";
+import { print } from "graphql";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useQuery } from "@apollo/client/react";
 
 import { GET_PUBLIC_PAGE } from "@/lib/graphql/pages";
 import { GetPublicPageData, parseBlocks } from "@/types/page.types";
 import { BlockRenderer } from "@/components/page-builder/block-renderer";
 import { Button } from "@/components/ui/button";
+import { serverGraphQL } from "@/lib/graphql/server-fetch";
+import { absoluteUrl, getSiteName } from "@/lib/seo/site";
+import { JsonLd } from "@/lib/seo/json-ld";
 
 const HOME_SLUG = "home";
+const HOME_QUERY = print(GET_PUBLIC_PAGE);
 
-export default function Home() {
-  const { data, loading, error } = useQuery<GetPublicPageData>(
-    GET_PUBLIC_PAGE,
-    {
-      variables: { slug: HOME_SLUG },
-      fetchPolicy: "cache-and-network",
-      errorPolicy: "ignore",
+// Memoized per request so `generateMetadata` and the page body share one fetch.
+const loadHomePage = cache(async () => {
+  const data = await serverGraphQL<GetPublicPageData>(HOME_QUERY, {
+    slug: HOME_SLUG,
+  });
+  return data?.publicPage ?? null;
+});
+
+export async function generateMetadata(): Promise<Metadata> {
+  const [page, siteName] = await Promise.all([loadHomePage(), getSiteName()]);
+  const title = page?.metaTitle || page?.title;
+  const description =
+    page?.metaDesc || `${siteName} — shop across categories and sellers.`;
+  const canonical = absoluteUrl("/");
+
+  return {
+    // The home page owns the brand title itself (ignores the "%s | brand"
+    // template) so it renders as just the site name, not "Home | brand".
+    title: title ? title : { absolute: siteName },
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title: title || siteName,
+      description,
+      url: canonical,
+      siteName,
     },
-  );
+  };
+}
 
-  useEffect(() => {
-    const page = data?.publicPage;
-    if (!page) return;
-    const t = page.metaTitle ?? page.title;
-    if (t) document.title = t;
-  }, [data]);
+export default async function Home() {
+  const [page, siteName] = await Promise.all([loadHomePage(), getSiteName()]);
 
-  if (loading && !data) {
-    return (
-      <div className="px-4 py-12 max-w-6xl mx-auto space-y-3">
-        <div className="h-64 w-full bg-muted rounded-xl skeleton-shimmer" />
-        <div className="h-32 w-full bg-muted rounded-xl skeleton-shimmer" />
-      </div>
-    );
-  }
+  const websiteLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteName,
+    url: absoluteUrl("/"),
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: absoluteUrl("/search?q={search_term_string}"),
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
 
-  const page = data?.publicPage;
   if (page) {
     const blocks = parseBlocks(page.blocks);
-    return <BlockRenderer blocks={blocks} />;
+    return (
+      <>
+        <JsonLd data={websiteLd} />
+        <BlockRenderer blocks={blocks} />
+      </>
+    );
   }
 
   // Fallback when no `home` page is published yet — keeps the site usable
   // before the admin builds the homepage in /admin/pages.
-  if (error || !page) {
-    return (
+  return (
+    <>
+      <JsonLd data={websiteLd} />
       <div className="flex flex-col items-center justify-center px-6 py-20 sm:py-32">
         <div className="z-10 max-w-3xl w-full text-center space-y-6">
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
@@ -74,6 +107,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-    );
-  }
+    </>
+  );
 }
