@@ -17,17 +17,35 @@
  * over. Codegen ignores those gql usages and only generates types for the
  * ones using the new `graphql()` tag.
  *
- * Schema source:
- *   We introspect the running backend at http://localhost:7000/graphql.
- *   That means `pnpm codegen` requires the backend container to be up.
- *   When CI needs offline codegen, switch to a committed schema snapshot
- *   (`pnpm exec graphql-codegen --schema=./gql/schema.graphql`).
+ * Schema source (offline-first):
+ *   Codegen reads the COMMITTED schema snapshot at `./gql/schema.graphql`
+ *   instead of introspecting the live backend. This makes `pnpm codegen`
+ *   deterministic and runnable in CI without the backend container up, and
+ *   underpins the codegen-staleness gate (see below).
+ *
+ *   Refresh the snapshot from the running backend whenever the API changes:
+ *     `pnpm codegen:schema`   (introspects http://localhost:7000/graphql →
+ *                              rewrites gql/schema.graphql, sorted + stable)
+ *   then re-run `pnpm codegen` and commit both the snapshot and the
+ *   regenerated `gql/*` artifacts together.
+ *
+ * Codegen-staleness gate:
+ *   `pnpm codegen:check` runs codegen against the snapshot and then
+ *   `git diff --exit-code -- gql/`. If the committed generated artifacts are
+ *   out of sync with the snapshot (someone edited a query/fragment or bumped
+ *   the schema without re-running codegen), the diff is non-empty and CI
+ *   fails. The Frontend CI workflow runs this step before typecheck/build.
  */
 
 import type { CodegenConfig } from "@graphql-codegen/cli";
 
+// Allow overriding the schema source (e.g. the refresh script points this at
+// the live backend to regenerate the snapshot). Defaults to the committed
+// offline snapshot so plain `pnpm codegen` never needs the backend.
+const SCHEMA = process.env.CODEGEN_SCHEMA ?? "./gql/schema.graphql";
+
 const config: CodegenConfig = {
-  schema: "http://localhost:7000/graphql",
+  schema: SCHEMA,
   documents: [
     "app/**/*.{ts,tsx}",
     "components/**/*.{ts,tsx}",

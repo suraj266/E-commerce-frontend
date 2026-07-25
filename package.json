@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "codegen": "graphql-codegen --config codegen.ts",
-    "codegen:watch": "graphql-codegen --config codegen.ts --watch"
+    "codegen:watch": "graphql-codegen --config codegen.ts --watch",
+    "codegen:schema": "node scripts/refresh-schema.mjs",
+    "codegen:check": "graphql-codegen --config codegen.ts && git diff --exit-code -- gql/"
   },
   "dependencies": {
     "@apollo/client": "^4.1.6",
@@ -42,6 +44,7 @@
     "@graphql-codegen/cli": "^5.0.3",
     "@graphql-codegen/client-preset": "^4.5.1",
     "@graphql-typed-document-node/core": "^3.2.0",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

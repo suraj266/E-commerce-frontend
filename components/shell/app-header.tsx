@@ -12,14 +12,14 @@
  */
 
 import { usePathname } from "next/navigation";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { usePageTitle } from "@/components/shell/page-title-context";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 interface AppHeaderProps {
   /** Leftmost breadcrumb segment, e.g. "Admin" or "Seller". */
@@ -70,11 +70,7 @@ export function AppHeader({ breadcrumbRoot }: AppHeaderProps) {
 
         <ThemeToggle />
 
-        <Button variant="ghost" size="icon" className="relative h-9 w-9">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <NotificationBell />
       </div>
     </header>
   );

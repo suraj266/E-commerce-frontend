@@ -54,3 +54,12 @@ export const UNSUBSCRIBE_NEWSLETTER = gql`
     }
   }
 `;
+
+// Double opt-in confirmation (Phase 3 Wave 2c). Public mutation — the token
+// arrives via the link in the "confirm your subscription" email and flips the
+// subscription PENDING -> ACTIVE. Returns true on success.
+export const CONFIRM_NEWSLETTER = gql`
+  mutation ConfirmNewsletter($token: String!) {
+    confirmNewsletter(token: $token)
+  }
+`;

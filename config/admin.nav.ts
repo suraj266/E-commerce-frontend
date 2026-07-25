@@ -43,19 +43,45 @@ import {
   FileBadge,
   ImagePlus,
   Boxes,
+  ShoppingBag,
+  Undo2,
+  HandCoins,
+  PackageX,
+  UserCog,
+  ShieldCheck,
+  History,
+  KeyRound,
 } from "lucide-react";
 
-import type { NavGroup } from "./nav.types";
+import type { NavItem } from "./nav.types";
+import { ROUTE_PERMISSIONS } from "@/lib/auth/permission-slugs";
 
 // Re-export so existing imports `from "@/config/admin.nav"` keep working.
 export type { NavItem, NavGroup } from "./nav.types";
+
+/**
+ * Admin nav item that may carry a per-permission gate (P3-06). `permission` is
+ * a set of slugs the viewer needs ANY of to see the item (PermissionsGuard
+ * parity); omit it for items every admin may see. Extends the shared NavItem so
+ * these groups still satisfy AppSidebar's `NavGroup[]` prop — the extra field
+ * is simply ignored by the shared sidebar and read only by <AdminSidebar>'s
+ * client-side hidden-nav filter.
+ */
+export interface AdminNavItem extends NavItem {
+  permission?: readonly string[];
+}
+
+export interface AdminNavGroup {
+  label: string;
+  items: AdminNavItem[];
+}
 
 // ---------------------------------------------------------------------------
 // Navigation Config
 // NOTE: Only add items here when the page is fully built and working.
 // ---------------------------------------------------------------------------
 
-export const adminNavigation: NavGroup[] = [
+export const adminNavigation: AdminNavGroup[] = [
   {
     label: "Main",
     items: [
@@ -137,6 +163,36 @@ export const adminNavigation: NavGroup[] = [
     ],
   },
   {
+    label: "Operations",
+    items: [
+      {
+        title: "Orders",
+        href: "/admin/orders",
+        icon: ShoppingBag,
+        permission: ROUTE_PERMISSIONS.orders,
+      },
+      {
+        title: "Refunds",
+        href: "/admin/refunds",
+        icon: Undo2,
+        permission: ROUTE_PERMISSIONS.refunds,
+      },
+      {
+        title: "Payouts",
+        href: "/admin/payouts",
+        icon: HandCoins,
+        permission: ROUTE_PERMISSIONS.payouts,
+      },
+      {
+        // Page built by P3-02 (Returns/RMA). P3-06 only wires the nav link.
+        title: "Returns",
+        href: "/admin/returns",
+        icon: PackageX,
+        permission: ROUTE_PERMISSIONS.returns,
+      },
+    ],
+  },
+  {
     label: "Marketing",
     items: [
       {
@@ -148,6 +204,13 @@ export const adminNavigation: NavGroup[] = [
         title: "Reviews",
         href: "/admin/reviews",
         icon: Star,
+      },
+      {
+        // Consent-gated broadcast campaigns (Phase 3 Wave 4).
+        title: "Newsletter",
+        href: "/admin/newsletter",
+        icon: Mail,
+        permission: ROUTE_PERMISSIONS.newsletter,
       },
     ],
   },
@@ -193,6 +256,34 @@ export const adminNavigation: NavGroup[] = [
         title: "Tax Invoices",
         href: "/admin/invoices",
         icon: FileBadge,
+      },
+    ],
+  },
+  {
+    label: "Access & Security",
+    items: [
+      {
+        title: "Users",
+        href: "/admin/users",
+        icon: UserCog,
+        permission: ROUTE_PERMISSIONS.users,
+      },
+      {
+        title: "Roles & Permissions",
+        href: "/admin/roles",
+        icon: ShieldCheck,
+        permission: ROUTE_PERMISSIONS.roles,
+      },
+      {
+        title: "Audit Log",
+        href: "/admin/audit-logs",
+        icon: History,
+        permission: ROUTE_PERMISSIONS.auditLogs,
+      },
+      {
+        title: "API Keys",
+        href: "/admin/api-keys",
+        icon: KeyRound,
       },
     ],
   },

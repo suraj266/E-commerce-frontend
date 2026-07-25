@@ -1,26 +1,8 @@
 /**
- * =============================================================================
- * Admin Layout
- * =============================================================================
- * 
- * Root layout for the entire Admin Panel route group `(admin)`.
- * This layout wraps ALL pages under /admin/* with:
- * - AuthProxy (server-side cookie check → redirects to /login if not auth)
- * - SidebarProvider (Shadcn sidebar state management)
- * - TooltipProvider (for sidebar icon tooltips)
- * - AdminSidebar (left navigation)
- * - AdminHeader (top bar)
- * - Main content area with proper padding
- * 
- * SECURITY:
- * The AuthProxy runs on the server before ANY page content is rendered.
- * If the user doesn't have a valid refreshToken cookie, they are
- * instantly redirected to /login — no admin HTML is ever sent.
- * 
- * HOW IT WORKS:
- * Every page inside `app/(admin)/admin/*` will automatically
- * inherit this sidebar + header + auth protection.
- * =============================================================================
+ * Root layout for the `(admin)` route group — wraps every /admin/* page in the
+ * sidebar, header, and AuthProxy. The AuthProxy runs on the server before any
+ * page content renders: without a valid refreshToken cookie the request is
+ * redirected to /admin/login and no admin HTML is ever sent.
  */
 
 import type { Metadata } from "next";
@@ -94,7 +76,6 @@ export default async function AdminLayout({
         <TooltipProvider>
           <SidebarProvider>
             <PageTitleProvider>
-              {/* Left Sidebar Navigation */}
               <AdminSidebar />
 
               {/* Main Content Area (right of sidebar).
@@ -104,10 +85,8 @@ export default async function AdminLayout({
                   (tables, fixed-width column rows) push the body horizontally
                   instead of scrolling within the page. */}
               <SidebarInset className="min-w-0">
-                {/* Top Header Bar */}
                 <AdminHeader />
 
-                {/* Page Content - each admin page renders here */}
                 <main className="flex-1 overflow-auto p-4 md:p-6">
                   {children}
                 </main>

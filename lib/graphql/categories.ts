@@ -1,22 +1,4 @@
-/**
- * =============================================================================
- * Category GraphQL Operations
- * =============================================================================
- *
- * Centralized file for all category-related GraphQL queries and mutations.
- * Import these into any component that needs category data.
- *
- * HOW TO USE:
- * ```tsx
- * import { GET_CATEGORIES, CREATE_CATEGORY } from '@/lib/graphql/categories'
- * const { data } = useQuery(GET_CATEGORIES)
- * const [createCategory] = useMutation(CREATE_CATEGORY)
- * ```
- *
- * REUSABILITY:
- * These operations can be used in Admin, Seller, and Customer panels.
- * =============================================================================
- */
+// Category-related GraphQL queries and mutations.
 
 import { gql } from "@apollo/client";
 
@@ -121,9 +103,6 @@ export const GET_CATEGORY_ANCESTORS = gql`
   }
 `;
 
-// ---------------------------------------------------------------------------
-// Query: Get single category by ID
-// ---------------------------------------------------------------------------
 export const GET_CATEGORY = gql`
   ${CATEGORY_FIELDS}
   query GetCategory($id: ID!) {
@@ -149,10 +128,7 @@ export const GET_PUBLIC_CATEGORY_BY_SLUG = gql`
   }
 `;
 
-// ---------------------------------------------------------------------------
-// Mutation: Create new category
 // Requires: category:create permission + Authorization header
-// ---------------------------------------------------------------------------
 export const CREATE_CATEGORY = gql`
   ${CATEGORY_FIELDS}
   mutation CreateCategory($createCategoryInput: CreateCategoryInput!) {
@@ -162,10 +138,7 @@ export const CREATE_CATEGORY = gql`
   }
 `;
 
-// ---------------------------------------------------------------------------
-// Mutation: Update existing category
 // Requires: category:update permission + Authorization header
-// ---------------------------------------------------------------------------
 export const UPDATE_CATEGORY = gql`
   ${CATEGORY_FIELDS}
   mutation UpdateCategory($updateCategoryInput: UpdateCategoryInput!) {
@@ -175,10 +148,7 @@ export const UPDATE_CATEGORY = gql`
   }
 `;
 
-// ---------------------------------------------------------------------------
-// Mutation: Soft-delete a category
 // Requires: category:delete permission + Authorization header
-// ---------------------------------------------------------------------------
 export const REMOVE_CATEGORY = gql`
   ${CATEGORY_FIELDS}
   mutation RemoveCategory($id: ID!) {
@@ -188,10 +158,7 @@ export const REMOVE_CATEGORY = gql`
   }
 `;
 
-// ---------------------------------------------------------------------------
-// Mutation: Update category tree structure
 // Requires: category:update permission + Authorization header
-// ---------------------------------------------------------------------------
 export const UPDATE_CATEGORY_TREE = gql`
   mutation UpdateCategoryTree($input: UpdateCategoryTreeInput!) {
     updateCategoryTree(updateCategoryTreeInput: $input)

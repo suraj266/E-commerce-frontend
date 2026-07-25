@@ -1,89 +1,54 @@
 "use client";
 
 /**
- * /checkout — multi-gateway checkout page.
+ * /checkout — multi-gateway checkout page (orchestrator).
  *
- * Layout: left column = address + payment gateway + notes; right column = order
- * summary (mini cart). Both panes scroll independently on tall viewports.
+ * Layout: left column = address + payment gateway + notes + B2B GSTIN; right
+ * column = order summary (mini cart + place-order). Both panes scroll
+ * independently on tall viewports.
  *
- * Two-phase flow:
- *   Phase 1: initiateCheckout → creates order + payment session
- *   Phase 2 (online): Razorpay SDK popup → verifyPayment mutation
- *   Phase 2 (COD): order placed immediately, redirect to success
+ * This file owns the page-level data queries, form state and derived values,
+ * then composes the section components in `./_components`. The two-phase
+ * place-order flow (initiate → COD redirect | Razorpay popup → verify), together
+ * with the Phase-1 `clientRequestId` idempotency, lives in `usePlaceOrder`.
  *
- * Payment gateways are fetched dynamically from the backend — whatever
- * the admin has enabled shows up here automatically.
+ * Payment gateways are fetched dynamically from the backend — whatever the admin
+ * has enabled shows up here automatically.
  */
 
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useMutation, useQuery } from "@apollo/client/react";
-import { toast } from "sonner";
-import {
-  AlertCircle,
-  CreditCard,
-  Loader2,
-  MapPin,
-  Plus,
-  ShieldCheck,
-  Wallet,
-  Banknote,
-  CheckCircle2,
-} from "lucide-react";
+import { useQuery } from "@apollo/client/react";
+import { AlertCircle } from "lucide-react";
 
 import { GET_MY_CART } from "@/lib/graphql/cart";
 import { GET_MY_ADDRESSES } from "@/lib/graphql/account";
-import {
-  CANCEL_CHECKOUT,
-  GET_ACTIVE_PAYMENT_GATEWAYS,
-  INITIATE_CHECKOUT,
-  VERIFY_PAYMENT,
-} from "@/lib/graphql/payments";
+import { GET_ACTIVE_PAYMENT_GATEWAYS } from "@/lib/graphql/payments";
 import { GET_SHIPPING_QUOTE } from "@/lib/graphql/shipping";
 import { ShippingQuoteData } from "@/types/shipping.types";
 import { MyCartData } from "@/types/cart.types";
-import { Address, MyAddressesData } from "@/types/account.types";
+import { MyAddressesData } from "@/types/account.types";
 import {
-  InitiateCheckoutData,
-  VerifyPaymentData,
   ActivePaymentGatewaysData,
-  ActiveGateway,
   PaymentGateway,
 } from "@/types/order.types";
 import { useAuthStore } from "@/store/auth.store";
 import { formatPrice } from "@/lib/utils/currency";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
-import { ApplyCouponPanel } from "@/components/coupon/apply-coupon-panel";
 import { useAppliedCoupon } from "@/components/coupon/use-applied-coupon";
 import { useCouponStore } from "@/store/coupon.store";
+import { CartValidationNotice } from "@/components/cart/cart-validation-notice";
 
-// ---------------------------------------------------------------------------
-// Razorpay SDK type (loaded dynamically)
-// ---------------------------------------------------------------------------
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Razorpay: any;
-  }
-}
-
-/** Load the Razorpay checkout.js script once. */
-function loadRazorpayScript(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (window.Razorpay) return resolve(true);
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
+import { CenteredEmpty, SkeletonView } from "./_components/checkout-ui";
+import { AddressSection } from "./_components/address-section";
+import { PaymentMethodSection } from "./_components/payment-method-section";
+import { OrderNotesSection } from "./_components/order-notes-section";
+import { B2bGstinSection } from "./_components/b2b-gstin-section";
+import { OrderSummary } from "./_components/order-summary";
+import { usePlaceOrder } from "./_components/use-place-order";
 
 // ===========================================================================
 export default function CheckoutPage() {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isAuthed = !!user;
   const { showPriceWithTax, getDisplayPrice } = useSiteSettings();
@@ -101,7 +66,7 @@ export default function CheckoutPage() {
   });
   const gatewayQ = useQuery<ActivePaymentGatewaysData>(
     GET_ACTIVE_PAYMENT_GATEWAYS,
-    { fetchPolicy: "cache-and-network" }
+    { fetchPolicy: "cache-and-network" },
   );
 
   const cart = cartQ.data?.myCart ?? null;
@@ -109,21 +74,17 @@ export default function CheckoutPage() {
   const gateways = gatewayQ.data?.activePaymentGateways ?? [];
 
   // ---- Form state ----
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    null
-  );
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [selectedGateway, setSelectedGateway] = useState<PaymentGateway | null>(
-    null
+    null,
   );
   const [notes, setNotes] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
   // B2B GSTIN capture. When the customer toggles the "buying for business"
   // checkbox we reveal a GSTIN field; valid input is forwarded to the
   // backend and printed on the seller's tax invoice as the recipient GSTIN.
   const [b2bChecked, setB2bChecked] = useState(false);
   const [buyerGstin, setBuyerGstin] = useState("");
-  const GSTIN_REGEX =
-    /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z][Z][0-9A-Z]$/;
+  const GSTIN_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][0-9A-Z][Z][0-9A-Z]$/;
   const buyerGstinValid = !b2bChecked || GSTIN_REGEX.test(buyerGstin);
 
   // Applied coupon — persisted from cart, re-validated against current cart.
@@ -169,25 +130,10 @@ export default function CheckoutPage() {
     }
   }, [gateways, selectedGateway]);
 
-  // ---- Mutations ----
-  const [initiateCheckout] = useMutation<InitiateCheckoutData>(
-    INITIATE_CHECKOUT
-  );
-  const [verifyPayment] = useMutation<VerifyPaymentData>(VERIFY_PAYMENT);
-  const [cancelCheckout] = useMutation(CANCEL_CHECKOUT);
-
-  // Idempotency key for the current checkout attempt. Generated lazily on the
-  // first submit and kept stable across double-clicks / network retries so the
-  // server (OrderPlacementService) never creates a duplicate order. Reset once
-  // the attempt reaches a terminal outcome (placed / paid / cancelled) so the
-  // next order gets a fresh key. Kept on an initiateCheckout error so a retry
-  // recovers the same order if the response was lost after it was created.
-  const checkoutRequestId = useRef<string | null>(null);
-
   // ---- Computed ----
   const activeGateway = useMemo(
     () => gateways.find((g) => g.gateway === selectedGateway) ?? null,
-    [gateways, selectedGateway]
+    [gateways, selectedGateway],
   );
 
   const processingFeeDisplay = useMemo(() => {
@@ -198,160 +144,17 @@ export default function CheckoutPage() {
     return formatPrice(activeGateway.processingFee);
   }, [activeGateway]);
 
-  // ---- Razorpay checkout handler ----
-  const openRazorpay = useCallback(
-    async (orderId: string, payload: Record<string, unknown>) => {
-      const loaded = await loadRazorpayScript();
-      if (!loaded) {
-        toast.error("Failed to load Razorpay SDK. Please try again.");
-        setIsProcessing(false);
-        return;
-      }
-
-      const options = {
-        key: payload.razorpayKeyId,
-        amount: payload.amount,
-        currency: payload.currency,
-        name: payload.name ?? "Order Payment",
-        order_id: payload.razorpayOrderId,
-        prefill: payload.prefill ?? {},
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        handler: async (response: any) => {
-          try {
-            await verifyPayment({
-              variables: {
-                input: {
-                  orderId,
-                  gatewayPaymentId: response.razorpay_payment_id,
-                  gatewaySignature: response.razorpay_signature,
-                  gatewayOrderId: response.razorpay_order_id,
-                },
-              },
-            });
-            // Order is redeemed — clear the persisted coupon.
-            checkoutRequestId.current = null; // attempt complete
-            clearAppliedCoupon();
-            toast.success("Payment successful! Redirecting...");
-            router.push(`/checkout/success/${orderId}`);
-          } catch (err) {
-            toast.error(
-              err instanceof Error
-                ? err.message
-                : "Payment verification failed."
-            );
-            // Verification failed — treat as a failed payment so the order
-            // doesn't linger as a seller-actionable PENDING order. Reset the
-            // key so a fresh retry creates a new order (this one is cancelled).
-            checkoutRequestId.current = null;
-            await cancelCheckout({ variables: { orderId } }).catch(() => {});
-            router.push(`/checkout/failed/${orderId}?reason=failed`);
-          } finally {
-            setIsProcessing(false);
-          }
-        },
-        modal: {
-          ondismiss: async () => {
-            // Customer closed the gateway without paying. Cancel the order
-            // server-side (releases reserved stock) so it can't be fulfilled,
-            // then send them to the failed page. The webhook is the backstop
-            // if this call doesn't land.
-            try {
-              checkoutRequestId.current = null; // attempt cancelled — next is fresh
-              await cancelCheckout({ variables: { orderId } });
-            } catch {
-              // best-effort; the payment.failed webhook will reconcile.
-            } finally {
-              setIsProcessing(false);
-              router.push(`/checkout/failed/${orderId}?reason=cancelled`);
-            }
-          },
-        },
-        theme: {
-          color: "#6366f1",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    },
-    [verifyPayment, cancelCheckout, router, clearAppliedCoupon]
-  );
-
-  // ---- Place Order Handler ----
-  async function handleCheckout() {
-    if (!selectedAddressId) {
-      toast.error("Please select a shipping address.");
-      return;
-    }
-    if (!selectedGateway) {
-      toast.error("Please select a payment method.");
-      return;
-    }
-    if (b2bChecked && !buyerGstinValid) {
-      toast.error("Enter a valid 15-character GSTIN or uncheck B2B.");
-      return;
-    }
-
-    setIsProcessing(true);
-
-    // Stable per-attempt idempotency key (generated once, reused on retry).
-    if (!checkoutRequestId.current) {
-      checkoutRequestId.current = crypto.randomUUID();
-    }
-
-    try {
-      const res = await initiateCheckout({
-        variables: {
-          input: {
-            shippingAddressId: selectedAddressId,
-            gateway: selectedGateway,
-            customerNotes: notes || undefined,
-            couponCode: appliedCouponCode ?? undefined,
-            buyerGstin: b2bChecked
-              ? buyerGstin.toUpperCase().trim()
-              : undefined,
-            clientRequestId: checkoutRequestId.current,
-          },
-        },
-      });
-
-      const result = res.data?.initiateCheckout;
-      if (!result) {
-        toast.error("Checkout failed. Please try again.");
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!result.requiresPayment) {
-        // COD — order placed immediately. Clear the persisted coupon now
-        // that it's redeemed; the server enforces idempotency via the
-        // unique CouponRedemption.orderId so a retry can't double-apply.
-        checkoutRequestId.current = null; // attempt complete — next order is fresh
-        clearAppliedCoupon();
-        toast.success(`Order ${result.orderNumber} placed successfully!`);
-        router.push(`/checkout/success/${result.orderId}`);
-        return;
-      }
-
-      // Online payment — parse gateway payload and open SDK
-      const payload = result.gatewayPayload
-        ? JSON.parse(result.gatewayPayload)
-        : {};
-
-      if (result.gateway === "RAZORPAY") {
-        await openRazorpay(result.orderId, payload);
-      } else {
-        // Future: handle STRIPE redirect, PHONEPE, etc.
-        toast.error(`${result.gateway} checkout is not yet supported.`);
-        setIsProcessing(false);
-      }
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Could not initiate checkout."
-      );
-      setIsProcessing(false);
-    }
-  }
+  // ---- Place-order flow (initiate → COD redirect | Razorpay → verify) ----
+  const { isProcessing, placeOrder } = usePlaceOrder({
+    selectedAddressId,
+    selectedGateway,
+    notes,
+    appliedCouponCode: appliedCouponCode ?? null,
+    b2bChecked,
+    buyerGstin,
+    buyerGstinValid,
+    clearAppliedCoupon,
+  });
 
   // ---- Early returns ----
   if (!isAuthed) {
@@ -389,6 +192,8 @@ export default function CheckoutPage() {
         </p>
       </header>
 
+      <CartValidationNotice refreshSignal={cart.subtotal} />
+
       {cart.needsReview && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 flex items-start gap-3 text-sm">
           <AlertCircle className="h-4 w-4 text-feature mt-0.5 shrink-0" />
@@ -413,610 +218,55 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-10">
         {/* ------------- LEFT: Address + Payment + Notes ------------- */}
         <div className="space-y-8">
-          {/* Address picker */}
-          <section className="rounded-lg border bg-card p-6">
-            <SectionHeader
-              icon={MapPin}
-              title="Shipping address"
-              action={
-                <Link
-                  href="/account/addresses"
-                  className="text-xs font-semibold text-brand hover:underline"
-                >
-                  Manage
-                </Link>
-              }
-            />
+          <AddressSection
+            addresses={addresses}
+            loading={addrQ.loading}
+            selectedAddressId={selectedAddressId}
+            onSelect={setSelectedAddressId}
+          />
 
-            {addrQ.loading && addresses.length === 0 ? (
-              <div className="text-sm text-foreground/60">
-                <Loader2 className="inline h-4 w-4 animate-spin mr-2" />
-                Loading addresses...
-              </div>
-            ) : addresses.length === 0 ? (
-              <NoAddressBlock />
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {addresses.map((a) => (
-                  <AddressOption
-                    key={a.id}
-                    addr={a}
-                    selected={selectedAddressId === a.id}
-                    onSelect={() => setSelectedAddressId(a.id)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+          <PaymentMethodSection
+            gateways={gateways}
+            loading={gatewayQ.loading}
+            selectedGateway={selectedGateway}
+            onSelect={setSelectedGateway}
+          />
 
-          {/* Payment gateway selection */}
-          <section className="rounded-lg border bg-card p-6">
-            <SectionHeader icon={CreditCard} title="Payment method" />
+          <OrderNotesSection notes={notes} onChange={setNotes} />
 
-            {gatewayQ.loading ? (
-              <div className="text-sm text-foreground/60">
-                <Loader2 className="inline h-4 w-4 animate-spin mr-2" />
-                Loading payment methods...
-              </div>
-            ) : gateways.length === 0 ? (
-              <div className="rounded-md border border-dashed bg-muted/20 px-4 py-6 text-center text-sm text-foreground/70">
-                No payment methods are currently available. Please contact
-                support.
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {gateways.map((gw) => (
-                  <GatewayOption
-                    key={gw.id}
-                    gw={gw}
-                    selected={selectedGateway === gw.gateway}
-                    onSelect={() => setSelectedGateway(gw.gateway)}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Notes */}
-          <section className="rounded-lg border bg-card p-6">
-            <SectionHeader icon={ShieldCheck} title="Order notes (optional)" />
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value.slice(0, 500))}
-              placeholder="Anything the seller should know? (e.g. delivery instructions)"
-              rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-brand transition resize-none"
-            />
-            <p className="mt-1 text-xs text-foreground/50">
-              {notes.length} / 500
-            </p>
-          </section>
-
-          {/* B2B GSTIN — optional. When ticked, the entered GSTIN is
-              printed as the recipient on each seller's tax invoice so
-              the buyer can claim input tax credit. */}
-          <section className="rounded-lg border bg-card p-6">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={b2bChecked}
-                onChange={(e) => {
-                  setB2bChecked(e.target.checked);
-                  if (!e.target.checked) setBuyerGstin("");
-                }}
-                className="mt-1 h-4 w-4 rounded border-input"
-              />
-              <div>
-                <span className="text-sm font-medium">
-                  I&apos;m buying for business (GSTIN invoice)
-                </span>
-                <p className="text-xs text-foreground/60 mt-0.5">
-                  Your GSTIN appears on each seller&apos;s tax invoice so
-                  you can claim input tax credit.
-                </p>
-              </div>
-            </label>
-
-            {b2bChecked && (
-              <div className="mt-4 ml-7">
-                <label
-                  htmlFor="buyerGstin"
-                  className="block text-xs font-medium mb-1.5"
-                >
-                  GSTIN *
-                </label>
-                <input
-                  id="buyerGstin"
-                  type="text"
-                  value={buyerGstin}
-                  onChange={(e) =>
-                    setBuyerGstin(
-                      e.target.value.toUpperCase().slice(0, 15),
-                    )
-                  }
-                  placeholder="27AABCS1234A1Z5"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono outline-none focus:border-brand transition"
-                  maxLength={15}
-                  aria-invalid={!buyerGstinValid}
-                />
-                <p
-                  className={`mt-1 text-xs ${
-                    buyerGstinValid
-                      ? "text-foreground/50"
-                      : "text-destructive"
-                  }`}
-                >
-                  {buyerGstinValid
-                    ? "Will be printed on your tax invoice."
-                    : "Enter a valid 15-character GSTIN."}
-                </p>
-              </div>
-            )}
-          </section>
+          <B2bGstinSection
+            b2bChecked={b2bChecked}
+            onToggle={(checked) => {
+              setB2bChecked(checked);
+              if (!checked) setBuyerGstin("");
+            }}
+            buyerGstin={buyerGstin}
+            onGstinChange={setBuyerGstin}
+            buyerGstinValid={buyerGstinValid}
+          />
         </div>
 
         {/* ------------- RIGHT: Mini cart + Place order ------------- */}
-        <aside className="lg:sticky lg:top-24 self-start space-y-4">
-          <div className="rounded-lg border bg-card p-6">
-            <h2 className="text-base font-semibold mb-4">Order summary</h2>
-
-            <ul className="space-y-3 max-h-72 overflow-y-auto pr-1 -mr-1">
-              {cart.items.map((it) => (
-                <li
-                  key={it.id}
-                  className="flex gap-3 items-start text-sm"
-                >
-                  <div className="relative h-14 w-14 shrink-0 rounded-md overflow-hidden bg-muted">
-                    {it.product?.images?.[0]?.imageUrl ? (
-                      <Image
-                        src={it.product.images[0].imageUrl}
-                        alt={it.product.name}
-                        fill
-                        sizes="100px"
-                        className="object-cover"
-                      />
-                    ) : null}
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-white text-[10px] font-bold flex items-center justify-center">
-                      {it.quantity}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium line-clamp-2">
-                      {it.product?.name ?? "Product"}
-                    </div>
-                    {it.variant?.attributes &&
-                      it.variant.attributes.length > 0 && (
-                        <div className="text-xs text-foreground/60 line-clamp-1">
-                          {it.variant.attributes
-                            .map((a) => a.value)
-                            .join(" / ")}
-                        </div>
-                      )}
-                  </div>
-                  <div className="text-right text-sm font-semibold">
-                    {formatPrice(
-                      showPriceWithTax
-                        ? getDisplayPrice(
-                            it.unitPriceCurrent,
-                            it.variant?.priceWithTax ?? null
-                          ) * it.quantity
-                        : it.lineTotal
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-            {(() => {
-              const displaySubtotal = showPriceWithTax
-                ? cart.items.reduce((sum, item) => {
-                    const unitPrice = getDisplayPrice(
-                      item.unitPriceCurrent,
-                      item.variant?.priceWithTax ?? null
-                    );
-                    return sum + unitPrice * item.quantity;
-                  }, 0)
-                : cart.subtotal;
-
-              // GST estimate across the cart (per-line taxAmount = unit tax × qty).
-              const taxEstimate = cart.items.reduce(
-                (sum, item) => sum + (item.taxAmount ?? 0),
-                0
-              );
-
-              // Match the discount line to the display mode. Pre-tax mode
-              // shows ₹X off; tax-inclusive mode shows the effective ₹X +
-              // GST reduction, which is the real customer saving.
-              const couponDiscount = showPriceWithTax
-                ? couponDiscountInclTax
-                : couponDiscountPreTax;
-
-              // Goods total is always tax-INCLUSIVE (the stored price is base;
-              // GST is always charged). Prefer the server's customerTotal (it
-              // recomputes GST on the discounted base), else base + GST. When
-              // the toggle is ON the subtotal already carries GST.
-              const goodsTotalInclTax =
-                couponCustomerTotal != null
-                  ? couponCustomerTotal
-                  : showPriceWithTax
-                    ? displaySubtotal
-                    : Math.max(0, displaySubtotal - couponDiscount) + taxEstimate;
-
-              // When the subtotal is shown pre-tax, surface GST as its own line
-              // so Subtotal − Discount + Tax + Shipping reconciles to the total.
-              const taxLine = !showPriceWithTax
-                ? Math.max(
-                    0,
-                    goodsTotalInclTax - (displaySubtotal - couponDiscount)
-                  )
-                : null;
-
-              let displayTotal = goodsTotalInclTax;
-
-              // Shipping (tax-inclusive) — a flat add on the goods total.
-              displayTotal += shippingTotal;
-
-              // Processing fee tacks on top of whichever base we chose.
-              if (
-                activeGateway &&
-                activeGateway.processingFee > 0 &&
-                activeGateway.processingFeeType === "FIXED"
-              ) {
-                displayTotal += activeGateway.processingFee;
-              }
-              if (
-                activeGateway &&
-                activeGateway.processingFee > 0 &&
-                activeGateway.processingFeeType === "PERCENTAGE"
-              ) {
-                displayTotal +=
-                  (displayTotal * activeGateway.processingFee) / 100;
-              }
-
-              return (
-                <>
-                  <div className="mt-5 pt-4 border-t space-y-2 text-sm">
-                    <Row
-                      label={`Subtotal${showPriceWithTax ? " (incl. tax)" : ""}`}
-                      value={formatPrice(displaySubtotal)}
-                    />
-                    <Row
-                      label={
-                        (() => {
-                          const couriers = Array.from(
-                            new Set(
-                              (quote?.sellers ?? [])
-                                .filter((s) => s.rateSource === "LIVE" && s.courierName)
-                                .map((s) => s.courierName as string),
-                            ),
-                          );
-                          return couriers.length > 0
-                            ? `Shipping (via ${couriers.join(", ")})`
-                            : "Shipping";
-                        })()
-                      }
-                      value={
-                        !selectedAddressId
-                          ? "Select an address"
-                          : shippingQ.loading && !quote
-                            ? "Calculating…"
-                            : shippingTotal > 0
-                              ? formatPrice(shippingTotal)
-                              : "Free"
-                      }
-                    />
-                    {taxLine != null && (
-                      <Row
-                        label="Tax (GST)"
-                        value={
-                          taxLine > 0
-                            ? formatPrice(taxLine)
-                            : "Calculated by seller"
-                        }
-                      />
-                    )}
-                    {couponDiscount > 0 && (
-                      <Row
-                        label="Coupon discount"
-                        value={`− ${formatPrice(couponDiscount)}`}
-                      />
-                    )}
-                    {processingFeeDisplay && (
-                      <Row
-                        label="Processing fee"
-                        value={processingFeeDisplay}
-                      />
-                    )}
-                  </div>
-
-                  <div className="mt-4 pt-4">
-                    <ApplyCouponPanel cartSignal={cart.subtotal} compact />
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t flex items-baseline justify-between">
-                    <span className="text-base font-semibold">Total</span>
-                    <span className="text-xl font-bold">
-                      {formatPrice(displayTotal)}
-                    </span>
-                  </div>
-                </>
-              );
-            })()}
-
-            {/* Serviceability + COD eligibility warnings */}
-            {selectedAddressId && !quoteServiceable && (
-              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 flex items-start gap-2 text-xs text-destructive">
-                <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                <span>
-                  One or more items can&apos;t be delivered to this address.
-                  Try a different address.
-                </span>
-              </div>
-            )}
-            {selectedAddressId &&
-              quoteServiceable &&
-              selectedGateway === "COD" &&
-              !quoteCodEligible && (
-                <div className="mt-3 rounded-md border border-amber-400/40 bg-amber-50 px-3 py-2 flex items-start gap-2 text-xs text-amber-700">
-                  <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>
-                    Cash on Delivery isn&apos;t available for this order. Please
-                    choose another payment method.
-                  </span>
-                </div>
-              )}
-
-            {/* Selected gateway summary */}
-            {activeGateway && (
-              <div className="mt-3 rounded-md bg-muted/50 px-3 py-2 flex items-center gap-2 text-xs">
-                <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
-                <span className="text-foreground/70">
-                  Paying via{" "}
-                  <span className="font-semibold text-foreground">
-                    {activeGateway.displayName}
-                  </span>
-                </span>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={
-                isProcessing ||
-                cart.needsReview ||
-                addresses.length === 0 ||
-                !selectedAddressId ||
-                !selectedGateway ||
-                (!!selectedAddressId && !quoteServiceable) ||
-                (selectedGateway === "COD" && !quoteCodEligible)
-              }
-              className="mt-5 w-full inline-flex items-center justify-center rounded-md bg-brand text-white px-6 py-3 text-sm font-semibold shadow hover:bg-brand/90 transition disabled:opacity-60"
-            >
-              {isProcessing && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              {isProcessing
-                ? "Processing..."
-                : selectedGateway === "COD"
-                  ? "Place order (Cash on Delivery)"
-                  : "Proceed to payment"}
-            </button>
-            <p className="mt-2 text-xs text-foreground/50 text-center">
-              By placing this order you agree to our terms.
-            </p>
-          </div>
-        </aside>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-
-function SectionHeader({
-  icon: Icon,
-  title,
-  action,
-}: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-base font-semibold flex items-center gap-2">
-        <Icon className="h-4 w-4 text-foreground/60" />
-        {title}
-      </h2>
-      {action}
-    </div>
-  );
-}
-
-function AddressOption({
-  addr,
-  selected,
-  onSelect,
-}: {
-  addr: Address;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`text-left rounded-md border p-4 transition ${
-        selected
-          ? "border-brand bg-blue-50/50 ring-2 ring-brand/10"
-          : "hover:border-foreground/40"
-      }`}
-    >
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-[10px] uppercase tracking-wide font-semibold text-foreground/60">
-          {addr.label || addr.type}
-        </span>
-        {addr.isDefault && (
-          <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-brand text-white">
-            Default
-          </span>
-        )}
-      </div>
-      <div className="text-sm font-semibold">
-        {addr.firstName} {addr.lastName}
-      </div>
-      <div className="text-xs text-foreground/70 mt-1 leading-relaxed">
-        {addr.addressLine1}
-        {addr.addressLine2 && <>, {addr.addressLine2}</>}
-        <br />
-        {addr.city}, {addr.state} {addr.postalCode}
-      </div>
-      {addr.phone && (
-        <div className="text-xs text-foreground/60 mt-1">{addr.phone}</div>
-      )}
-    </button>
-  );
-}
-
-/** Dynamic gateway option card — replaces the old hardcoded PaymentOption. */
-function GatewayOption({
-  gw,
-  selected,
-  onSelect,
-}: {
-  gw: ActiveGateway;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  const icon =
-    gw.gateway === "COD" ? (
-      <Banknote className="h-5 w-5 text-foreground/60" />
-    ) : (
-      <Wallet className="h-5 w-5 text-foreground/60" />
-    );
-
-  return (
-    <label
-      className={`flex items-start gap-3 rounded-md border p-3 transition cursor-pointer ${
-        selected
-          ? "border-brand bg-blue-50/50"
-          : "hover:border-foreground/40"
-      }`}
-    >
-      <input
-        type="radio"
-        name="payment-gateway"
-        value={gw.gateway}
-        checked={selected}
-        onChange={onSelect}
-        className="mt-0.5 h-4 w-4"
-      />
-      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-        {gw.logoUrl ? (
-          <div className="relative h-6 w-6">
-            <Image
-              src={gw.logoUrl}
-              alt={gw.displayName}
-              fill
-              sizes="50px"
-              className="object-contain rounded"
-            />
-          </div>
-        ) : (
-          icon
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold flex items-center gap-2">
-            {gw.displayName}
-            {gw.isDefault && (
-              <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
-                Recommended
-              </span>
-            )}
-          </div>
-          {gw.description && (
-            <div className="text-xs text-foreground/60 mt-0.5 line-clamp-1">
-              {gw.description}
-            </div>
-          )}
-          {gw.processingFee > 0 && (
-            <div className="text-xs text-foreground/50 mt-0.5">
-              Processing fee:{" "}
-              {gw.processingFeeType === "PERCENTAGE"
-                ? `${gw.processingFee}%`
-                : formatPrice(gw.processingFee)}
-            </div>
-          )}
-        </div>
-      </div>
-    </label>
-  );
-}
-
-function NoAddressBlock() {
-  return (
-    <div className="rounded-md border border-dashed bg-muted/20 px-4 py-6 text-center">
-      <p className="text-sm text-foreground/70">
-        You don&apos;t have any saved addresses.
-      </p>
-      <Link
-        href="/account/addresses"
-        className="mt-3 inline-flex items-center justify-center rounded-md bg-brand text-white px-5 py-2 text-sm font-semibold hover:bg-brand/90 transition"
-      >
-        <Plus className="mr-1.5 h-4 w-4" />
-        Add an address
-      </Link>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between text-foreground/70">
-      <span>{label}</span>
-      <span className="text-foreground">{value}</span>
-    </div>
-  );
-}
-
-function CenteredEmpty({
-  title,
-  body,
-  cta,
-}: {
-  title: string;
-  body: string;
-  cta: { href: string; label: string };
-}) {
-  return (
-    <div className="max-w-md mx-auto px-4 py-20 text-center space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      <p className="text-sm text-foreground/60">{body}</p>
-      <Link
-        href={cta.href}
-        className="inline-flex items-center justify-center rounded-md bg-brand px-6 py-3 text-sm font-semibold text-white shadow hover:bg-brand/90 transition"
-      >
-        {cta.label}
-      </Link>
-    </div>
-  );
-}
-
-function SkeletonView() {
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-10 lg:py-14">
-      <div className="h-8 w-48 bg-muted animate-pulse rounded mb-8" />
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-10">
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-32 rounded-lg bg-muted animate-pulse"
-            />
-          ))}
-        </div>
-        <div className="h-72 rounded-lg bg-muted animate-pulse" />
+        <OrderSummary
+          cart={cart}
+          showPriceWithTax={showPriceWithTax}
+          getDisplayPrice={getDisplayPrice}
+          couponDiscountPreTax={couponDiscountPreTax}
+          couponDiscountInclTax={couponDiscountInclTax}
+          couponCustomerTotal={couponCustomerTotal}
+          quote={quote}
+          shippingTotal={shippingTotal}
+          shippingLoading={shippingQ.loading}
+          activeGateway={activeGateway}
+          processingFeeDisplay={processingFeeDisplay}
+          selectedAddressId={selectedAddressId}
+          selectedGateway={selectedGateway}
+          quoteServiceable={quoteServiceable}
+          quoteCodEligible={quoteCodEligible}
+          hasAddresses={addresses.length > 0}
+          isProcessing={isProcessing}
+          onPlaceOrder={placeOrder}
+        />
       </div>
     </div>
   );

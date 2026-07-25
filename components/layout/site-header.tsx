@@ -27,6 +27,7 @@ import { SmartImage } from "@/components/media/smart-image";
 import { HeaderWishlistLink } from "@/components/wishlist/header-wishlist-link";
 import { HeaderCartLink } from "@/components/cart/header-cart-link";
 import { HeaderAccountLink } from "@/components/auth/header-account-link";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { SearchTrigger } from "@/components/layout/search-trigger";
 import { StoreThemeToggle } from "@/components/layout/store-theme-toggle";
 import { GET_PUBLIC_MENU } from "@/lib/graphql/menus";
@@ -226,6 +227,7 @@ export function SiteHeader() {
           {/* Right-side actions */}
           <div className="ml-auto md:ml-0 flex items-center gap-1 shrink-0">
             <StoreThemeToggle />
+            <NotificationBell />
             <HeaderAccountLink />
             <HeaderWishlistLink />
             <HeaderCartLink />

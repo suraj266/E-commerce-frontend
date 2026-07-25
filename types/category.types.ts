@@ -1,19 +1,6 @@
-/**
- * =============================================================================
- * Category TypeScript Types
- * =============================================================================
- *
- * Shared types for Category data across the entire application.
- * These mirror the backend GraphQL schema exactly.
- *
- * REUSABILITY:
- * Used in Admin, Seller, and Customer panels wherever categories appear.
- * =============================================================================
- */
+// Shared Category types, mirroring the backend GraphQL schema.
 
-// ---------------------------------------------------------------------------
 // Core Category type (matches backend Category entity)
-// ---------------------------------------------------------------------------
 export interface Category {
   id: string;
   name: string;

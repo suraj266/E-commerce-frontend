@@ -85,7 +85,6 @@ function SortableCategoryItem({
         isDragging ? "ring-2 ring-primary" : ""
       }`}
     >
-      {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
@@ -94,7 +93,6 @@ function SortableCategoryItem({
         <GripVertical className="h-5 w-5" />
       </div>
 
-      {/* Name & Slug */}
       <div className="flex-1 min-w-0">
         <div className="font-semibold">{category.name}</div>
         <div className="text-xs text-muted-foreground font-mono truncate">
@@ -102,17 +100,14 @@ function SortableCategoryItem({
         </div>
       </div>
 
-      {/* Parent */}
       <div className="hidden lg:block w-32 text-sm text-muted-foreground truncate">
         {category.parentId ? parentName : <span className="italic">Root</span>}
       </div>
 
-      {/* Order */}
       <div className="hidden sm:block w-16 text-sm text-muted-foreground text-center">
         {category.displayOrder}
       </div>
 
-      {/* Status */}
       <div className="w-28 flex justify-center">
         <Select
           value={category.isActive ? "active" : "inactive"}
@@ -142,7 +137,6 @@ function SortableCategoryItem({
         </Select>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" onClick={() => onEdit(category)}>
           <Pencil className="h-4 w-4" />
@@ -187,21 +181,18 @@ export function CategorySortableList({
     })
   );
 
-  // DND handler
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = items.findIndex((item) => item.id === active.id);
       const newIndex = items.findIndex((item) => item.id === over.id);
 
-      // Reorder array locally
       const reorderedItems = arrayMove(items, oldIndex, newIndex);
-      
-      // Update displayOrders based on new index
-      // (This is a simplified approach assuming a flat sort list)
+
+      // Flat list, so displayOrder is just the new array index.
       const updatedItems = reorderedItems.map((item, index) => ({
         ...item,
-        displayOrder: index, // Apply sequential display order
+        displayOrder: index,
       }));
 
       onReorder(updatedItems);

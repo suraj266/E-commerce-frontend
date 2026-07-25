@@ -1,0 +1,3651 @@
+type AccountDeletionRequestEntity {
+  anonymizedAt: DateTime
+  cancelledAt: DateTime
+  executeAfter: DateTime!
+  id: ID!
+  requestedAt: DateTime!
+  status: AccountDeletionStatus!
+}
+
+enum AccountDeletionStatus {
+  ANONYMIZED
+  CANCELLED
+  GRACE
+  PENDING
+}
+
+input AddProductImageInput {
+  altText: String
+  displayOrder: Int
+
+  """Canonical URL from Image module upload"""
+  imageUrl: String!
+  isPrimary: Boolean = false
+  productId: ID!
+}
+
+input AddSlideItemInput {
+  ctaLabel: String
+  description: String
+  imageUrl: String
+  isEnabled: Boolean = true
+  link: String
+  mobileImageUrl: String
+  order: Int
+  sliderId: ID!
+  tabletImageUrl: String
+  title: String
+}
+
+input AddToCartInput {
+  quantity: Int = 1
+  variantId: ID!
+}
+
+type Address {
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+
+  """ISO 3166-1 alpha-2 country code (e.g. "IN", "US")."""
+  countryCode: String!
+  firstName: String!
+  id: ID!
+  isDefault: Boolean!
+  label: String
+  lastName: String!
+  phone: String
+  postalCode: String!
+  state: String!
+  type: AddressType!
+  userId: ID!
+}
+
+enum AddressType {
+  BILLING
+  BOTH
+  SHIPPING
+}
+
+input AdjustInventoryInput {
+  """
+  Relative change to onHand. Positive = received, negative = removed. Mutually exclusive with newQuantityOnHand.
+  """
+  delta: Int
+  movementType: InventoryMovementType!
+
+  """
+  Absolute set — used for recounts. The service derives delta from current onHand. Mutually exclusive with delta.
+  """
+  newQuantityOnHand: Int
+  notes: String
+  variantId: ID!
+  warehouseId: ID
+}
+
+input AdminCreateProductInput {
+  brandId: ID
+  categoryId: ID
+  compareAtPrice: Float
+  costPrice: Float
+  countryOfOrigin: String
+  description: String
+  height: Float
+  hsnCode: String
+  isDigital: Boolean = false
+  isPriceTaxInclusive: Boolean = true
+  labelIds: [ID!]
+  length: Float
+  name: String!
+
+  """Required for SIMPLE products. Ignored for VARIABLE (set per variant)."""
+  price: Float
+
+  """
+  SIMPLE = single SKU (auto-creates 1 variant with the price). VARIABLE = seller adds variants on the next screen.
+  """
+  productType: ProductType = SIMPLE
+  seoDescription: String
+  seoKeywords: [String!]
+  seoTitle: String
+  shortDescription: String
+
+  """SKU. Auto-generated from product name if blank."""
+  sku: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+
+  """JSON: [{name, order, items: [{label, value, order}]}]"""
+  specifications: String
+
+  """
+  Initial product status. DRAFT by default; set ACTIVE to publish immediately.
+  """
+  status: ProductStatus = DRAFT
+  storeId: ID!
+  tagIds: [ID!]
+  taxId: ID
+  weight: Float
+  width: Float
+}
+
+input AdminCreateSellerInput {
+  businessEmail: String!
+  businessPhone: String!
+  businessType: BusinessType!
+  commissionRate: Float = 0
+  dateOfIncorporation: DateTime
+
+  """Storefront / brand name"""
+  displayName: String!
+
+  """15-char GSTIN"""
+  gstin: String
+
+  """Legal/registered business name"""
+  legalName: String!
+
+  """India PAN (10 chars)"""
+  panNumber: String!
+
+  """CIN / LLPIN / etc."""
+  registrationNumber: String
+  signatoryDesignation: String
+  signatoryName: String
+  signatoryPan: String
+
+  """2-digit GST state code (e.g. "27" for Maharashtra)"""
+  stateCode: String
+  stateName: String
+  supportEmail: String
+
+  """Login email (must be unique)"""
+  userEmail: String!
+
+  """Full name of the new seller user"""
+  userName: String!
+
+  """Temporary password — share with seller"""
+  userPassword: String!
+
+  """India phone (must be unique)"""
+  userPhone: String!
+}
+
+input AdminCreateStoreInput {
+  bannerUrl: String
+
+  """ISO 4217 currency code (default: INR)"""
+  currencyCode: String
+  description: String
+  isFeatured: Boolean = false
+
+  """BCP 47 locale (default: en-IN)"""
+  locale: String
+  logoUrl: String
+  name: String!
+
+  """Seller (owner) ID — must exist and be VERIFIED"""
+  sellerId: ID!
+
+  """Auto-generated from name if blank"""
+  slug: String
+  supportEmail: String
+  supportPhone: String
+
+  """IANA timezone (default: Asia/Kolkata)"""
+  timezone: String
+}
+
+type AdminCustomer {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  email: String!
+  emailVerifiedAt: DateTime
+  id: ID!
+  lastLoginAt: DateTime
+  marketingOptIn: Boolean!
+  name: String!
+  phone: String
+  preferredCurrency: String!
+  status: String
+  updatedAt: DateTime!
+  userCreatedAt: DateTime!
+  userId: ID!
+}
+
+type AdminDashboardStats {
+  activeSellers: Int!
+  activeUsers: StatDelta!
+  avgOrderValue: Float!
+  conversionRate: Float!
+  monthlyRevenue: [MonthlyRevenuePoint!]!
+  pendingReturns: Int!
+  recentOrders: [RecentOrderItem!]!
+  totalOrders: StatDelta!
+  totalProducts: StatDelta!
+  totalRevenue: StatDelta!
+}
+
+type AdminReview {
+  body: String!
+  createdAt: DateTime!
+  customerAvatarUrl: String
+  customerEmail: String
+  customerId: ID!
+  customerName: String
+  hiddenAt: DateTime
+  hiddenById: String
+  hiddenReason: String
+  id: ID!
+  media: [ReviewMedia!]!
+  productId: ID!
+  productName: String
+  productSlug: String
+  rating: Int!
+  status: ReviewStatus!
+  title: String
+  updatedAt: DateTime!
+  verifiedPurchase: Boolean!
+}
+
+type AdminTheme {
+  accentDark: String!
+  accentLight: String!
+  destructiveDark: String!
+  destructiveLight: String!
+  fontFamily: String
+  id: ID!
+  primaryDark: String!
+  primaryLight: String!
+  radius: String!
+  sidebarDark: String!
+  sidebarLight: String!
+  updatedAt: DateTime!
+  updatedById: String
+}
+
+input AdminUpdateProductInput {
+  brandId: ID
+  categoryId: ID
+  compareAtPrice: Float
+  costPrice: Float
+  countryOfOrigin: String
+  description: String
+  height: Float
+  hsnCode: String
+  id: ID!
+  isDigital: Boolean = false
+  isPriceTaxInclusive: Boolean = true
+  labelIds: [ID!]
+  length: Float
+  name: String
+
+  """Required for SIMPLE products. Ignored for VARIABLE (set per variant)."""
+  price: Float
+
+  """
+  SIMPLE = single SKU (auto-creates 1 variant with the price). VARIABLE = seller adds variants on the next screen.
+  """
+  productType: ProductType = SIMPLE
+  seoDescription: String
+  seoKeywords: [String!]
+  seoTitle: String
+  shortDescription: String
+
+  """SKU. Auto-generated from product name if blank."""
+  sku: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+
+  """JSON: [{name, order, items: [{label, value, order}]}]"""
+  specifications: String
+
+  """
+  When set, also applies the status change (incl. ARCHIVED, which is admin-only).
+  """
+  status: ProductStatus
+  tagIds: [ID!]
+  taxId: ID
+  weight: Float
+  width: Float
+}
+
+type ApiKeyEntity {
+  createdAt: DateTime!
+  expiresAt: DateTime
+  id: ID!
+  keyPrefix: String!
+  lastUsedAt: DateTime
+  name: String!
+  ownerUserId: ID!
+  revokedAt: DateTime
+  scopes: [String!]!
+}
+
+enum AttributeType {
+  BOOLEAN
+  MULTISELECT
+  NUMBER
+  SELECT
+  TEXT
+}
+
+type AuditLogEntity {
+  action: String!
+  actorEmail: String
+  actorUserId: ID
+  after: String
+  before: String
+  createdAt: DateTime!
+  entityId: ID
+  entityType: String!
+  id: ID!
+  ip: String
+  requestId: String
+  userAgent: String
+}
+
+input AuditLogFilterInput {
+  action: String
+  actorUserId: ID
+  entityId: ID
+  entityType: String
+  from: DateTime
+  page: Int = 1
+  pageSize: Int = 20
+  to: DateTime
+}
+
+type Brand {
+  bannerUrl: String
+
+  """ISO 3166-1 alpha-2 (e.g. IN, US)"""
+  countryCode: String
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  foundedYear: Int
+  id: ID!
+  isFeatured: Boolean!
+  logoUrl: String
+  name: String!
+  slug: String!
+  status: BrandStatus!
+  updatedAt: DateTime!
+  websiteUrl: String
+}
+
+enum BrandStatus {
+  ACTIVE
+  INACTIVE
+}
+
+input BulkUpdateVariantsInput {
+  compareAtPrice: Float
+
+  """
+  Optional filter: only update variants having ANY of these attribute value IDs
+  """
+  filterValueIds: [ID!]
+  price: Float
+  productId: ID!
+  status: VariantStatus
+}
+
+enum BusinessType {
+  HUF
+  INDIVIDUAL
+  LLP
+  PARTNERSHIP
+  PRIVATE_LIMITED
+  PROPRIETORSHIP
+  PUBLIC_LIMITED
+}
+
+type Cart {
+  createdAt: DateTime!
+
+  """
+  Owning customer. Null for a guest cart (keyed by an httpOnly sessionToken cookie instead).
+  """
+  customerId: ID
+  id: ID!
+
+  """Sum of quantity across all items — drives the header badge."""
+  itemCount: Int!
+  items: [CartItem!]!
+
+  """true if any line has a price change OR is out of stock."""
+  needsReview: Boolean!
+
+  """Sum of all lineTotal values. Tax + shipping computed at checkout."""
+  subtotal: Float!
+  updatedAt: DateTime!
+}
+
+type CartItem {
+  """Aggregate available stock across warehouses. -1 if unknown/unbounded."""
+  availableQuantity: Int!
+  cartId: ID!
+  createdAt: DateTime!
+  id: ID!
+
+  """quantity * unitPriceCurrent — what the line costs today (pre-tax)."""
+  lineTotal: Float!
+
+  """
+  true when unitPriceCurrent != unitPriceSnapshot — the customer should re-confirm before checkout.
+  """
+  priceChanged: Boolean!
+  product: Product
+  productId: ID!
+  quantity: Int!
+
+  """Stock state for this variant: IN_STOCK | LOW_STOCK | OUT_OF_STOCK."""
+  stockState: String!
+
+  """
+  GST portion for the whole line (unit tax × quantity). Null if the product has no tax. Display-only; checkout recomputes authoritatively.
+  """
+  taxAmount: Float
+
+  """Live price right now (variant.price)."""
+  unitPriceCurrent: Float!
+
+  """
+  Price of the variant at the time it was added to the cart. Compare with `unitPriceCurrent` to detect price drift.
+  """
+  unitPriceSnapshot: Float!
+  updatedAt: DateTime!
+  variant: ProductVariant
+  variantId: ID!
+}
+
+type CartValidationResult {
+  """true when there are zero warnings — safe to proceed."""
+  valid: Boolean!
+
+  """One entry per (variant, issue). Empty when valid."""
+  warnings: [CartWarning!]!
+}
+
+type CartWarning {
+  """Live available stock across warehouses (stock-related codes)."""
+  availableQuantity: Int
+
+  """OUT_OF_STOCK | REDUCED_QUANTITY | PRICE_CHANGED | UNAVAILABLE."""
+  code: String!
+
+  """Human-readable, display-ready explanation."""
+  message: String!
+
+  """Current live price (PRICE_CHANGED only)."""
+  newPrice: Float
+
+  """Snapshot price at add time (PRICE_CHANGED only)."""
+  oldPrice: Float
+
+  """
+  Quantity the customer could keep instead (= availableQuantity for REDUCED_QUANTITY).
+  """
+  suggestedQuantity: Int
+
+  """Variant the warning is about."""
+  variantId: ID!
+}
+
+type Category {
+  children: [Category!]
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  displayOrder: Int!
+  hasChildren: Boolean
+  iconUrl: String
+  id: ID!
+  imageUrl: String
+  isActive: Boolean!
+  name: String!
+  parentId: String
+  productCount: Int
+  slug: String!
+  updatedAt: DateTime!
+}
+
+type CategorySuggestion {
+  id: ID!
+  name: String!
+  productCount: Int!
+  slug: String!
+}
+
+input CategoryTreeItemInput {
+  displayOrder: Int!
+  id: ID!
+  parentId: String
+}
+
+type CheckoutResult {
+  gateway: PaymentGateway!
+  gatewayPayload: String
+  orderId: ID!
+  orderNumber: String!
+  requiresPayment: Boolean!
+}
+
+type Collection {
+  bannerUrl: String
+  createdAt: DateTime!
+  description: String
+  displayOrder: Int!
+  id: ID!
+  imageUrl: String
+  isFeatured: Boolean!
+  name: String!
+  productIds: [ID!]
+
+  """JSON-encoded RuleSet for SMART collections; null for MANUAL."""
+  rule: String
+  slug: String!
+  status: CollectionStatus!
+  type: CollectionType!
+  updatedAt: DateTime!
+}
+
+enum CollectionStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CollectionType {
+  MANUAL
+  SMART
+}
+
+input ConfirmUploadInput {
+  alt: String
+  externalId: String!
+  ownerId: ID
+  ownerType: ImageOwnerType
+  purpose: ImagePurpose!
+}
+
+input ConnectCourierAccountInput {
+  email: String!
+  password: String!
+  provider: CourierProvider!
+  webhookSecret: String
+}
+
+type Coupon {
+  code: String!
+  createdAt: DateTime!
+  description: String
+  discountType: String!
+  discountValue: Float!
+  id: ID!
+  isActive: Boolean!
+  maximumDiscountAmount: Float
+  minimumPurchaseAmount: Float
+  name: String!
+  redemptionCount: Int
+  storeId: ID
+  updatedAt: DateTime!
+  usageLimit: Int
+  usageLimitPerUser: Int
+  validFrom: DateTime!
+  validUntil: DateTime!
+}
+
+type CouponValidation {
+  coupon: Coupon
+  customerTotal: Float!
+  discountAmount: Float!
+  discountInclTax: Float!
+  isValid: Boolean!
+  reason: String
+  subtotal: Float!
+  subtotalInclTax: Float!
+}
+
+type CourierAccountSafe {
+  createdAt: DateTime!
+  hasCredentials: Boolean!
+  id: ID!
+  isEnabled: Boolean!
+  lastError: String
+  lastTestedAt: DateTime
+  pickupLocationNickname: String
+  provider: CourierProvider!
+  status: CourierAccountStatus!
+  updatedAt: DateTime!
+  webhookConfigured: Boolean!
+}
+
+enum CourierAccountStatus {
+  CONNECTED
+  DISABLED
+  ERROR
+  PENDING
+}
+
+type CourierOption {
+  codAvailable: Boolean!
+  courierId: String!
+  courierName: String!
+  estimatedDays: Int
+  rate: Float!
+  recommended: Boolean!
+}
+
+type CourierOptionsResult {
+  couriers: [CourierOption!]!
+  selectedCourierId: String
+  selectedCourierName: String
+}
+
+type CourierPickupLocation {
+  address: String!
+  city: String!
+  id: ID!
+  name: String!
+  nickname: String!
+  phone: String!
+  pincode: String!
+  state: String!
+}
+
+enum CourierProvider {
+  MOCK
+  SHIPROCKET
+}
+
+input CreateAddressInput {
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  countryCode: String!
+  firstName: String!
+  isDefault: Boolean
+  label: String
+  lastName: String!
+  phone: String
+  postalCode: String!
+  state: String!
+  type: AddressType!
+}
+
+input CreateApiKeyInput {
+  expiresAt: DateTime
+  name: String!
+  scopes: [String!]! = []
+}
+
+type CreateApiKeyResult {
+  apiKey: ApiKeyEntity!
+  secret: String!
+}
+
+input CreateAttributeInput {
+  description: String
+  isVariantAttribute: Boolean = false
+  name: String!
+
+  """Auto-generated from name if blank"""
+  slug: String
+  type: AttributeType! = SELECT
+}
+
+input CreateAttributeValueInput {
+  attributeId: ID!
+
+  """Appended to end of list when omitted"""
+  displayOrder: Int
+
+  """Auto-generated from value if blank"""
+  slug: String
+  value: String!
+}
+
+input CreateBrandInput {
+  bannerUrl: String
+  countryCode: String
+  description: String
+  foundedYear: Int
+  isFeatured: Boolean = false
+  logoUrl: String
+  name: String!
+
+  """Auto-generated from name if blank"""
+  slug: String
+  websiteUrl: String
+}
+
+input CreateCategoryInput {
+  description: String
+  displayOrder: Int! = 0
+  iconUrl: String
+  imageUrl: String
+  isActive: Boolean! = true
+  name: String!
+  parentId: String
+  slug: String
+}
+
+input CreateCollectionInput {
+  bannerUrl: String
+  description: String
+  displayOrder: Int = 0
+  imageUrl: String
+  isFeatured: Boolean = false
+  name: String!
+  productIds: [ID!]
+  rule: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+  status: CollectionStatus = ACTIVE
+  type: CollectionType! = MANUAL
+}
+
+input CreateCouponInput {
+  code: String!
+  description: String
+  discountType: String!
+  discountValue: Float!
+  isActive: Boolean
+  maximumDiscountAmount: Float
+  minimumPurchaseAmount: Float
+  name: String!
+  storeId: String
+  usageLimit: Int
+  usageLimitPerUser: Int
+  validFrom: String!
+  validUntil: String!
+}
+
+input CreateGatewayConfigInput {
+  credentialsJson: String
+  description: String
+  displayName: String!
+  displayOrder: Int! = 0
+  gateway: PaymentGateway!
+  instructions: String
+  isDefault: Boolean! = false
+  isEnabled: Boolean! = false
+  logoUrl: String
+  paymentType: GatewayPaymentType! = WEBSITE_EMBEDDED
+  processingFee: Float! = 0
+  processingFeeType: ProcessingFeeType! = FIXED
+  sandboxMode: Boolean! = true
+  supportedMethods: [String!]! = []
+}
+
+input CreateLabelInput {
+  color: String!
+  displayOrder: Int = 0
+  icon: String
+  isEnabled: Boolean = true
+  key: String!
+  name: String!
+  priority: Int = 100
+  rule: String
+  textColor: String
+  type: LabelType! = MANUAL
+}
+
+input CreateNewsletterCampaignInput {
+  htmlBody: String!
+  subject: String!
+}
+
+input CreatePageInput {
+  """JSON-encoded blocks array. Optional on create; defaults to "[]"."""
+  blocks: String
+  isSystem: Boolean = false
+  metaDesc: String
+  metaTitle: String
+  slug: String!
+  title: String!
+}
+
+input CreatePayoutAccountInput {
+  accountHolderName: String!
+  accountNumber: String
+
+  """One of: bank, upi, wallet"""
+  accountType: String!
+  bankName: String
+  ifscCode: String
+  isPrimary: Boolean = false
+  sellerId: ID!
+  upiId: String
+  walletProvider: String
+}
+
+input CreateProductInput {
+  brandId: ID
+  categoryId: ID
+  compareAtPrice: Float
+  costPrice: Float
+  countryOfOrigin: String
+  description: String
+  height: Float
+  hsnCode: String
+  isDigital: Boolean = false
+  isPriceTaxInclusive: Boolean = true
+  labelIds: [ID!]
+  length: Float
+  name: String!
+
+  """Required for SIMPLE products. Ignored for VARIABLE (set per variant)."""
+  price: Float
+
+  """
+  SIMPLE = single SKU (auto-creates 1 variant with the price). VARIABLE = seller adds variants on the next screen.
+  """
+  productType: ProductType = SIMPLE
+  seoDescription: String
+  seoKeywords: [String!]
+  seoTitle: String
+  shortDescription: String
+
+  """SKU. Auto-generated from product name if blank."""
+  sku: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+
+  """JSON: [{name, order, items: [{label, value, order}]}]"""
+  specifications: String
+  storeId: ID!
+  tagIds: [ID!]
+  taxId: ID
+  weight: Float
+  width: Float
+}
+
+input CreateReviewInput {
+  body: String!
+  media: [ReviewMediaInput!]
+  productId: ID!
+  rating: Int!
+  title: String
+}
+
+input CreateRoleInput {
+  createdById: String
+  description: String
+  isDefault: Boolean = false
+  name: String!
+  updatedById: String
+}
+
+input CreateSellerInput {
+  businessEmail: String!
+  businessPhone: String!
+  businessType: BusinessType!
+  commissionRate: Float = 0
+  dateOfIncorporation: DateTime
+
+  """Storefront / brand name"""
+  displayName: String!
+
+  """15-char GSTIN"""
+  gstin: String
+
+  """Legal/registered business name"""
+  legalName: String!
+
+  """India PAN (10 chars)"""
+  panNumber: String!
+
+  """CIN / LLPIN / etc."""
+  registrationNumber: String
+  signatoryDesignation: String
+  signatoryName: String
+  signatoryPan: String
+
+  """2-digit GST state code (e.g. "27" for Maharashtra)"""
+  stateCode: String
+  stateName: String
+  supportEmail: String
+}
+
+input CreateSliderInput {
+  """JSON-encoded config object."""
+  config: String
+  description: String
+
+  """Stable identifier. Auto-slugified from name if omitted."""
+  key: String
+  name: String!
+}
+
+input CreateStoreInput {
+  bannerUrl: String
+
+  """ISO 4217 currency code (default: INR)"""
+  currencyCode: String
+  description: String
+  isFeatured: Boolean = false
+
+  """BCP 47 locale (default: en-IN)"""
+  locale: String
+  logoUrl: String
+  name: String!
+
+  """Auto-generated from name if blank"""
+  slug: String
+  supportEmail: String
+  supportPhone: String
+
+  """IANA timezone (default: Asia/Kolkata)"""
+  timezone: String
+}
+
+input CreateTagInput {
+  description: String
+  isFeatured: Boolean = false
+  name: String!
+
+  """Auto-generated from name if blank"""
+  slug: String
+}
+
+input CreateTaxInput {
+  description: String
+  displayOrder: Int = 0
+  isActive: Boolean = true
+  name: String!
+  rate: Float!
+}
+
+input CreateUserInput {
+  avatarUrl: String
+  dateOfBirth: DateTime
+  email: String!
+  emailVerifiedAt: DateTime
+  gender: String
+  lastLoginAt: DateTime
+  name: String!
+  password: String!
+  phone: String!
+  phoneVerifiedAt: DateTime
+  roleId: String!
+  status: String = "inactive"
+}
+
+input CreateVariantInput {
+  """Attribute value IDs that define this variant — one per axis"""
+  attributeValueIds: [ID!]!
+  compareAtPrice: Float
+  costPrice: Float
+
+  """Height in cm"""
+  height: Float
+  imageUrl: String
+
+  """Length in cm"""
+  length: Float
+  price: Float!
+  productId: ID!
+
+  """Auto-generated from attribute slugs if blank"""
+  sku: String
+
+  """Weight in kg"""
+  weight: Float
+
+  """Width in cm"""
+  width: Float
+}
+
+input CreateWarehouseInput {
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+
+  """Short unique-per-store code, e.g. MUM01"""
+  code: String!
+
+  """ISO 3166-1 alpha-2 (default: IN)"""
+  countryCode: String
+  isDefault: Boolean = false
+  name: String!
+  phone: String
+  postalCode: String!
+  state: String!
+  storeId: ID!
+}
+
+type DataExportRequestEntity {
+  completedAt: DateTime
+  createdAt: DateTime!
+  expiresAt: DateTime
+  fileUrl: String
+  id: ID!
+  requestedAt: DateTime!
+  status: DataExportStatus!
+}
+
+enum DataExportStatus {
+  EXPIRED
+  FAILED
+  PENDING
+  PROCESSING
+  READY
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+enum EmailEncryption {
+  NONE
+  SSL
+  TLS
+}
+
+enum EmailMailer {
+  SMTP
+}
+
+type EmailSetting {
+  encryption: EmailEncryption!
+  hasPassword: Boolean!
+  host: String!
+  id: ID!
+  isConfigured: Boolean!
+  localDomain: String
+  mailer: EmailMailer!
+  port: Int!
+  senderEmail: String!
+  senderName: String!
+  updatedAt: DateTime!
+  username: String!
+}
+
+type EmailTemplate {
+  category: EmailTemplateCategory!
+  description: String!
+  htmlBody: String!
+  id: ID!
+  isEnabled: Boolean!
+  isSystem: Boolean!
+  key: String!
+  name: String!
+  subject: String!
+  textBody: String
+  updatedAt: DateTime!
+  variables: [String!]!
+}
+
+enum EmailTemplateCategory {
+  ADMIN
+  AUTH
+  NEWSLETTER
+  ORDER
+  PARTIAL
+  SELLER
+  SYSTEM
+}
+
+enum GatewayPaymentType {
+  REDIRECT
+  WEBSITE_EMBEDDED
+}
+
+input GenerateVariantMatrixInput {
+  axes: [VariantAxisValuesInput!]!
+  baseCompareAtPrice: Float
+  baseCostPrice: Float
+
+  """Default price applied to all generated variants"""
+  basePrice: Float!
+  productId: ID!
+}
+
+type Image {
+  alt: String
+  createdAt: DateTime!
+  externalId: String!
+  format: String!
+  height: Int!
+  id: ID!
+  ownerId: ID
+  ownerType: ImageOwnerType!
+
+  """local | s3 | cloudinary"""
+  provider: String!
+  purpose: ImagePurpose!
+  sizeBytes: Int!
+
+  """Canonical URL — render directly or via variants."""
+  url: String!
+  width: Int!
+}
+
+enum ImageOwnerType {
+  CATEGORY
+  GENERIC
+  PRODUCT
+  SELLER
+  STORE
+  USER
+}
+
+enum ImagePurpose {
+  AVATAR
+  BANNER
+  GENERIC
+  ICON
+  LOGO
+  PRODUCT_GALLERY
+  PRODUCT_PRIMARY
+}
+
+input InitiateCheckoutInput {
+  billingAddressId: ID
+  buyerGstin: String
+  clientRequestId: String
+  couponCode: String
+  customerNotes: String
+  gateway: PaymentGateway!
+  shippingAddressId: ID!
+}
+
+type Inventory {
+  createdAt: DateTime!
+  id: ID!
+  lastCountedAt: DateTime
+
+  """
+  The variant's parent product — included for cross-product dashboard listings so the UI doesn't have to chase nested relations.
+  """
+  product: Product
+  quantityAvailable: Int!
+  quantityOnHand: Int!
+  quantityReserved: Int!
+  reorderPoint: Int!
+  reorderQuantity: Int!
+
+  """
+  Derived: OUT_OF_STOCK when available <= 0; LOW_STOCK when available <= reorderPoint; else IN_STOCK.
+  """
+  stockState: StockState!
+  updatedAt: DateTime!
+  variant: ProductVariant
+  variantId: ID!
+  warehouse: Warehouse
+  warehouseId: ID!
+}
+
+type InventoryMovement {
+  createdAt: DateTime!
+  createdById: ID
+  id: ID!
+  inventoryId: ID!
+  movementType: InventoryMovementType!
+  notes: String
+  quantityAfter: Int!
+  quantityBefore: Int!
+  quantityChange: Int!
+  referenceId: ID
+  referenceType: String
+  variantId: ID!
+  warehouseId: ID!
+}
+
+enum InventoryMovementType {
+  ADJUSTMENT
+  DAMAGE
+  EXPIRED
+  PURCHASE
+  RETURN
+  SALE
+  TRANSFER
+}
+
+type InvoiceTemplate {
+  css: String!
+  description: String!
+  htmlBody: String!
+  id: ID!
+  isEnabled: Boolean!
+  isSystem: Boolean!
+  key: String!
+  name: String!
+  updatedAt: DateTime!
+  variables: [String!]!
+}
+
+type Label {
+  color: String!
+  createdAt: DateTime!
+  displayOrder: Int!
+  icon: String
+  id: ID!
+  isEnabled: Boolean!
+  isSystem: Boolean!
+  key: String!
+  name: String!
+  priority: Int!
+
+  """JSON-encoded RuleSet for AUTO labels; null for MANUAL."""
+  rule: String
+  textColor: String
+  type: LabelType!
+  updatedAt: DateTime!
+}
+
+enum LabelType {
+  AUTO
+  MANUAL
+}
+
+type ManualRefundInfo {
+  amount: Float!
+  disbursable: Boolean!
+  id: ID!
+  isManual: Boolean!
+  reference: String
+  status: String!
+}
+
+input MarkPayoutPaidInput {
+  payoutId: ID!
+  providerRef: String
+  utr: String!
+}
+
+input MarkTcsDepositedInput {
+  challanRef: String!
+  period: String!
+}
+
+type MarketingConsentState {
+  granted: Boolean!
+}
+
+type Menu {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  id: ID!
+  isActive: Boolean!
+
+  """
+  JSON-encoded array: [{id, label, url, target?, icon?, visible, children: [...]}]. Frontend parses and renders.
+  """
+  items: String!
+  location: MenuLocation!
+  name: String!
+  updatedAt: DateTime!
+}
+
+enum MenuLocation {
+  FOOTER_COMPANY
+  FOOTER_HELP
+  FOOTER_LEGAL
+  FOOTER_SHOP
+  FOOTER_SOCIAL
+  HEADER_PRIMARY
+  HEADER_TOP
+}
+
+type MonthlyRevenuePoint {
+  month: String!
+  value: Float!
+}
+
+type Mutation {
+  addMyAddress(input: CreateAddressInput!): Address!
+  addMyProductImage(addProductImageInput: AddProductImageInput!): ProductImage!
+  addMyProductVariant(createVariantInput: CreateVariantInput!): ProductVariant!
+  addSlideItem(addSlideItemInput: AddSlideItemInput!): SlideItem!
+  addToCart(input: AddToCartInput!): Cart!
+  addToGuestCart(input: AddToCartInput!): Cart!
+  addToWishlist(input: ToggleWishlistInput!): Wishlist!
+  adjustMyInventory(adjustInventoryInput: AdjustInventoryInput!): Inventory!
+  adminCancelOrder(id: ID!, reason: String): Order!
+  adminCreateProduct(input: AdminCreateProductInput!): Product!
+  adminCreateSeller(input: AdminCreateSellerInput!): Seller!
+  adminCreateStore(input: AdminCreateStoreInput!): Store!
+  adminRemoveStore(id: ID!): Store!
+  adminSetProductStatus(setProductStatusInput: SetProductStatusInput!): Product!
+  adminUpdateProduct(input: AdminUpdateProductInput!): Product!
+  adminUpdateSeller(updateSellerInput: UpdateSellerInput!): Seller!
+  adminUpdateStore(input: UpdateStoreInput!): Store!
+  approveRefund(refundId: ID!): RefundEntity!
+  approveReturn(id: ID!): ReturnRequestEntity!
+  approveReview(id: ID!): AdminReview!
+  assignPermission(permissionId: ID!, roleId: ID!): Role!
+  bulkUpdateMyProductVariants(bulkUpdateVariantsInput: BulkUpdateVariantsInput!): Float!
+  cancelCheckout(orderId: ID!): Order!
+  cancelMyAccountDeletion: AccountDeletionRequestEntity
+  cancelMyOrder(id: ID!, notes: String): Order!
+  clearCart: Cart!
+  clearWishlist: Wishlist!
+  confirmImageUpload(confirmUploadInput: ConfirmUploadInput!): Image!
+  confirmNewsletter(token: String!): Boolean!
+  connectCourierAccount(input: ConnectCourierAccountInput!): CourierAccountSafe!
+  createApiKey(input: CreateApiKeyInput!): CreateApiKeyResult!
+  createAttribute(createAttributeInput: CreateAttributeInput!): ProductAttribute!
+  createAttributeValue(createAttributeValueInput: CreateAttributeValueInput!): ProductAttributeValue!
+  createBrand(createBrandInput: CreateBrandInput!): Brand!
+  createCategory(createCategoryInput: CreateCategoryInput!): Category!
+  createCollection(createCollectionInput: CreateCollectionInput!): Collection!
+  createCoupon(input: CreateCouponInput!): Coupon!
+  createLabel(createLabelInput: CreateLabelInput!): Label!
+  createMyPayoutAccount(createPayoutAccountInput: CreatePayoutAccountInput!): SellerPayoutAccount!
+  createMyProduct(createProductInput: CreateProductInput!): Product!
+  createMySeller(createSellerInput: CreateSellerInput!): Seller!
+  createMyStore(createStoreInput: CreateStoreInput!): Store!
+  createMyWarehouse(createWarehouseInput: CreateWarehouseInput!): Warehouse!
+  createNewsletterCampaign(input: CreateNewsletterCampaignInput!): NewsletterCampaign!
+  createPage(createPageInput: CreatePageInput!): Page!
+  createPaymentGatewayConfig(input: CreateGatewayConfigInput!): PaymentGatewayConfigEntity!
+  createPayoutRun(sellerId: ID): [PayoutEntity!]!
+  createReview(input: CreateReviewInput!): Review!
+  createRole(createRoleInput: CreateRoleInput!): Role!
+  createSlider(createSliderInput: CreateSliderInput!): Slider!
+  createTag(createTagInput: CreateTagInput!): Tag!
+  createTax(createTaxInput: CreateTaxInput!): Tax!
+  createUser(createUserInput: CreateUserInput!): User!
+  deleteImage(id: ID!): Image!
+  deleteReview(id: ID!): Review
+  disburseManualRefund(note: String, reference: String!, refundId: ID!): RefundEntity!
+  generateMyProductVariantMatrix(generateVariantMatrixInput: GenerateVariantMatrixInput!): [ProductVariant!]!
+  initiateCheckout(input: InitiateCheckoutInput!): CheckoutResult!
+  markAllNotificationsRead: Int!
+  markNotificationRead(id: ID!): Notification!
+  markPayoutFailed(payoutId: ID!, reason: String!): PayoutEntity!
+  markPayoutPaid(input: MarkPayoutPaidInput!): PayoutEntity!
+  markReplacementShipped(id: ID!, note: String, reference: String): ReturnRequestEntity!
+  markReturnReceived(id: ID!): ReturnRequestEntity!
+  markTcsDeposited(input: MarkTcsDepositedInput!): TcsDepositEntity!
+  mergeGuestCart: Cart!
+  placeOrder(input: PlaceOrderInput!): Order!
+  presignImageUpload(presignUploadInput: PresignUploadInput!): PresignUploadPayload!
+  qcReturn(id: ID!, note: String, pass: Boolean!): ReturnRequestEntity!
+  refreshTcsDeposit(period: String!): TcsDepositEntity!
+
+  """
+  Force-regenerate the tax invoice for a SellerOrder. Keeps the original invoice number; only replaces the rendered PDF.
+  """
+  regenerateSellerOrderInvoice(sellerOrderId: ID!): String!
+  rejectRefund(reason: String, refundId: ID!): RefundEntity!
+  rejectReturn(id: ID!, reason: String): ReturnRequestEntity!
+  rejectReview(id: ID!, reason: String): AdminReview!
+  removeAttribute(id: ID!): ProductAttribute!
+  removeAttributeValue(id: ID!): ProductAttributeValue!
+  removeBrand(id: ID!): Brand!
+  removeCategory(id: ID!): Category!
+  removeCollection(id: ID!): Collection!
+  removeCoupon(id: ID!): Coupon
+  removeFromCart(input: RemoveCartItemInput!): Cart!
+  removeFromGuestCart(input: RemoveCartItemInput!): Cart!
+  removeFromWishlist(input: ToggleWishlistInput!): Wishlist!
+  removeLabel(id: ID!): Label!
+  removeMenu(location: MenuLocation!): Menu!
+  removeMyAddress(id: ID!): Address!
+  removeMyPayoutAccount(id: ID!): SellerPayoutAccount!
+  removeMyProduct(id: ID!): Product!
+  removeMyProductImage(id: ID!): ProductImage!
+  removeMyProductVariant(id: ID!): ProductVariant!
+  removeMyStore(id: ID!): Store!
+  removeMyWarehouse(id: ID!): Warehouse!
+  removePage(id: ID!): Page!
+  removeRole(id: ID!): Role!
+  removeSeller(id: ID!): Seller!
+  removeSlideItem(id: ID!): SlideItem!
+  removeSlider(id: ID!): Slider!
+  removeTag(id: ID!): Tag!
+  removeTax(id: ID!): Tax!
+  removeUser(id: ID!): User!
+  reorderAttributeValues(reorderAttributeValuesInput: ReorderAttributeValuesInput!): Boolean!
+  reorderMyProductImages(reorderProductImagesInput: ReorderProductImagesInput!): Boolean!
+  reorderSlideItems(reorderSlideItemsInput: ReorderSlideItemsInput!): Boolean!
+  requestMyAccountDeletion: AccountDeletionRequestEntity!
+  requestMyDataExport: DataExportRequestEntity!
+  requestRefund(input: RequestRefundInput!): RefundEntity!
+  requestReturn(input: RequestReturnInput!): ReturnRequestEntity!
+  resetAdminTheme: AdminTheme!
+  restoreCustomer(id: ID!): AdminCustomer!
+  revokeApiKey(id: ID!): ApiKeyEntity!
+  revokePermission(permissionId: ID!, roleId: ID!): Role!
+  scheduleReturnPickup(id: ID!): ReturnRequestEntity!
+  sendNewsletterCampaign(id: ID!): NewsletterCampaign!
+  sendTestEmail(input: SendTestEmailInput!): SendTestResult!
+  setBrandStatus(setBrandStatusInput: SetBrandStatusInput!): Brand!
+  setCourierAccountEnabled(enabled: Boolean!, provider: CourierProvider!): CourierAccountSafe!
+  setCourierPickupLocation(nickname: String!, provider: CourierProvider!): CourierAccountSafe!
+  setCourierWebhookToken(provider: CourierProvider!, token: String!): CourierAccountSafe!
+  setDefaultPaymentGateway(id: ID!): PaymentGatewayConfigEntity!
+  setMenuActive(isActive: Boolean!, location: MenuLocation!): Menu!
+  setMyDefaultAddress(id: ID!): Address!
+  setMyProductStatus(setProductStatusInput: SetProductStatusInput!): Product!
+  setMyProductVariantAxes(setVariantAxesInput: SetVariantAxesInput!): [VariantAxis!]!
+  setMyReorderPoint(setReorderPointInput: SetReorderPointInput!): Inventory!
+  setPageStatus(setPageStatusInput: SetPageStatusInput!): Page!
+  setSellerStatus(setStatusInput: SetSellerStatusInput!): Seller!
+  setSliderStatus(setSliderStatusInput: SetSliderStatusInput!): Slider!
+  setStoreStatus(setStoreStatusInput: SetStoreStatusInput!): Store!
+  setTagStatus(setTagStatusInput: SetTagStatusInput!): Tag!
+  setUserStatus(id: ID!, status: String!): User!
+  shipViaCourier(courierId: String!, sellerOrderId: ID!): SellerOrder!
+  softDeleteCustomer(id: ID!): AdminCustomer!
+  submitMySellerForReview(id: ID!): Seller!
+  submitMyStoreForReview(id: ID!): Store!
+  subscribeToNewsletter(input: SubscribeNewsletterInput!): NewsletterSubscribeResult!
+  testCourierConnection(provider: CourierProvider!): CourierAccountSafe!
+  togglePaymentGateway(enabled: Boolean!, id: ID!): PaymentGatewayConfigEntity!
+  unsubscribeFromNewsletter(token: String!): Boolean!
+  unsubscribeNewsletter(id: ID!): NewsletterSubscription!
+  updateAdminTheme(updateAdminThemeInput: UpdateAdminThemeInput!): AdminTheme!
+  updateAttribute(updateAttributeInput: UpdateAttributeInput!): ProductAttribute!
+  updateAttributeValue(updateAttributeValueInput: UpdateAttributeValueInput!): ProductAttributeValue!
+  updateBrand(updateBrandInput: UpdateBrandInput!): Brand!
+  updateCartItemQty(input: UpdateCartItemQtyInput!): Cart!
+  updateCategory(updateCategoryInput: UpdateCategoryInput!): Category!
+  updateCategoryTree(updateCategoryTreeInput: UpdateCategoryTreeInput!): Boolean!
+  updateCollection(updateCollectionInput: UpdateCollectionInput!): Collection!
+  updateCoupon(input: UpdateCouponInput!): Coupon!
+  updateCustomer(input: UpdateCustomerInput!): AdminCustomer!
+  updateEmailSetting(input: UpdateEmailSettingInput!): EmailSetting!
+  updateEmailTemplate(input: UpdateEmailTemplateInput!): EmailTemplate!
+  updateGuestCartItemQty(input: UpdateCartItemQtyInput!): Cart!
+  updateInvoiceTemplate(input: UpdateInvoiceTemplateInput!): InvoiceTemplate!
+  updateLabel(updateLabelInput: UpdateLabelInput!): Label!
+  updateMyAddress(input: UpdateAddressInput!): Address!
+  updateMyMarketingConsent(input: UpdateMarketingConsentInput!): MarketingConsentState!
+  updateMyPayoutAccount(updatePayoutAccountInput: UpdatePayoutAccountInput!): SellerPayoutAccount!
+  updateMyProduct(updateProductInput: UpdateProductInput!): Product!
+  updateMyProductImage(updateProductImageInput: UpdateProductImageInput!): ProductImage!
+  updateMyProductVariant(updateVariantInput: UpdateVariantInput!): ProductVariant!
+  updateMyProfile(input: UpdateMyProfileInput!): AdminCustomer!
+  updateMySeller(updateSellerInput: UpdateSellerInput!): Seller!
+  updateMyStore(updateStoreInput: UpdateStoreInput!): Store!
+  updateMyStoreShipping(input: UpdateStoreShippingInput!): Store!
+  updateMyWarehouse(updateWarehouseInput: UpdateWarehouseInput!): Warehouse!
+  updatePage(updatePageInput: UpdatePageInput!): Page!
+  updatePaymentGatewayConfig(input: UpdateGatewayConfigInput!): PaymentGatewayConfigEntity!
+  updateReview(input: UpdateReviewInput!): Review!
+  updateRole(updateRoleInput: UpdateRoleInput!): Role!
+  updateSellerOrderStatus(input: UpdateSellerOrderStatusInput!): SellerOrder!
+
+  """Admin — update a setting value by key."""
+  updateSiteSetting(input: UpdateSiteSettingInput!): SiteSetting!
+  updateSlideItem(updateSlideItemInput: UpdateSlideItemInput!): SlideItem!
+  updateSlider(updateSliderInput: UpdateSliderInput!): Slider!
+  updateTag(updateTagInput: UpdateTagInput!): Tag!
+  updateTax(updateTaxInput: UpdateTaxInput!): Tax!
+  updateUser(updateUserInput: UpdateUserInput!): User!
+  upsertMenu(upsertMenuInput: UpsertMenuInput!): Menu!
+  validateCoupon(input: ValidateCouponInput!): CouponValidation!
+  verifyPayment(input: VerifyPaymentInput!): Order!
+  verifySellerSection(verifySectionInput: VerifySellerSectionInput!): Seller!
+}
+
+enum NewsletterAudience {
+  ACTIVE_SUBSCRIBERS
+}
+
+type NewsletterCampaign {
+  audience: NewsletterAudience!
+  createdAt: DateTime!
+  htmlBody: String!
+  id: ID!
+
+  """Total ACTIVE addresses considered by the fan-out."""
+  recipientCount: Int!
+  sendStartedAt: DateTime
+  sentAt: DateTime
+
+  """Recipients kept + enqueued/delivered (passed the consent gate)."""
+  sentCount: Int!
+
+  """Recipients dropped by the consent gate or a mid-flight unsubscribe."""
+  skippedCount: Int!
+  status: NewsletterCampaignStatus!
+  subject: String!
+  updatedAt: DateTime!
+}
+
+enum NewsletterCampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+}
+
+enum NewsletterStatus {
+  ACTIVE
+  PENDING
+  UNSUBSCRIBED
+}
+
+type NewsletterSubscribeResult {
+  """Friendly message — "subscribed", "already-subscribed", "resubscribed"."""
+  message: String!
+  ok: Boolean!
+}
+
+type NewsletterSubscription {
+  createdAt: DateTime!
+  email: String!
+  id: ID!
+  source: String
+  status: NewsletterStatus!
+  unsubscribedAt: DateTime
+  updatedAt: DateTime!
+}
+
+type Notification {
+  body: String!
+  createdAt: DateTime!
+  data: String
+  id: ID!
+  read: Boolean!
+  title: String!
+  type: String!
+}
+
+type Order {
+  billingAddress: OrderAddressSnapshot
+  buyerGstin: String
+  cancelledAt: DateTime
+  createdAt: DateTime!
+  currencyCode: String!
+  customerId: ID!
+  customerNotes: String
+  deliveredAt: DateTime
+  discountAmount: Float!
+  id: ID!
+  itemCount: Int!
+  items: [OrderItem!]!
+  orderNumber: String!
+  paymentMethod: PaymentMethod!
+  paymentStatus: PaymentStatus!
+  placeOfSupplyStateCode: String
+  placeOfSupplyStateName: String
+  placedAt: DateTime!
+  sellerOrders: [SellerOrder!]!
+  shippingAddress: OrderAddressSnapshot
+  shippingAmount: Float!
+
+  """
+  Aggregate status across all SellerOrders. Computed as the earliest stage any sub-order is at.
+  """
+  status: OrderStatus!
+  statusHistory: [OrderStatusHistoryEntry!]!
+  subtotal: Float!
+  taxAmount: Float!
+  totalAmount: Float!
+  updatedAt: DateTime!
+}
+
+type OrderAddressSnapshot {
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  countryCode: String!
+  firstName: String!
+  id: ID!
+  lastName: String!
+  phone: String
+  postalCode: String!
+  state: String!
+}
+
+type OrderItem {
+  attributesSnapshot: [OrderItemAttribute!]!
+  cessAmount: Float!
+  cessRate: Float!
+  cgstAmount: Float!
+  cgstRate: Float!
+  countryOfOrigin: String
+  createdAt: DateTime!
+  discountAmount: Float!
+  hsnCode: String
+  id: ID!
+  igstAmount: Float!
+  igstRate: Float!
+  imageUrlSnapshot: String
+  name: String!
+  orderId: ID!
+  priceTaxInclusive: Boolean!
+  productId: ID!
+  quantity: Int!
+  sellerOrderId: ID!
+  sgstAmount: Float!
+  sgstRate: Float!
+  sku: String!
+  storeId: ID!
+  taxAmount: Float!
+  taxableValue: Float!
+  totalPrice: Float!
+  unitPrice: Float!
+  variantId: ID!
+  variantName: String
+}
+
+type OrderItemAttribute {
+  attributeName: String!
+  value: String!
+}
+
+enum OrderStatus {
+  CANCELLED
+  CONFIRMED
+  DELIVERED
+  PACKED
+  PENDING
+  REFUNDED
+  SHIPPED
+}
+
+type OrderStatusHistoryEntry {
+  changedById: ID
+  createdAt: DateTime!
+  fromStatus: OrderStatus
+  id: ID!
+  notes: String
+  toStatus: OrderStatus!
+}
+
+type Page {
+  """
+  JSON-encoded array: [{id, type, props, visible}]. Frontend parses + renders via BLOCK_REGISTRY.
+  """
+  blocks: String!
+  createdAt: DateTime!
+  createdById: ID
+  deletedAt: DateTime
+  id: ID!
+  isSystem: Boolean!
+  metaDesc: String
+  metaTitle: String
+  publishedAt: DateTime
+  slug: String!
+  status: PageStatus!
+  title: String!
+  updatedAt: DateTime!
+}
+
+enum PageStatus {
+  ARCHIVED
+  DRAFT
+  PUBLISHED
+}
+
+type PaginatedAdminCustomers {
+  currentPage: Int!
+  items: [AdminCustomer!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedAdminReviews {
+  currentPage: Int!
+  items: [AdminReview!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedAuditLogs {
+  currentPage: Int!
+  items: [AuditLogEntity!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedCategories {
+  currentPage: Int!
+  items: [Category!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedNewsletterCampaigns {
+  currentPage: Int!
+  items: [NewsletterCampaign!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedNewsletterSubscriptions {
+  currentPage: Int!
+  items: [NewsletterSubscription!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedOrders {
+  currentPage: Int!
+  items: [Order!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedPages {
+  currentPage: Int!
+  items: [Page!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedPayments {
+  currentPage: Int!
+  items: [PaymentEntity!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedPayouts {
+  currentPage: Int!
+  items: [PayoutEntity!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedProducts {
+  currentPage: Int!
+  items: [Product!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedRefunds {
+  currentPage: Int!
+  items: [RefundEntity!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedReturns {
+  currentPage: Int!
+  items: [ReturnRequestEntity!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedReviews {
+  currentPage: Int!
+  items: [Review!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedSellerOrders {
+  currentPage: Int!
+  items: [SellerOrder!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedSliders {
+  currentPage: Int!
+  items: [Slider!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedTaxes {
+  currentPage: Int!
+  items: [Tax!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedTcsLedger {
+  currentPage: Int!
+  items: [TcsLedgerEntity!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedUsers {
+  currentPage: Int!
+  items: [User!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaymentEntity {
+  amount: Float!
+  capturedAt: DateTime
+  createdAt: DateTime!
+  currency: String!
+  expiresAt: DateTime
+  failedAt: DateTime
+  gateway: PaymentGateway!
+  gatewayOrderId: String
+  gatewayPaymentId: String
+  id: ID!
+  method: PaymentMethod!
+  orderId: ID!
+  processingFee: Float!
+  status: PaymentTransactionStatus!
+  updatedAt: DateTime!
+}
+
+enum PaymentGateway {
+  COD
+  PHONEPE
+  RAZORPAY
+  STRIPE
+}
+
+type PaymentGatewayConfigEntity {
+  createdAt: DateTime!
+  credentialHints: String
+  description: String
+  displayName: String!
+  displayOrder: Int!
+  gateway: PaymentGateway!
+  hasCredentials: Boolean!
+  id: ID!
+  instructions: String
+  isDefault: Boolean!
+  isEnabled: Boolean!
+  logoUrl: String
+  paymentType: GatewayPaymentType!
+  processingFee: Float!
+  processingFeeType: ProcessingFeeType!
+  sandboxMode: Boolean!
+  supportedMethods: [String!]!
+  updatedAt: DateTime!
+  webhookUrl: String
+}
+
+enum PaymentMethod {
+  CARD
+  COD
+  NET_BANKING
+  UPI
+  WALLET
+}
+
+enum PaymentStatus {
+  AWAITING_PAYMENT
+  FAILED
+  PAID
+  PARTIALLY_PAID
+  PARTIALLY_REFUNDED
+  PENDING
+  REFUNDED
+}
+
+enum PaymentTransactionStatus {
+  AUTHORIZED
+  CAPTURED
+  CREATED
+  EXPIRED
+  FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+}
+
+type PayoutEntity {
+  accountHolderName: String
+  accountNumberMasked: String
+  accountType: String
+  createdAt: DateTime!
+  currencyCode: String!
+  failedAt: DateTime
+  failureReason: String
+  grossAmount: Float!
+  id: ID!
+  ifscCode: String
+  items: [PayoutItemEntity!]
+  netAmount: Float!
+  paidAt: DateTime
+  periodEnd: DateTime
+  periodStart: DateTime
+  providerRef: String
+  refundAdjustment: Float!
+  sellerId: ID!
+  status: PayoutStatus!
+  updatedAt: DateTime!
+  upiId: String
+  utr: String
+}
+
+type PayoutItemEntity {
+  amount: Float!
+  createdAt: DateTime!
+  id: ID!
+  payoutId: ID!
+  refundedAmount: Float!
+  sellerOrderId: ID!
+}
+
+type PayoutPreview {
+  currencyCode: String!
+  grossAmount: Float!
+  itemCount: Int!
+  items: [PayoutPreviewItem!]!
+  netAmount: Float!
+  refundAdjustment: Float!
+  sellerId: ID!
+  sellerName: String!
+}
+
+type PayoutPreviewItem {
+  amount: Float!
+  orderNumber: String!
+  refundedAmount: Float!
+  sellerOrderId: ID!
+}
+
+enum PayoutStatus {
+  FAILED
+  PAID
+  PENDING
+  PROCESSING
+}
+
+type Permission {
+  action: String!
+  createdAt: DateTime!
+  description: String
+  id: ID!
+  module: String!
+  slug: String!
+  updatedAt: DateTime!
+}
+
+input PlaceOrderInput {
+  billingAddressId: ID
+  buyerGstin: String
+  clientRequestId: String
+  couponCode: String
+  customerNotes: String
+  paymentMethod: PaymentMethod! = COD
+  shippingAddressId: ID!
+}
+
+input PresignUploadInput {
+  """image/jpeg | image/png | image/webp"""
+  contentType: String!
+  originalName: String
+  purpose: ImagePurpose!
+}
+
+type PresignUploadPayload {
+  expiresIn: Int!
+  externalId: String!
+
+  """JSON-encoded extra form fields for multipart POST uploads."""
+  fields: String!
+  method: String!
+  provider: String!
+  uploadUrl: String!
+}
+
+input PreviewInvoiceTemplateInput {
+  css: String!
+  htmlBody: String!
+}
+
+enum ProcessingFeeType {
+  FIXED
+  PERCENTAGE
+}
+
+type Product {
+  assignedLabelIds: [ID!]!
+  brand: Brand
+  brandId: ID
+  category: Category
+  categoryId: ID
+  compareAtPrice: Float
+  costPrice: Float
+
+  """
+  ISO 3166-1 alpha-2 country code (e.g. "IN"). Required for ACTIVE status per CP-EC Rules 2020.
+  """
+  countryOfOrigin: String
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  height: Float
+
+  """
+  Harmonized System of Nomenclature code (4/6/8 digits). Required for GST invoicing in India.
+  """
+  hsnCode: String
+  id: ID!
+  images: [ProductImage!]
+  isDigital: Boolean!
+  isFeatured: Boolean!
+
+  """
+  Legacy flag — no longer affects pricing. Stored price is always treated as the pre-tax base; GST is added on top at checkout. Retained for historical-order re-derivation only.
+  """
+  isPriceTaxInclusive: Boolean!
+  labels: [ProductBadge!]!
+  length: Float
+  name: String!
+
+  """Default variant price (SIMPLE products) or starting from (VARIABLE)."""
+  price: Float
+
+  """
+  Price including tax (price + price × taxRate/100). Null if no tax assigned.
+  """
+  priceWithTax: Float
+  productType: ProductType!
+  seoDescription: String
+  seoKeywords: [String!]!
+  seoTitle: String
+  shortDescription: String
+  sku: String
+  slug: String!
+
+  """
+  JSON-encoded array: [{name, order, items: [{label, value, order}]}]. Frontend parses.
+  """
+  specifications: String!
+  status: ProductStatus!
+  storeId: ID!
+  tags: [Tag!]
+  tax: Tax
+
+  """Tax portion = price × taxRate/100. Null if no tax assigned."""
+  taxAmount: Float
+  taxId: ID
+  updatedAt: DateTime!
+
+  """Always present; for SIMPLE products contains 1 default variant."""
+  variants: [ProductVariant!]
+  weight: Float
+  width: Float
+}
+
+type ProductAttribute {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  id: ID!
+
+  """When true, this attribute is used to differentiate variants (Phase B)."""
+  isVariantAttribute: Boolean!
+  name: String!
+  slug: String!
+  type: AttributeType!
+  updatedAt: DateTime!
+  values: [ProductAttributeValue!]
+}
+
+type ProductAttributeValue {
+  attributeId: ID!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  displayOrder: Int!
+  id: ID!
+  slug: String!
+  updatedAt: DateTime!
+  value: String!
+}
+
+type ProductBadge {
+  color: String!
+  icon: String
+  key: String!
+  name: String!
+  priority: Int!
+  textColor: String
+}
+
+type ProductImage {
+  altText: String
+  createdAt: DateTime!
+  displayOrder: Int!
+  id: ID!
+  imageUrl: String!
+  isPrimary: Boolean!
+  productId: ID!
+  updatedAt: DateTime!
+}
+
+type ProductRatingSummary {
+  average: Float!
+  count1: Int!
+  count2: Int!
+  count3: Int!
+  count4: Int!
+  count5: Int!
+  total: Int!
+}
+
+enum ProductSortOrder {
+  NEWEST
+  PRICE_ASC
+  PRICE_DESC
+}
+
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+  DRAFT
+  INACTIVE
+}
+
+enum ProductType {
+  SIMPLE
+  VARIABLE
+}
+
+type ProductVariant {
+  attributes: [ProductVariantAttribute!]!
+  availableQuantity: Int
+  barcode: String
+  compareAtPrice: Float
+  costPrice: Float
+  createdAt: DateTime!
+  deletedAt: DateTime
+  height: Float
+  id: ID!
+  imageUrl: String
+  length: Float
+  name: String
+  price: Float!
+
+  """
+  Price including tax (base price + GST). Null if parent product has no tax.
+  """
+  priceWithTax: Float
+  productId: ID!
+  sku: String!
+  status: VariantStatus!
+  stockState: StockState
+
+  """Tax portion = price × taxRate/100. Null if parent product has no tax."""
+  taxAmount: Float
+  updatedAt: DateTime!
+  weight: Float
+  width: Float
+}
+
+type ProductVariantAttribute {
+  attributeId: ID!
+  attributeName: String!
+  attributeSlug: String!
+  attributeValueId: ID!
+  value: String!
+  valueSlug: String!
+}
+
+type Query {
+  activePaymentGateways: [PaymentGatewayConfigEntity!]!
+  adminAttributes(type: AttributeType): [ProductAttribute!]!
+  adminBrands(status: BrandStatus): [Brand!]!
+  adminCategoriesPaginated(page: Int, pageSize: Int, search: String): PaginatedCategories!
+  adminCollections(status: CollectionStatus): [Collection!]!
+  adminCoupon(id: ID!): Coupon!
+  adminCoupons(search: String, status: String): [Coupon!]!
+  adminCustomer(id: ID!): AdminCustomer!
+  adminCustomers(includeDeleted: Boolean, page: Int, pageSize: Int, search: String, status: String): PaginatedAdminCustomers!
+  adminDashboardStats: AdminDashboardStats!
+  adminInventoryByProduct(productId: ID!): [Inventory!]!
+  adminLabels: [Label!]!
+  adminMenu(location: MenuLocation!): Menu!
+  adminMenus: [Menu!]!
+  adminNewsletterCampaign(id: ID!): NewsletterCampaign!
+  adminNewsletterCampaigns(page: Int, pageSize: Int, search: String, status: NewsletterCampaignStatus): PaginatedNewsletterCampaigns!
+  adminNewsletterSubscriptions(page: Int, pageSize: Int, search: String, status: NewsletterStatus): PaginatedNewsletterSubscriptions!
+  adminOrder(id: ID!): Order!
+  adminOrders(dateFrom: DateTime, dateTo: DateTime, page: Int, pageSize: Int, paymentStatus: PaymentStatus, search: String, sellerId: ID, status: OrderStatus): PaginatedOrders!
+  adminPages(status: PageStatus): [Page!]!
+  adminPagesPaginated(page: Int, pageSize: Int, search: String, status: PageStatus): PaginatedPages!
+  adminPaymentGateway(id: ID!): PaymentGatewayConfigEntity!
+  adminPaymentGateways: [PaymentGatewayConfigEntity!]!
+  adminPaymentTransactions(gateway: PaymentGateway, page: Int! = 1, pageSize: Int! = 10, status: PaymentTransactionStatus): PaginatedPayments!
+  adminPayouts(page: Int! = 1, pageSize: Int! = 10, sellerId: ID, status: PayoutStatus): PaginatedPayouts!
+  adminProduct(id: ID!): Product!
+  adminProducts(brandId: ID, categoryId: ID, status: ProductStatus, storeId: ID): [Product!]!
+  adminRefunds(orderId: ID, page: Int! = 1, pageSize: Int! = 10, status: RefundStatus): PaginatedRefunds!
+  adminReturn(id: ID!): ReturnRequestEntity!
+  adminReturns(page: Int! = 1, pageSize: Int! = 10, sellerId: ID, status: ReturnStatus): PaginatedReturns!
+  adminReviews(page: Int, pageSize: Int, search: String, status: ReviewStatus): PaginatedAdminReviews!
+  adminSellerOrder(id: ID!): SellerOrder!
+  adminSellerOrdersWithInvoices(onlyMissingInvoice: Boolean, page: Int, pageSize: Int): PaginatedSellerOrders!
+  adminSlider(id: ID!): Slider!
+  adminSliders: [Slider!]!
+  adminSlidersPaginated(page: Int, pageSize: Int, search: String, status: SliderStatus): PaginatedSliders!
+  adminTags(status: TagStatus): [Tag!]!
+  adminTaxes: [Tax!]!
+  adminTaxesPaginated(page: Int, pageSize: Int, search: String): PaginatedTaxes!
+  adminTheme: AdminTheme!
+  adminUsers(page: Int, pageSize: Int, roleId: ID, search: String, status: String): PaginatedUsers!
+  apiKeys(ownerUserId: ID): [ApiKeyEntity!]!
+  attribute(id: ID!): ProductAttribute!
+  attributes(type: AttributeType, variantOnly: Boolean): [ProductAttribute!]!
+  auditLogs(filter: AuditLogFilterInput): PaginatedAuditLogs!
+  brand(id: ID!): Brand!
+  brands(featuredOnly: Boolean, status: BrandStatus): [Brand!]!
+  categories: [Category!]!
+  category(id: ID!): Category!
+  categoryAncestors(id: ID!): [Category!]!
+  categoryChildren(limit: Int, parentId: ID, search: String): [Category!]!
+  collection(id: ID!): Collection!
+  collections(featuredOnly: Boolean): [Collection!]!
+  courierOptionsForOrder(sellerOrderId: ID!): CourierOptionsResult!
+  courierPickupLocations(provider: CourierProvider!): [CourierPickupLocation!]!
+  courierWebhookUrl: String!
+  emailSetting: EmailSetting!
+  emailTemplate(id: ID!): EmailTemplate!
+  emailTemplates: [EmailTemplate!]!
+
+  """
+  The current guest cart (from the guestCartToken cookie). Null if none exists yet.
+  """
+  guestCart: Cart
+  image(id: ID!): Image
+  invoiceTemplate: InvoiceTemplate
+  invoiceTemplates: [InvoiceTemplate!]!
+  label(id: ID!): Label!
+  labels: [Label!]!
+  myAccountDeletion: AccountDeletionRequestEntity
+  myAddresses: [Address!]!
+  myCart: Cart!
+  myCartItemCount: Int!
+  myCourierAccounts: [CourierAccountSafe!]!
+  myDataExports: [DataExportRequestEntity!]!
+  myInventory(lowStockOnly: Boolean, productId: ID, search: String, storeId: ID, warehouseId: ID): [Inventory!]!
+  myInventoryByVariant(variantId: ID!, warehouseId: ID): Inventory
+  myInventoryMovements(limit: Int, variantId: ID, warehouseId: ID): [InventoryMovement!]!
+  myMarketingConsent: MarketingConsentState!
+  myNotifications(limit: Int = 20, offset: Int = 0): [Notification!]!
+  myOrder(id: ID!): Order!
+  myOrders(page: Int, pageSize: Int, status: OrderStatus): PaginatedOrders!
+  myPermissions: [String!]!
+  myProduct(id: ID!): Product!
+  myProductVariantAxes(productId: ID!): [VariantAxis!]!
+  myProductVariants(productId: ID!): [ProductVariant!]!
+  myProducts(status: ProductStatus, storeId: ID): [Product!]!
+  myProfile: AdminCustomer!
+  myRefunds: [RefundEntity!]!
+  myReturn(id: ID!): ReturnRequestEntity!
+  myReturns: [ReturnRequestEntity!]!
+  myReview(productId: ID!): Review
+  mySeller: Seller
+  mySellerOrder(id: ID!): SellerOrder!
+  mySellerOrders(page: Int, pageSize: Int, status: OrderStatus): PaginatedSellerOrders!
+  mySellerStats: SellerStats!
+  myStore(id: ID!): Store
+  myStores: [Store!]!
+  myWarehouses(storeId: ID!): [Warehouse!]!
+  myWishlist: Wishlist!
+  myWishlistProductIds: [String!]!
+  page(id: ID!): Page!
+  paginatedPublicProducts(brandSlug: String, categorySlug: String, collectionSlug: String, maxPrice: Float, minPrice: Float, page: Int, pageSize: Int, search: String, sort: ProductSortOrder, storeSlug: String, tagSlug: String): PaginatedProducts!
+  payoutPreview(sellerId: ID): [PayoutPreview!]!
+  permissions: [Permission!]!
+  previewInvoiceTemplate(input: PreviewInvoiceTemplateInput!): String!
+  productRatingSummary(productId: ID!): ProductRatingSummary!
+  publicBrand(slug: String!): Brand!
+  publicCategoryBySlug(slug: String!): Category!
+  publicCollection(slug: String!): Collection!
+  publicMenu(location: MenuLocation!): Menu!
+  publicPage(slug: String!): Page!
+  publicProduct(slug: String!): Product!
+  publicProductReviews(page: Int, pageSize: Int, productId: ID!, rating: Int, sort: String): PaginatedReviews!
+  publicProducts(brandSlug: String, categorySlug: String, collectionSlug: String, limit: Float, sort: ProductSortOrder, storeSlug: String, tagSlug: String): [Product!]!
+  publicSlider(key: String!): Slider!
+  publicStore(slug: String!): Store!
+  publicTag(slug: String!): Tag!
+  reviewEligibility(productId: ID!): ReviewEligibility!
+  role(id: ID!): Role!
+  roles: [Role!]!
+  searchSuggestions(limit: Int, q: String!): SearchSuggestions!
+  seller(id: ID!): Seller!
+  sellerReturn(id: ID!): ReturnRequestEntity!
+  sellerReturns(page: Int! = 1, pageSize: Int! = 10, status: ReturnStatus): PaginatedReturns!
+  sellerUsers(status: SellerListStatus): [SellerListItem!]!
+  sellers(status: SellerStatus): [Seller!]!
+  shippingQuote(input: ShippingQuoteInput!): ShippingQuote!
+  shopFilterCategories: [Category!]!
+
+  """Public — get settings by group. Used by storefront for display config."""
+  siteSettings(group: SettingGroup): [SiteSetting!]!
+  store(id: ID!): Store!
+  stores(status: StoreStatus): [Store!]!
+  tag(id: ID!): Tag!
+  tags(featuredOnly: Boolean, status: TagStatus): [Tag!]!
+  tax(id: ID!): Tax!
+  taxes: [Tax!]!
+  tcsDeposits: [TcsDepositEntity!]!
+  tcsGstr8Json(period: String!): String!
+  tcsLedger(filter: TcsLedgerFilterInput): PaginatedTcsLedger!
+  tcsPeriodSummary(period: String!): TcsPeriodSummary!
+  tcsSellerGstr1Json(period: String!, sellerId: String!): String!
+  unreadNotificationCount: Int!
+  user(id: ID!): User!
+  users: [User!]!
+
+  """
+  Advisory stock/price re-validation. Non-mutating; placement keeps the authoritative oversell guard.
+  """
+  validateCart: CartValidationResult!
+}
+
+type RecentOrderItem {
+  customerName: String!
+  id: ID!
+  orderNumber: String!
+  placedAt: DateTime!
+  productSummary: String!
+  status: OrderStatus!
+  totalAmount: Float!
+}
+
+type RefundEntity {
+  amount: Float!
+  approvedById: ID
+  createdAt: DateTime!
+  failureReason: String
+  gatewayRefundId: String
+  id: ID!
+  orderId: ID!
+  paymentId: ID!
+  reason: String
+  requestedById: ID
+  restock: Boolean!
+  sellerOrderId: ID
+  status: RefundStatus!
+  updatedAt: DateTime!
+}
+
+enum RefundStatus {
+  CANCELLED
+  FAILED
+  PROCESSED
+  PROCESSING
+  REJECTED
+  REQUESTED
+}
+
+input RemoveCartItemInput {
+  variantId: ID!
+}
+
+input ReorderAttributeValuesInput {
+  attributeId: ID!
+
+  """Value IDs in the desired display order (top to bottom)"""
+  valueIds: [ID!]!
+}
+
+input ReorderProductImagesInput {
+  """Image IDs in desired display order (top to bottom)"""
+  imageIds: [ID!]!
+  productId: ID!
+}
+
+input ReorderSlideItemsInput {
+  """Slide item IDs in their new order (top → bottom)."""
+  itemIds: [ID!]!
+  sliderId: ID!
+}
+
+input RequestRefundInput {
+  amount: Float
+  orderId: ID
+  reason: String
+  restock: Boolean
+  sellerOrderId: ID
+}
+
+input RequestReturnInput {
+  customerNote: String
+  items: [RequestReturnItemInput!]!
+  reason: String!
+  resolutionType: ReturnResolutionType
+  sellerOrderId: ID!
+}
+
+input RequestReturnItemInput {
+  condition: String
+  orderItemId: ID!
+  quantity: Int!
+}
+
+type ReturnEventEntity {
+  createdAt: DateTime!
+  fromStatus: ReturnStatus
+  id: ID!
+  note: String
+  toStatus: ReturnStatus!
+}
+
+type ReturnItemEntity {
+  condition: String
+  id: ID!
+  orderItemId: ID!
+  quantity: Int!
+}
+
+type ReturnRequestEntity {
+  approvedAt: DateTime
+  createdAt: DateTime!
+  customerId: ID!
+  customerNote: String
+  events: [ReturnEventEntity!]
+  id: ID!
+  items: [ReturnItemEntity!]
+  manualRefund: ManualRefundInfo
+  orderId: ID!
+  qcNote: String
+  reason: String!
+  receivedAt: DateTime
+  refundAmount: Float
+  refundId: ID
+  refundedAt: DateTime
+  rejectionReason: String
+  replacementApprovedAt: DateTime
+  replacementReference: String
+  replacementShippedAt: DateTime
+  requestedAt: DateTime!
+  resolutionType: ReturnResolutionType!
+  returnNumber: String!
+  reverseAwb: String
+  reverseLabelUrl: String
+  sellerId: ID!
+  sellerOrderId: ID!
+  status: ReturnStatus!
+  updatedAt: DateTime!
+}
+
+enum ReturnResolutionType {
+  REFUND
+  REPLACEMENT
+}
+
+enum ReturnStatus {
+  APPROVED
+  CLOSED
+  IN_TRANSIT
+  PICKUP_SCHEDULED
+  QC_FAILED
+  QC_PASSED
+  RECEIVED
+  REFUNDED
+  REJECTED
+  REPLACEMENT_APPROVED
+  REPLACEMENT_SHIPPED
+  REQUESTED
+}
+
+type Review {
+  body: String!
+  createdAt: DateTime!
+  customerAvatarUrl: String
+  customerId: ID!
+  customerName: String
+  id: ID!
+  media: [ReviewMedia!]!
+  productId: ID!
+  rating: Int!
+  status: ReviewStatus!
+  title: String
+  updatedAt: DateTime!
+  verifiedPurchase: Boolean!
+}
+
+type ReviewEligibility {
+  canReview: Boolean!
+  existingReviewId: ID
+  hasPurchased: Boolean!
+}
+
+type ReviewMedia {
+  durationMs: Int
+  height: Int
+  id: ID!
+  sizeBytes: Int!
+  thumbnailUrl: String
+  type: ReviewMediaType!
+  url: String!
+  width: Int
+}
+
+input ReviewMediaInput {
+  durationMs: Int
+  height: Int
+  sizeBytes: Int!
+  type: ReviewMediaType!
+  url: String!
+  width: Int
+}
+
+enum ReviewMediaType {
+  IMAGE
+  VIDEO
+}
+
+enum ReviewStatus {
+  HIDDEN
+  PENDING
+  PUBLISHED
+}
+
+type Role {
+  createdAt: DateTime!
+  createdById: String
+  description: String
+  id: ID!
+  isDefault: Boolean
+  name: String!
+  permissions: [Permission!]
+  updatedAt: DateTime!
+  updatedById: String
+}
+
+type SearchSuggestion {
+  brandName: String
+  id: ID!
+  imageUrl: String
+  name: String!
+  price: Float!
+  slug: String!
+}
+
+type SearchSuggestions {
+  categories: [CategorySuggestion!]!
+  products: [SearchSuggestion!]!
+}
+
+type Seller {
+  bankVerifiedAt: DateTime
+  businessEmail: String!
+  businessPhone: String!
+  businessType: BusinessType!
+  commissionRate: Float!
+  createdAt: DateTime!
+  dateOfIncorporation: DateTime
+  deletedAt: DateTime
+  displayName: String!
+  documentsVerifiedAt: DateTime
+  gstin: String
+  gstinVerifiedAt: DateTime
+  id: ID!
+  legalName: String!
+  overallStatus: SellerStatus!
+  panNumber: String!
+  panVerifiedAt: DateTime
+  payoutAccounts: [SellerPayoutAccount!]
+  registrationNumber: String
+  rejectionReason: String
+  signatoryDesignation: String
+  signatoryName: String
+  signatoryPan: String
+  stateCode: String
+  stateName: String
+  supportEmail: String
+  updatedAt: DateTime!
+  userId: ID!
+}
+
+type SellerBestSeller {
+  name: String!
+  productId: String!
+  revenue: Float!
+  unitsSold: Int!
+}
+
+type SellerListItem {
+  email: String!
+  emailVerifiedAt: DateTime
+  name: String!
+  phone: String!
+  registeredAt: DateTime!
+  seller: Seller
+  status: SellerListStatus!
+  userId: ID!
+}
+
+enum SellerListStatus {
+  DRAFT
+  PENDING
+  REGISTERED
+  REGISTERED_UNVERIFIED
+  REJECTED
+  SUSPENDED
+  UNDER_REVIEW
+  VERIFIED
+}
+
+type SellerOrder {
+  awbCode: String
+  billableWeightKg: Float
+  cancelledAt: DateTime
+  carrier: String
+  commissionAmount: Float!
+  createdAt: DateTime!
+  currencyCode: String!
+  customerName: String
+  deliveredAt: DateTime
+  discountAmount: Float!
+  dispatchedAt: DateTime
+  expectedDeliveryAt: DateTime
+  id: ID!
+  invoiceDate: DateTime
+  invoiceNumber: String
+  invoiceUrl: String
+  itemCount: Int!
+  items: [OrderItem!]!
+  labelUrl: String
+  orderId: ID!
+  orderNumber: String!
+  packedAt: DateTime
+  parentOrderNumber: String
+  paymentStatus: PaymentStatus!
+  payoutAmount: Float!
+  payoutStatus: PayoutStatus!
+  placeOfSupplyStateCode: String
+  placeOfSupplyStateName: String
+  providerOrderId: String
+  quotedShippingRate: Float
+  selectedCourierId: String
+  selectedCourierName: String
+  sellerId: ID!
+  shipmentId: String
+  shippedAt: DateTime
+  shippingAddress: OrderAddressSnapshot
+  shippingAmount: Float!
+  shippingProvider: String
+  shippingRateSource: String
+  status: OrderStatus!
+  statusHistory: [OrderStatusHistoryEntry!]!
+  storeId: ID!
+  storeName: String
+  subtotal: Float!
+  taxAmount: Float!
+  taxKind: String
+  trackingNumber: String
+  trackingUrl: String
+  updatedAt: DateTime!
+}
+
+type SellerPayoutAccount {
+  accountHolderName: String!
+  accountNumber: String
+  accountType: String!
+  bankName: String
+  createdAt: DateTime!
+  deletedAt: DateTime
+  id: ID!
+  ifscCode: String
+  isPrimary: Boolean!
+  isVerified: Boolean!
+  sellerId: ID!
+  updatedAt: DateTime!
+  upiId: String
+  walletProvider: String
+}
+
+type SellerShippingQuote {
+  codEligible: Boolean!
+  courierName: String
+  estimatedDispatchDays: Int
+  freeAbove: Float
+  freeApplied: Boolean!
+  merchandiseSubtotal: Float!
+  rateSource: String!
+  sellerId: ID!
+  serviceable: Boolean!
+  shippingCharge: Float!
+  storeId: ID!
+  storeName: String!
+}
+
+type SellerStatPoint {
+  label: String!
+  value: Float!
+}
+
+type SellerStats {
+  avgOrderValue: Float!
+  bestSellers: [SellerBestSeller!]!
+  cancelledOrders: Int!
+  deliveredOrders: Int!
+  grossSalesThisMonth: Float!
+  lifetimeCommission: Float!
+  lifetimeNetEarnings: Float!
+  lifetimeOrders: Int!
+  monthlyEarnings: [SellerStatPoint!]!
+  netEarningsChangePct: Float!
+  netEarningsLastMonth: Float!
+  netEarningsThisMonth: Float!
+  ordersChangePct: Float!
+  ordersLastMonth: Int!
+  ordersThisMonth: Int!
+  paidPayoutAmount: Float!
+  pendingOrders: Int!
+  pendingPayoutAmount: Float!
+  toShipOrders: Int!
+}
+
+enum SellerStatus {
+  DRAFT
+  PENDING
+  REJECTED
+  SUSPENDED
+  UNDER_REVIEW
+  VERIFIED
+}
+
+enum SellerVerificationSection {
+  BANK
+  DOCUMENTS
+  GSTIN
+  PAN
+}
+
+input SendTestEmailInput {
+  templateKey: String
+  to: String!
+}
+
+type SendTestResult {
+  message: String
+  success: Boolean!
+}
+
+input SetBrandStatusInput {
+  id: ID!
+  isFeatured: Boolean
+  status: BrandStatus
+}
+
+input SetPageStatusInput {
+  id: ID!
+  status: PageStatus!
+}
+
+input SetProductStatusInput {
+  id: ID!
+
+  """Reason — recommended for ARCHIVED"""
+  reason: String
+  status: ProductStatus!
+}
+
+input SetReorderPointInput {
+  reorderPoint: Int!
+  reorderQuantity: Int
+  variantId: ID!
+  warehouseId: ID
+}
+
+input SetSellerStatusInput {
+  id: ID!
+  reason: String
+  status: SellerStatus!
+}
+
+input SetSliderStatusInput {
+  id: ID!
+  status: SliderStatus!
+}
+
+input SetStoreStatusInput {
+  id: ID!
+  reason: String
+  status: StoreStatus!
+}
+
+input SetTagStatusInput {
+  id: ID!
+  isFeatured: Boolean
+  status: TagStatus
+}
+
+input SetVariantAxesInput {
+  """
+  Attribute IDs that define this variable product (e.g. Color, Size). Order is preserved for SKU generation.
+  """
+  attributeIds: [ID!]!
+  productId: ID!
+}
+
+enum SettingGroup {
+  CHECKOUT
+  EMAIL
+  GENERAL
+  SEO
+  TAX
+}
+
+enum SettingValueType {
+  BOOLEAN
+  JSON
+  NUMBER
+  STRING
+}
+
+type ShippingConfig {
+  codEnabled: Boolean!
+  codLimit: Float
+  excludedPincodes: [String!]
+  flatRate: Float!
+  freeAbove: Float
+  perKgRate: Float
+  processingDays: Int
+}
+
+type ShippingQuote {
+  codEligible: Boolean!
+  grandTotal: Float!
+  sellers: [SellerShippingQuote!]!
+  serviceable: Boolean!
+  shippingTotal: Float!
+}
+
+input ShippingQuoteInput {
+  addressId: ID
+  couponCode: String
+  pincode: String
+}
+
+type SiteSetting {
+  createdAt: DateTime!
+  description: String
+  group: SettingGroup!
+  id: ID!
+  key: String!
+  label: String!
+  updatedAt: DateTime!
+  value: String!
+  valueType: SettingValueType!
+}
+
+type SlideItem {
+  createdAt: DateTime!
+  ctaLabel: String
+  deletedAt: DateTime
+  description: String
+  id: ID!
+
+  """Desktop image (>= 1200px). Falls through to tablet/mobile chain."""
+  imageUrl: String
+  isEnabled: Boolean!
+  link: String
+
+  """Mobile image (<768px). Falls back to tablet → desktop."""
+  mobileImageUrl: String
+  order: Int!
+  sliderId: ID!
+
+  """Tablet image (768-1199px). Falls back to desktop if empty."""
+  tabletImageUrl: String
+  title: String
+  updatedAt: DateTime!
+}
+
+type Slider {
+  """
+  JSON-stringified config (style, autoplay interval, etc.). Frontend parses.
+  """
+  config: String!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  id: ID!
+  items: [SlideItem!]
+
+  """
+  Stable identifier used by page blocks to reference this slider. Auto-derived from name on create; admin-editable.
+  """
+  key: String!
+  name: String!
+  status: SliderStatus!
+  updatedAt: DateTime!
+}
+
+enum SliderStatus {
+  ARCHIVED
+  DRAFT
+  PUBLISHED
+}
+
+type StatDelta {
+  changePct: Float!
+  current: Float!
+  previous: Float!
+}
+
+enum StockState {
+  IN_STOCK
+  LOW_STOCK
+  OUT_OF_STOCK
+}
+
+type Store {
+  bannerUrl: String
+  createdAt: DateTime!
+  currencyCode: String!
+  customDomain: String
+  deletedAt: DateTime
+  description: String
+  id: ID!
+  isFeatured: Boolean!
+  locale: String!
+  logoUrl: String
+  name: String!
+  sellerId: ID!
+  shippingConfig: ShippingConfig!
+  slug: String!
+  status: StoreStatus!
+  subdomain: String
+  supportEmail: String
+  supportPhone: String
+  timezone: String!
+  updatedAt: DateTime!
+  warehouses: [Warehouse!]
+}
+
+enum StoreStatus {
+  ACTIVE
+  DRAFT
+  INACTIVE
+  SUSPENDED
+  UNDER_REVIEW
+}
+
+input SubscribeNewsletterInput {
+  email: String!
+  source: String
+}
+
+type Tag {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  id: ID!
+  isFeatured: Boolean!
+  name: String!
+  slug: String!
+  status: TagStatus!
+  updatedAt: DateTime!
+}
+
+enum TagStatus {
+  ACTIVE
+  INACTIVE
+}
+
+type Tax {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  displayOrder: Int!
+  id: ID!
+  isActive: Boolean!
+  name: String!
+
+  """Percentage value (0-100), e.g. 18.00 for 18% GST."""
+  rate: Float!
+  updatedAt: DateTime!
+}
+
+type TcsDepositEntity {
+  cgstTcs: Float!
+  challanRef: String
+  createdAt: DateTime!
+  depositedAt: DateTime
+  depositedById: ID
+  id: ID!
+  igstTcs: Float!
+  netTaxableValue: Float!
+  period: String!
+  sgstTcs: Float!
+  status: TcsDepositStatus!
+  totalTcs: Float!
+  updatedAt: DateTime!
+}
+
+"""PENDING (rolled up, not yet deposited) or DEPOSITED (filed)."""
+enum TcsDepositStatus {
+  DEPOSITED
+  PENDING
+}
+
+type TcsLedgerEntity {
+  cgstTcs: Float!
+  createdAt: DateTime!
+  id: ID!
+  igstTcs: Float!
+  kind: TcsLedgerKind!
+  netTaxableValue: Float!
+  period: String!
+  rateBps: Int!
+  refundId: ID
+  sellerId: ID!
+  sellerOrderId: ID!
+  sgstTcs: Float!
+  storeId: ID!
+  taxKind: String!
+}
+
+input TcsLedgerFilterInput {
+  kind: TcsLedgerKind
+  page: Int = 1
+  pageSize: Int = 20
+  period: String
+  sellerId: ID
+}
+
+"""ACCRUAL (+, at supply) or REVERSAL (−, on refund)."""
+enum TcsLedgerKind {
+  ACCRUAL
+  REVERSAL
+}
+
+type TcsPeriodSummary {
+  cgstTcs: Float!
+  igstTcs: Float!
+  netTaxableValue: Float!
+  period: String!
+  sgstTcs: Float!
+  totalTcs: Float!
+}
+
+input ToggleWishlistInput {
+  productId: ID!
+  variantId: ID
+}
+
+input UpdateAddressInput {
+  addressLine1: String
+  addressLine2: String
+  city: String
+  countryCode: String
+  firstName: String
+  id: ID!
+  isDefault: Boolean
+  label: String
+  lastName: String
+  phone: String
+  postalCode: String
+  state: String
+  type: AddressType
+}
+
+input UpdateAdminThemeInput {
+  accentDark: String
+  accentLight: String
+  destructiveDark: String
+  destructiveLight: String
+  fontFamily: String
+  primaryDark: String
+  primaryLight: String
+  radius: String
+  sidebarDark: String
+  sidebarLight: String
+}
+
+input UpdateAttributeInput {
+  description: String
+  id: ID!
+  isVariantAttribute: Boolean = false
+  name: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+  type: AttributeType = SELECT
+}
+
+input UpdateAttributeValueInput {
+  """Appended to end of list when omitted"""
+  displayOrder: Int
+  id: ID!
+
+  """Auto-generated from value if blank"""
+  slug: String
+  value: String
+}
+
+input UpdateBrandInput {
+  bannerUrl: String
+  countryCode: String
+  description: String
+  foundedYear: Int
+  id: ID!
+  isFeatured: Boolean = false
+  logoUrl: String
+  name: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+  websiteUrl: String
+}
+
+input UpdateCartItemQtyInput {
+  quantity: Int!
+  variantId: ID!
+}
+
+input UpdateCategoryInput {
+  description: String
+  displayOrder: Int = 0
+  iconUrl: String
+  id: ID!
+  imageUrl: String
+  isActive: Boolean = true
+  name: String
+  parentId: String
+  slug: String
+}
+
+input UpdateCategoryTreeInput {
+  items: [CategoryTreeItemInput!]!
+}
+
+input UpdateCollectionInput {
+  bannerUrl: String
+  description: String
+  displayOrder: Int = 0
+  id: ID!
+  imageUrl: String
+  isFeatured: Boolean = false
+  name: String
+  productIds: [ID!]
+  rule: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+  status: CollectionStatus = ACTIVE
+  type: CollectionType = MANUAL
+}
+
+input UpdateCouponInput {
+  description: String
+  discountType: String
+  discountValue: Float
+  id: ID!
+  isActive: Boolean
+  maximumDiscountAmount: Float
+  minimumPurchaseAmount: Float
+  name: String
+  storeId: String
+  usageLimit: Int
+  usageLimitPerUser: Int
+  validFrom: String
+  validUntil: String
+}
+
+input UpdateCustomerInput {
+  id: ID!
+  marketingOptIn: Boolean
+  name: String
+  phone: String
+  preferredCurrency: String
+  status: String
+}
+
+input UpdateEmailSettingInput {
+  encryption: EmailEncryption
+  host: String
+  localDomain: String
+  mailer: EmailMailer
+  password: String
+  port: Int
+  senderEmail: String
+  senderName: String
+  username: String
+}
+
+input UpdateEmailTemplateInput {
+  description: String
+  htmlBody: String
+  id: String!
+  isEnabled: Boolean
+  name: String
+  subject: String
+  textBody: String
+}
+
+input UpdateGatewayConfigInput {
+  credentialsJson: String
+  description: String
+  displayName: String
+  displayOrder: Int
+  id: ID!
+  instructions: String
+  isDefault: Boolean
+  isEnabled: Boolean
+  logoUrl: String
+  paymentType: GatewayPaymentType
+  processingFee: Float
+  processingFeeType: ProcessingFeeType
+  sandboxMode: Boolean
+  supportedMethods: [String!]
+}
+
+input UpdateInvoiceTemplateInput {
+  css: String
+  description: String
+  htmlBody: String
+  id: String!
+  isEnabled: Boolean
+  name: String
+}
+
+input UpdateLabelInput {
+  color: String
+  displayOrder: Int
+  icon: String
+  id: ID!
+  isEnabled: Boolean
+  name: String
+  priority: Int
+  rule: String
+  textColor: String
+  type: LabelType
+}
+
+input UpdateMarketingConsentInput {
+  granted: Boolean!
+}
+
+input UpdateMyProfileInput {
+  marketingOptIn: Boolean
+  name: String
+  phone: String
+  preferredCurrency: String
+}
+
+input UpdatePageInput {
+  """JSON-encoded blocks array. Optional on create; defaults to "[]"."""
+  blocks: String
+  id: ID!
+  metaDesc: String
+  metaTitle: String
+  slug: String
+  title: String
+}
+
+input UpdatePayoutAccountInput {
+  accountHolderName: String
+  accountNumber: String
+
+  """One of: bank, upi, wallet"""
+  accountType: String
+  bankName: String
+  id: ID!
+  ifscCode: String
+  isPrimary: Boolean = false
+  upiId: String
+  walletProvider: String
+}
+
+input UpdateProductImageInput {
+  altText: String
+  displayOrder: Int
+  id: ID!
+  isPrimary: Boolean
+}
+
+input UpdateProductInput {
+  brandId: ID
+  categoryId: ID
+  compareAtPrice: Float
+  costPrice: Float
+  countryOfOrigin: String
+  description: String
+  height: Float
+  hsnCode: String
+  id: ID!
+  isDigital: Boolean = false
+  isPriceTaxInclusive: Boolean = true
+  labelIds: [ID!]
+  length: Float
+  name: String
+
+  """Required for SIMPLE products. Ignored for VARIABLE (set per variant)."""
+  price: Float
+
+  """
+  SIMPLE = single SKU (auto-creates 1 variant with the price). VARIABLE = seller adds variants on the next screen.
+  """
+  productType: ProductType = SIMPLE
+  seoDescription: String
+  seoKeywords: [String!]
+  seoTitle: String
+  shortDescription: String
+
+  """SKU. Auto-generated from product name if blank."""
+  sku: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+
+  """JSON: [{name, order, items: [{label, value, order}]}]"""
+  specifications: String
+  tagIds: [ID!]
+  taxId: ID
+  weight: Float
+  width: Float
+}
+
+input UpdateReviewInput {
+  body: String
+  id: ID!
+  media: [ReviewMediaInput!]
+  rating: Int
+  title: String
+}
+
+input UpdateRoleInput {
+  createdById: String
+  description: String
+  id: ID!
+  isDefault: Boolean = false
+  name: String
+  updatedById: String
+}
+
+input UpdateSellerInput {
+  businessEmail: String
+  businessPhone: String
+  businessType: BusinessType
+  commissionRate: Float = 0
+  dateOfIncorporation: DateTime
+
+  """Storefront / brand name"""
+  displayName: String
+
+  """15-char GSTIN"""
+  gstin: String
+  id: ID!
+
+  """Legal/registered business name"""
+  legalName: String
+
+  """India PAN (10 chars)"""
+  panNumber: String
+
+  """CIN / LLPIN / etc."""
+  registrationNumber: String
+  signatoryDesignation: String
+  signatoryName: String
+  signatoryPan: String
+
+  """2-digit GST state code (e.g. "27" for Maharashtra)"""
+  stateCode: String
+  stateName: String
+  supportEmail: String
+}
+
+input UpdateSellerOrderStatusInput {
+  carrier: String
+  expectedDeliveryAt: DateTime
+  notes: String
+  sellerOrderId: ID!
+  status: OrderStatus!
+  trackingNumber: String
+  trackingUrl: String
+}
+
+input UpdateSiteSettingInput {
+  key: String!
+  value: String!
+}
+
+input UpdateSlideItemInput {
+  ctaLabel: String
+  description: String
+  id: ID!
+  imageUrl: String
+  isEnabled: Boolean = true
+  link: String
+  mobileImageUrl: String
+  order: Int
+  tabletImageUrl: String
+  title: String
+}
+
+input UpdateSliderInput {
+  """JSON-encoded config object."""
+  config: String
+  description: String
+  id: ID!
+
+  """Stable identifier. Auto-slugified from name if omitted."""
+  key: String
+  name: String
+}
+
+input UpdateStoreInput {
+  bannerUrl: String
+
+  """ISO 4217 currency code (default: INR)"""
+  currencyCode: String
+  description: String
+  id: ID!
+  isFeatured: Boolean = false
+
+  """BCP 47 locale (default: en-IN)"""
+  locale: String
+  logoUrl: String
+  name: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+  supportEmail: String
+  supportPhone: String
+
+  """IANA timezone (default: Asia/Kolkata)"""
+  timezone: String
+}
+
+input UpdateStoreShippingInput {
+  codEnabled: Boolean
+  codLimit: Float
+  excludedPincodes: [String!]
+  flatRate: Float
+  freeAbove: Float
+  perKgRate: Float
+  processingDays: Int
+  storeId: ID!
+}
+
+input UpdateTagInput {
+  description: String
+  id: ID!
+  isFeatured: Boolean = false
+  name: String
+
+  """Auto-generated from name if blank"""
+  slug: String
+}
+
+input UpdateTaxInput {
+  description: String
+  displayOrder: Int = 0
+  id: ID!
+  isActive: Boolean = true
+  name: String
+  rate: Float
+}
+
+input UpdateUserInput {
+  avatarUrl: String
+  dateOfBirth: DateTime
+  email: String
+  emailVerifiedAt: DateTime
+  gender: String
+  id: ID!
+  lastLoginAt: DateTime
+  name: String
+  password: String
+  phone: String
+  phoneVerifiedAt: DateTime
+  roleId: String
+  status: String = "inactive"
+}
+
+input UpdateVariantInput {
+  compareAtPrice: Float
+  costPrice: Float
+  height: Float
+  id: ID!
+  imageUrl: String
+  length: Float
+  price: Float
+  sku: String
+  status: VariantStatus
+  weight: Float
+  width: Float
+}
+
+input UpdateWarehouseInput {
+  addressLine1: String
+  addressLine2: String
+  city: String
+
+  """Short unique-per-store code, e.g. MUM01"""
+  code: String
+
+  """ISO 3166-1 alpha-2 (default: IN)"""
+  countryCode: String
+  id: ID!
+  isActive: Boolean
+  isDefault: Boolean = false
+  name: String
+  phone: String
+  postalCode: String
+  state: String
+}
+
+input UpsertMenuInput {
+  isActive: Boolean = true
+
+  """JSON-encoded array of MenuItem nodes (tree)."""
+  items: String!
+  location: MenuLocation!
+  name: String!
+}
+
+type User {
+  avatarUrl: String
+  createdAt: DateTime!
+  dateOfBirth: DateTime
+  email: String!
+  emailVerifiedAt: DateTime
+  gender: String
+  id: ID!
+  lastLoginAt: DateTime
+  name: String
+  phone: String
+  phoneVerifiedAt: DateTime
+  role: Role
+  roleId: String
+  status: String
+  updatedAt: DateTime!
+}
+
+input ValidateCouponInput {
+  code: String!
+}
+
+type VariantAxis {
+  attributeId: ID!
+  attributeName: String!
+  attributeSlug: String!
+  values: [ProductAttributeValue!]!
+}
+
+input VariantAxisValuesInput {
+  attributeId: ID!
+
+  """Selected value IDs to include in the matrix"""
+  valueIds: [ID!]!
+}
+
+enum VariantStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+input VerifyPaymentInput {
+  gatewayOrderId: String
+  gatewayPaymentId: String!
+  gatewaySignature: String!
+  orderId: ID!
+}
+
+input VerifySellerSectionInput {
+  id: ID!
+  section: SellerVerificationSection!
+  verified: Boolean!
+}
+
+type Warehouse {
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  code: String!
+  countryCode: String!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  id: ID!
+  isActive: Boolean!
+  isDefault: Boolean!
+  name: String!
+  phone: String
+  postalCode: String!
+  state: String!
+  storeId: ID!
+  updatedAt: DateTime!
+}
+
+type Wishlist {
+  createdAt: DateTime!
+  customerId: ID!
+  id: ID!
+  isDefault: Boolean!
+  isPublic: Boolean!
+
+  """Convenience count — same as items.length."""
+  itemCount: Int!
+  items: [WishlistItem!]!
+  name: String!
+  updatedAt: DateTime!
+}
+
+type WishlistItem {
+  createdAt: DateTime!
+  id: ID!
+  product: Product
+  productId: ID!
+  variantId: ID
+  wishlistId: ID!
+}

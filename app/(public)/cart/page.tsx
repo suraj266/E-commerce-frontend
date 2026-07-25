@@ -21,6 +21,7 @@ import Image from "next/image";
 import { Loader2, Minus, Plus, ShoppingBag, Trash2, AlertCircle, AlertTriangle } from "lucide-react";
 
 import { useCart } from "@/components/cart/use-cart";
+import { CartValidationNotice } from "@/components/cart/cart-validation-notice";
 import { useAuthStore } from "@/store/auth.store";
 import { formatPrice } from "@/lib/utils/currency";
 import { useSiteSettings } from "@/lib/context/site-settings-context";
@@ -42,16 +43,9 @@ export default function CartPage() {
     cartSignal: cart?.subtotal,
   });
 
-  if (!isAuthed) {
-    return (
-      <CenteredEmpty
-        title="Sign in to view your cart"
-        body="Your cart is tied to your account so you can pick up where you left off on any device."
-        cta={{ href: "/login?next=/cart", label: "Sign in" }}
-        secondaryCta={{ href: "/register", label: "Create an account" }}
-      />
-    );
-  }
+  // Guests keep a cookie-scoped cart and can browse/adjust it freely; they're
+  // only asked to sign in at the checkout step (order placement is customer-
+  // only, and login merges the guest cart into their account).
 
   if (loading && !cart) {
     return <SkeletonView />;
@@ -104,6 +98,8 @@ export default function CartPage() {
           </div>
         </div>
       )}
+
+      <CartValidationNotice refreshSignal={cart?.subtotal} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-10">
         {/* ---- Lines ---- */}
@@ -214,7 +210,7 @@ export default function CartPage() {
           })()}
 
           <Link
-            href="/checkout"
+            href={isAuthed ? "/checkout" : "/login?next=/checkout"}
             aria-disabled={busy || cart?.needsReview}
             onClick={(e) => {
               if (busy || cart?.needsReview) e.preventDefault();
@@ -225,7 +221,7 @@ export default function CartPage() {
                 : ""
             }`}
           >
-            Proceed to Checkout
+            {isAuthed ? "Proceed to Checkout" : "Sign in to Checkout"}
           </Link>
           {cart?.needsReview && (
             <p className="text-xs text-feature/90 text-center">

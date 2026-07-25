@@ -21,6 +21,7 @@ import {
   BarChart3,
   Settings,
   Truck,
+  PackageX,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -68,6 +69,11 @@ export const sellerNavigation: NavGroup[] = [
         title: "Orders",
         href: "/seller/orders",
         icon: Package,
+      },
+      {
+        title: "Returns",
+        href: "/seller/returns",
+        icon: PackageX,
       },
       {
         title: "Shipping",

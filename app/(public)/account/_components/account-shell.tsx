@@ -18,7 +18,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
-import { Loader2, MapPin, Package, User as UserIcon, LogOut } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  Package,
+  PackageX,
+  User as UserIcon,
+  LogOut,
+} from "lucide-react";
 
 import { GET_MY_PROFILE } from "@/lib/graphql/account";
 import { MyProfileData } from "@/types/account.types";
@@ -35,6 +42,7 @@ const NAV: {
   { href: "/account/profile", label: "Profile", icon: UserIcon },
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
   { href: "/account/orders", label: "Orders", icon: Package },
+  { href: "/account/returns", label: "Returns", icon: PackageX },
 ];
 
 export function AccountShell({ children }: { children: React.ReactNode }) {

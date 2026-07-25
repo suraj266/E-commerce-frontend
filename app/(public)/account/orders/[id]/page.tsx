@@ -173,6 +173,7 @@ export default function OrderDetailPage() {
           <SellerOrderCard
             key={so.id}
             sellerOrder={so}
+            orderId={order.id}
             orderPaymentMethod={order.paymentMethod}
             orderPaymentStatus={order.paymentStatus}
           />
@@ -281,10 +282,12 @@ export default function OrderDetailPage() {
 
 function SellerOrderCard({
   sellerOrder,
+  orderId,
   orderPaymentMethod,
   orderPaymentStatus,
 }: {
   sellerOrder: SellerOrder;
+  orderId: string;
   orderPaymentMethod?: string | null;
   orderPaymentStatus?: string | null;
 }) {
@@ -361,6 +364,14 @@ function SellerOrderCard({
           paymentMethod={orderPaymentMethod}
           hasReachedInvoiceTrigger={hasReachedInvoiceTrigger}
         />
+        {sellerOrder.status === "DELIVERED" && (
+          <Link
+            href={`/account/returns/new?orderId=${orderId}&sellerOrderId=${sellerOrder.id}`}
+            className="inline-flex items-center text-sm text-primary hover:underline"
+          >
+            Request a return →
+          </Link>
+        )}
       </div>
     </div>
   );

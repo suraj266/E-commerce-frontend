@@ -1,23 +1,10 @@
 /**
- * =============================================================================
- * Admin Login Page
- * =============================================================================
- * 
- * Dedicated login page for Platform Administrators.
- * Route: /admin/login
- * 
- * WHY SEPARATE FROM CUSTOMER LOGIN?
- * - Each user type (Admin, Seller, Customer) has its own login page
- * - In the future, each will connect to separate database tables
- * - Keeps the UI, branding, and error handling specific to each role
- * - Prevents confusion (admin sees "Admin Portal", customer sees "Shop Login")
- * 
- * ROUTE GROUP:
- * This page lives inside `(admin-auth)` route group which does NOT have
- * the AuthProxy guard, because unauthenticated admins need to see this page.
- * Instead, it has a ReverseAuthProxy which redirects already-logged-in
- * admins to /admin/dashboard.
- * =============================================================================
+ * Admin login page. Route: /admin/login
+ *
+ * Lives inside the `(admin-auth)` route group, which does NOT have the
+ * AuthProxy guard — unauthenticated admins need to reach this page. It carries
+ * a ReverseAuthProxy instead, redirecting already-logged-in admins to
+ * /admin/dashboard.
  */
 
 "use client";
@@ -71,7 +58,6 @@ export default function AdminLoginPage() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  // React Hook Form with Zod validation
   // NOTE: zodResolver type mismatch with Zod v4 - using explicit cast
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<z.infer<typeof adminLoginSchema>>({
@@ -98,10 +84,7 @@ export default function AdminLoginPage() {
         accountType: "admin",
       });
 
-      // Store auth state in Zustand (memory-only, not localStorage)
       setAuth(response.accessToken, response.user);
-
-      // Navigate to admin dashboard
       router.push("/admin/dashboard");
     } catch (error: any) {
       setServerError(error.message || "Invalid credentials. Please try again.");
@@ -145,7 +128,6 @@ export default function AdminLoginPage() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Email Field */}
             <FormField
               control={form.control}
               name="email"
@@ -160,7 +142,6 @@ export default function AdminLoginPage() {
               )}
             />
 
-            {/* Password Field */}
             <FormField
               control={form.control}
               name="password"
@@ -179,14 +160,12 @@ export default function AdminLoginPage() {
               )}
             />
 
-            {/* Server Error Message */}
             {serverError && (
               <div className="p-3 rounded-md bg-red-50 text-red-600 text-sm font-medium">
                 {serverError}
               </div>
             )}
 
-            {/* Submit Button */}
             <Button
               type="submit"
               className="w-full"

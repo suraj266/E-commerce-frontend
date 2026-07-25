@@ -29,7 +29,8 @@ export interface CartItem {
 
 export interface Cart {
   id: string;
-  customerId: string;
+  /** Null for a guest cart (keyed by the httpOnly guestCartToken cookie). */
+  customerId?: string | null;
   createdAt: string;
   updatedAt: string;
   items: CartItem[];
@@ -74,4 +75,55 @@ export interface RemoveFromCartData {
 
 export interface ClearCartData {
   clearCart: Cart;
+}
+
+/* ---- Guest cart ---- */
+
+export interface GuestCartData {
+  guestCart: Cart | null;
+}
+
+export interface AddToGuestCartData {
+  addToGuestCart: Cart;
+}
+
+export interface UpdateGuestCartItemQtyData {
+  updateGuestCartItemQty: Cart;
+}
+
+export interface RemoveFromGuestCartData {
+  removeFromGuestCart: Cart;
+}
+
+export interface MergeGuestCartData {
+  mergeGuestCart: Cart;
+}
+
+/* ---- Advisory validation ---- */
+
+export const CART_WARNING_CODES = [
+  "OUT_OF_STOCK",
+  "REDUCED_QUANTITY",
+  "PRICE_CHANGED",
+  "UNAVAILABLE",
+] as const;
+export type CartWarningCode = (typeof CART_WARNING_CODES)[number];
+
+export interface CartWarning {
+  variantId: string;
+  code: CartWarningCode;
+  message: string;
+  availableQuantity?: number | null;
+  suggestedQuantity?: number | null;
+  oldPrice?: number | null;
+  newPrice?: number | null;
+}
+
+export interface CartValidationResult {
+  valid: boolean;
+  warnings: CartWarning[];
+}
+
+export interface ValidateCartData {
+  validateCart: CartValidationResult;
 }
