@@ -13,7 +13,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
@@ -38,13 +38,27 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard";
+import {
+  GET_ADMIN_DASHBOARD_STATS,
+  GET_ADMIN_ANALYTICS,
+} from "@/lib/graphql/dashboard";
 import type {
   GetAdminDashboardStatsData,
   OrderStatus,
   StatDelta,
 } from "@/types/dashboard.types";
+import type {
+  GetAdminAnalyticsData,
+  AnalyticsBucket,
+} from "@/lib/graphql/dashboard";
 import { formatPrice } from "@/lib/utils/currency";
 
 // ---------------------------------------------------------------------------
@@ -98,6 +112,37 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (error) toast.error(`Failed to load dashboard: ${error.message}`);
   }, [error]);
+
+  // --- Date-range analytics (net revenue, GMV series, top products/sellers) ---
+  const [rangeDays, setRangeDays] = useState(30);
+  const [granularity, setGranularity] = useState<AnalyticsBucket>("DAY");
+
+  // Compute the window once per range change (not every render) so the query
+  // variables stay referentially stable and don't trigger a refetch storm.
+  const range = useMemo(() => {
+    const to = new Date();
+    const from = new Date(to.getTime() - rangeDays * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }, [rangeDays]);
+
+  const {
+    data: analyticsData,
+    loading: analyticsLoading,
+    error: analyticsError,
+  } = useQuery<GetAdminAnalyticsData>(GET_ADMIN_ANALYTICS, {
+    variables: { input: { from: range.from, to: range.to, granularity } },
+    fetchPolicy: "cache-and-network",
+  });
+
+  useEffect(() => {
+    if (analyticsError)
+      toast.error(`Failed to load analytics: ${analyticsError.message}`);
+  }, [analyticsError]);
+
+  const analytics = analyticsData?.adminAnalytics;
+  const analyticsSkeleton = analyticsLoading && !analytics;
+  const gmvSeries = analytics?.gmvSeries ?? [];
+  const maxGmv = Math.max(1, ...gmvSeries.map((p) => p.gmv));
 
   const stats = data?.adminDashboardStats;
   const showSkeletons = loading && !stats;
@@ -374,6 +419,288 @@ export default function AdminDashboardPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* ===== Platform Analytics (date-range scoped) ===== */}
+      <div className="flex flex-col gap-4 pt-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">Analytics</h2>
+            <p className="text-sm text-muted-foreground">
+              Net-of-refunds revenue, GMV, and leaderboards over a window.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={String(rangeDays)}
+              onValueChange={(v) => setRangeDays(Number(v))}
+            >
+              <SelectTrigger className="w-[140px]" aria-label="Date range">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+                <SelectItem value="90">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={granularity}
+              onValueChange={(v) => setGranularity(v as AnalyticsBucket)}
+            >
+              <SelectTrigger className="w-[120px]" aria-label="Granularity">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="DAY">Daily</SelectItem>
+                <SelectItem value="WEEK">Weekly</SelectItem>
+                <SelectItem value="MONTH">Monthly</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Revenue summary tiles */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <MiniStat
+            label="Net Revenue"
+            hint="Gross − refunds"
+            value={formatPrice(analytics?.revenue.net ?? 0, "INR")}
+            loading={analyticsSkeleton}
+            accent
+          />
+          <MiniStat
+            label="Gross Revenue"
+            hint={`${(analytics?.revenue.orderCount ?? 0).toLocaleString(
+              "en-IN",
+            )} orders`}
+            value={formatPrice(analytics?.revenue.gross ?? 0, "INR")}
+            loading={analyticsSkeleton}
+          />
+          <MiniStat
+            label="Refunds"
+            hint="Processed in window"
+            value={formatPrice(analytics?.revenue.refunds ?? 0, "INR")}
+            loading={analyticsSkeleton}
+          />
+          <MiniStat
+            label="Avg. Order Value"
+            hint="Per revenue order"
+            value={formatPrice(analytics?.revenue.avgOrderValue ?? 0, "INR")}
+            loading={analyticsSkeleton}
+          />
+        </div>
+
+        {/* GMV series + new signups */}
+        <div className="grid gap-4 lg:grid-cols-7">
+          <Card className="lg:col-span-5">
+            <CardHeader>
+              <CardTitle className="text-lg">GMV Over Time</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Gross merchandise value, {granularity.toLowerCase()} buckets
+              </p>
+            </CardHeader>
+            <CardContent>
+              {analyticsSkeleton ? (
+                <Skeleton className="h-[220px] w-full" />
+              ) : gmvSeries.length === 0 ? (
+                <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+                  No sales in this window.
+                </div>
+              ) : (
+                <div className="flex h-[220px] items-end gap-1.5 overflow-x-auto">
+                  {gmvSeries.map((p) => (
+                    <div
+                      key={p.bucket}
+                      className="flex min-w-[16px] flex-1 flex-col items-center gap-1"
+                      title={`${p.label}: ${formatPrice(p.gmv, "INR")} · ${
+                        p.orderCount
+                      } orders`}
+                    >
+                      <div
+                        className="min-h-[4px] w-full rounded-t-md bg-primary/80 transition-colors hover:bg-primary"
+                        style={{ height: `${(p.gmv / maxGmv) * 180}px` }}
+                      />
+                      <span className="whitespace-nowrap text-[9px] text-muted-foreground">
+                        {p.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-lg">New Signups</CardTitle>
+              <p className="text-sm text-muted-foreground">Created in window</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <MiniStat
+                inline
+                icon={Users}
+                label="New Users"
+                value={(analytics?.newSignups.users ?? 0).toLocaleString(
+                  "en-IN",
+                )}
+                loading={analyticsSkeleton}
+              />
+              <div className="h-px bg-border" />
+              <MiniStat
+                inline
+                icon={Package}
+                label="New Sellers"
+                value={(analytics?.newSignups.sellers ?? 0).toLocaleString(
+                  "en-IN",
+                )}
+                loading={analyticsSkeleton}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Orders by status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Orders by Status</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Orders placed in the window
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+              {analyticsSkeleton
+                ? Array.from({ length: 7 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[76px] w-full" />
+                  ))
+                : (analytics?.ordersByStatus ?? []).map((s) => (
+                    <div key={s.status} className="rounded-lg border p-3">
+                      <div className="text-2xl font-bold">
+                        {s.count.toLocaleString("en-IN")}
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={`mt-1 ${ORDER_STATUS_STYLES[s.status]}`}
+                      >
+                        {ORDER_STATUS_LABEL[s.status]}
+                      </Badge>
+                    </div>
+                  ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top products + top sellers */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Top Products</CardTitle>
+              <p className="text-sm text-muted-foreground">By units sold</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="text-right">Units</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analyticsSkeleton ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        {Array.from({ length: 3 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-4 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (analytics?.topProducts?.length ?? 0) > 0 ? (
+                    (analytics?.topProducts ?? []).map((p) => (
+                      <TableRow key={p.productId}>
+                        <TableCell className="max-w-[240px] truncate font-medium">
+                          {p.name}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {p.unitsSold.toLocaleString("en-IN")}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatPrice(p.grossRevenue, "INR")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        No sales in this window.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Top Sellers</CardTitle>
+              <p className="text-sm text-muted-foreground">By gross sales</p>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Seller</TableHead>
+                    <TableHead className="text-right">Orders</TableHead>
+                    <TableHead className="text-right">GMV</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analyticsSkeleton ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i}>
+                        {Array.from({ length: 3 }).map((__, j) => (
+                          <TableCell key={j}>
+                            <Skeleton className="h-4 w-full" />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (analytics?.topSellers?.length ?? 0) > 0 ? (
+                    (analytics?.topSellers ?? []).map((s) => (
+                      <TableRow key={s.sellerId}>
+                        <TableCell className="max-w-[240px] truncate font-medium">
+                          {s.sellerName}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {s.orderCount.toLocaleString("en-IN")}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatPrice(s.gmv, "INR")}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="py-8 text-center text-muted-foreground"
+                      >
+                        No sales in this window.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -399,6 +726,60 @@ function QuickStatRow({
       <div className="text-right">
         <p className="text-xl font-bold">{value}</p>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: a compact analytics stat — card tile (default) or inline row
+// ---------------------------------------------------------------------------
+function MiniStat({
+  label,
+  value,
+  hint,
+  loading,
+  accent,
+  inline,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  loading?: boolean;
+  accent?: boolean;
+  inline?: boolean;
+  icon?: ComponentType<{ className?: string }>;
+}) {
+  if (inline) {
+    return (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {Icon ? <Icon className="h-4 w-4 text-muted-foreground" /> : null}
+          <span className="text-sm font-medium">{label}</span>
+        </div>
+        {loading ? (
+          <Skeleton className="h-6 w-12" />
+        ) : (
+          <span className="text-xl font-bold">{value}</span>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div
+      className={`rounded-lg border p-4 ${
+        accent ? "border-primary/20 bg-primary/5" : ""
+      }`}
+    >
+      <p className="text-sm font-medium text-muted-foreground">{label}</p>
+      {loading ? (
+        <Skeleton className="mt-1 h-7 w-24" />
+      ) : (
+        <p className="mt-1 text-2xl font-bold">{value}</p>
+      )}
+      {hint ? (
+        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }

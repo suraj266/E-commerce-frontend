@@ -31,6 +31,7 @@ import { useSiteSettings } from "@/lib/context/site-settings-context";
 import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button";
 import { InlineRatingLink } from "@/components/reviews/inline-rating-link";
 import { ProductReviewsSection } from "@/components/reviews/product-reviews-section";
+import { DeliveryEstimator } from "./delivery-estimator";
 
 export function ProductDetailClient({ product }: { product: Product }) {
   const { add: addToCart, busy: cartBusy } = useCart();
@@ -499,6 +500,10 @@ export function ProductDetailClient({ product }: { product: Product }) {
                 className="h-11 w-11"
               />
             </div>
+
+            {/* Pincode → delivery ETA estimator (P4-B). Reuses the checkout
+                courier serviceability read-only; degrades to in-house config. */}
+            <DeliveryEstimator productId={product.id} currency={currency} />
           </div>
         </div>
 

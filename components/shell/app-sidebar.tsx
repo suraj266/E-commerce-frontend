@@ -66,12 +66,18 @@ interface AppSidebarProps {
   navigation: NavGroup[];
   /** Where to send the user after logout (e.g. `/admin/login`). */
   logoutRedirect: string;
+  /** Optional target for the profile-dropdown "Settings" item; renders it as a link. */
+  settingsHref?: string;
+  /** Optional target for the profile-dropdown "Profile" item; renders it as a link. */
+  profileHref?: string;
 }
 
 export function AppSidebar({
   brand,
   navigation,
   logoutRedirect,
+  settingsHref,
+  profileHref,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
@@ -214,14 +220,32 @@ export function AppSidebar({
                 align="start"
                 className="w-[--radix-dropdown-menu-trigger-width] min-w-56"
               >
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
+                {profileHref ? (
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={profileHref}>
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                )}
+                {settingsHref ? (
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={settingsHref}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </Link>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-red-600 focus:text-red-600 cursor-pointer"

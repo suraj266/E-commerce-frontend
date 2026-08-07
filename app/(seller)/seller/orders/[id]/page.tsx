@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Loader2,
   Package,
+  RotateCcw,
   Store as StoreIcon,
   Truck,
 } from "lucide-react";
@@ -51,6 +52,7 @@ import { formatPrice } from "@/lib/utils/currency";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { InvoiceCard } from "@/components/orders/invoice-card";
+import { SellerRefundDialog } from "@/components/orders/seller-refund-dialog";
 
 import {
   AlertDialog,
@@ -104,6 +106,7 @@ export default function SellerOrderDetailPage() {
   const id = params.id;
 
   const [confirmAction, setConfirmAction] = useState<OrderStatus | null>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
   const [shipOpen, setShipOpen] = useState(false);
   const [ship, setShip] = useState({
     carrier: "",
@@ -112,7 +115,7 @@ export default function SellerOrderDetailPage() {
     expectedDeliveryAt: "",
   });
 
-  const { data, loading, error } = useQuery<MySellerOrderData>(
+  const { data, loading, error, refetch } = useQuery<MySellerOrderData>(
     GET_MY_SELLER_ORDER,
     {
       variables: { id },
@@ -202,6 +205,15 @@ export default function SellerOrderDetailPage() {
   const requiresConfirm = (s: OrderStatus) => s === "CANCELLED";
   const requiresShipDetails = (s: OrderStatus) => s === "SHIPPED";
 
+  // Cancelling does NOT return the customer's money — that's a separate,
+  // deliberate action. Offer it once the order is cancelled and the buyer still
+  // holds a balance with us. PARTIALLY_REFUNDED is included so a seller can
+  // top up an earlier partial refund. The dialog re-checks eligibility server-
+  // side (COD, payout in flight, already fully refunded) and explains a block.
+  const canOfferRefund =
+    so.status === "CANCELLED" &&
+    (so.paymentStatus === "PAID" || so.paymentStatus === "PARTIALLY_REFUNDED");
+
   const submitShip = () => {
     if (!ship.trackingNumber.trim()) {
       toast.error("Tracking number is required");
@@ -281,6 +293,28 @@ export default function SellerOrderDetailPage() {
             <div className="rounded-md border border-amber-300/50 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-sm text-amber-900 dark:text-amber-300">
               Awaiting payment — this prepaid order can&apos;t be fulfilled until
               the customer&apos;s payment is confirmed. You can still cancel it.
+            </div>
+          </div>
+        )}
+
+        {canOfferRefund && (
+          <div className="mt-6 pt-5 border-t">
+            <div className="flex flex-col gap-3 rounded-md border border-amber-300/50 bg-amber-50 px-3 py-3 dark:bg-amber-900/20 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-amber-900 dark:text-amber-300">
+                <p className="font-semibold">Customer is still owed a refund</p>
+                <p className="mt-0.5 text-xs">
+                  This order was cancelled but the payment is still with us.
+                  Refund it to close the loop.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRefundOpen(true)}
+                className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 inline-flex items-center"
+              >
+                <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+                Refund customer
+              </button>
             </div>
           </div>
         )}
@@ -511,6 +545,13 @@ export default function SellerOrderDetailPage() {
           </ol>
         )}
       </section>
+
+      <SellerRefundDialog
+        sellerOrderId={so.id}
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        onRefunded={() => refetch()}
+      />
 
       <AlertDialog
         open={confirmAction !== null}

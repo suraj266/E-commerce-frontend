@@ -1,147 +1,99 @@
 /**
- * Public Brand Page — /brand/[slug]
+ * Public Brand Page — /brand/[slug]  (Server Component)
  *
- * Phase 1 placeholder: shows brand name, logo, banner, description.
- * Sprint 2.4d will fill in products grid filtered by this brand.
+ * Server-renders SEO metadata (title / description / canonical / Open Graph)
+ * and BreadcrumbList JSON-LD, then hands the brand record to the interactive
+ * client island (`brand-client.tsx`) which owns the brand header, filter
+ * sidebar, sort, pagination and the real product grid.
+ *
+ * An unknown / inactive brand renders the 404 page via `notFound()` — the same
+ * SSR pattern the /category and /product routes use (was a client-only stub).
  */
 
-"use client";
-
-import { useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { useParams } from "next/navigation";
-import { useQuery } from "@apollo/client/react";
-import { Globe, Tag as BrandIcon } from "lucide-react";
+import { cache } from "react";
+import { print } from "graphql";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { GET_PUBLIC_BRAND } from "@/lib/graphql/brands";
-import { Brand } from "@/types/brand.types";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import type { Brand } from "@/types/brand.types";
+import { serverGraphQL } from "@/lib/graphql/server-fetch";
+import { absoluteUrl, getSiteName } from "@/lib/seo/site";
+import { JsonLd } from "@/lib/seo/json-ld";
+
+import { BrandClient } from "./brand-client";
+
+const BRAND_QUERY = print(GET_PUBLIC_BRAND);
 
 interface GetPublicBrandData {
-  publicBrand: Brand;
+  publicBrand: Brand | null;
 }
 
-export default function PublicBrandPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+// Memoized per request so `generateMetadata` and the page body share one fetch.
+const loadBrand = cache(async (slug: string): Promise<Brand | null> => {
+  const data = await serverGraphQL<GetPublicBrandData>(BRAND_QUERY, { slug });
+  return data?.publicBrand ?? null;
+});
 
-  const { data, loading, error } = useQuery<GetPublicBrandData>(
-    GET_PUBLIC_BRAND,
-    { variables: { slug }, errorPolicy: "all" },
-  );
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const brand = await loadBrand(slug);
+  if (!brand) return {};
 
-  useEffect(() => {
-    if (typeof document !== "undefined" && data?.publicBrand) {
-      document.title = `${data.publicBrand.name} | MultiMart`;
-    }
-  }, [data?.publicBrand]);
+  const siteName = await getSiteName();
+  const title = brand.name;
+  const description =
+    brand.description || `Shop ${brand.name} products on ${siteName}.`;
+  const canonical = absoluteUrl(`/brand/${brand.slug}`);
+  const image = brand.bannerUrl || brand.logoUrl || undefined;
 
-  if (loading) {
-    return (
-      <div className="max-w-5xl mx-auto p-8">
-        <div className="h-48 animate-pulse rounded-lg bg-muted" />
-      </div>
-    );
-  }
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: canonical,
+      images: image ? [{ url: image, alt: brand.name }] : undefined,
+    },
+  };
+}
 
-  if (error || !data?.publicBrand) {
-    return (
-      <div className="max-w-5xl mx-auto p-8">
-        <Card>
-          <CardContent className="py-12 text-center space-y-3">
-            <BrandIcon className="h-12 w-12 mx-auto text-muted-foreground/50" />
-            <h1 className="text-xl font-semibold">Brand not found</h1>
-            <p className="text-sm text-muted-foreground">
-              The brand &ldquo;{slug}&rdquo; doesn&apos;t exist or is inactive.
-            </p>
-            <Button asChild variant="outline">
-              <Link href="/">Back to home</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+export default async function BrandPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const brand = await loadBrand(slug);
+  if (!brand) notFound();
 
-  const brand = data.publicBrand;
+  const siteName = await getSiteName();
+  const breadcrumbLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: siteName, item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Shop", item: absoluteUrl("/shop") },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: brand.name,
+        item: absoluteUrl(`/brand/${brand.slug}`),
+      },
+    ],
+  };
 
   return (
-    <div className="min-h-screen bg-muted/20">
-      {/* Banner */}
-      <div className="relative h-48 sm:h-64 bg-gradient-to-r from-primary/20 to-primary/5">
-        {brand.bannerUrl && (
-          <Image
-            src={brand.bannerUrl}
-            alt={`${brand.name} banner`}
-            fill
-            sizes="100vw"
-            className="h-full w-full object-cover"
-          />
-        )}
-      </div>
-
-      {/* Header */}
-      <div className="max-w-5xl mx-auto px-4 -mt-12 relative">
-        <div className="flex items-end gap-4">
-          <div className="h-24 w-24 rounded-lg bg-card border-4 border-background shadow-lg flex items-center justify-center overflow-hidden">
-            {brand.logoUrl ? (
-              <Image
-                src={brand.logoUrl}
-                alt={brand.name}
-                fill
-                sizes="100px"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <BrandIcon className="h-10 w-10 text-muted-foreground" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0 pb-2">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
-              {brand.name}
-            </h1>
-            {brand.description && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {brand.description}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Meta strip */}
-        <div className="mt-6 flex flex-wrap gap-4 text-sm text-muted-foreground">
-          {brand.websiteUrl && (
-            <a
-              href={brand.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 hover:text-foreground"
-            >
-              <Globe className="h-4 w-4" />
-              Official site
-            </a>
-          )}
-          {brand.foundedYear && (
-            <span>Est. {brand.foundedYear}</span>
-          )}
-          {brand.countryCode && <span>{brand.countryCode}</span>}
-        </div>
-      </div>
-
-      {/* Products placeholder */}
-      <div className="max-w-5xl mx-auto px-4 py-10">
-        <Card>
-          <CardContent className="py-16 text-center space-y-3">
-            <BrandIcon className="h-10 w-10 mx-auto text-muted-foreground/40" />
-            <h2 className="font-semibold">Products coming soon</h2>
-            <p className="text-sm text-muted-foreground">
-              Browse all {brand.name} products once sellers list them.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <>
+      <JsonLd data={breadcrumbLd} />
+      <BrandClient brand={brand} slug={slug} />
+    </>
   );
 }

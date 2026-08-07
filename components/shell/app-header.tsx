@@ -24,6 +24,12 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 interface AppHeaderProps {
   /** Leftmost breadcrumb segment, e.g. "Admin" or "Seller". */
   breadcrumbRoot: string;
+  /**
+   * Optional search slot. When provided (e.g. the admin command palette) it
+   * replaces the default placeholder field. Left undefined for portals that
+   * don't wire a search yet, which keep the inert stub.
+   */
+  search?: React.ReactNode;
 }
 
 const UUID_RE =
@@ -36,7 +42,7 @@ function titleCase(segment: string): string {
     .join(" ");
 }
 
-export function AppHeader({ breadcrumbRoot }: AppHeaderProps) {
+export function AppHeader({ breadcrumbRoot, search }: AppHeaderProps) {
   const pathname = usePathname();
   const overrideTitle = usePageTitle();
 
@@ -59,14 +65,16 @@ export function AppHeader({ breadcrumbRoot }: AppHeaderProps) {
       </div>
 
       <div className="ml-auto flex items-center gap-3">
-        <div className="relative hidden md:block">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search..."
-            className="w-[200px] lg:w-[280px] pl-8 h-9"
-          />
-        </div>
+        {search ?? (
+          <div className="relative hidden md:block">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              className="w-[200px] lg:w-[280px] pl-8 h-9"
+            />
+          </div>
+        )}
 
         <ThemeToggle />
 

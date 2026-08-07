@@ -6,7 +6,8 @@
  */
 
 import { AppHeader } from "@/components/shell/app-header";
+import { AdminSearch } from "@/components/admin/admin-search";
 
 export function AdminHeader() {
-  return <AppHeader breadcrumbRoot="Admin" />;
+  return <AppHeader breadcrumbRoot="Admin" search={<AdminSearch />} />;
 }

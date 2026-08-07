@@ -4,8 +4,25 @@ import {
   type AdminTheme,
 } from "@/types/admin-theme.types";
 
-const GRAPHQL_URL =
-  process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:7000/graphql";
+/**
+ * Resolve the GraphQL endpoint for this SERVER-SIDE fetch (mirrors
+ * `lib/graphql/server-fetch.ts`). Order matters: inside Docker the browser URL
+ * (`NEXT_PUBLIC_GRAPHQL_URL=http://localhost:7000`) points at the frontend
+ * container itself — `localhost` is NOT the backend — so a server fetch to it
+ * is refused and we'd silently fall back to ADMIN_THEME_DEFAULTS (the panel
+ * reverts to the brand-indigo default even though a custom theme is saved).
+ * `INTERNAL_API_URL` (e.g. http://host.docker.internal:7000) is the reachable
+ * container→backend path and must win. Normalized to always end in /graphql so
+ * it works whether the env var is a base origin or the full endpoint.
+ */
+function resolveGraphqlEndpoint(): string {
+  const raw =
+    process.env.INTERNAL_API_URL ||
+    process.env.NEXT_PUBLIC_GRAPHQL_URL ||
+    "http://localhost:7000/graphql";
+  const trimmed = raw.replace(/\/+$/, "");
+  return trimmed.endsWith("/graphql") ? trimmed : `${trimmed}/graphql`;
+}
 
 // Named distinct from the client-side GetAdminTheme so codegen's operation-name
 // uniqueness check passes. Both hit the same resolver.
@@ -45,7 +62,7 @@ interface GraphQLResponse {
  */
 export async function getAdminTheme(): Promise<AdminTheme> {
   try {
-    const res = await fetch(GRAPHQL_URL, {
+    const res = await fetch(resolveGraphqlEndpoint(), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ query: QUERY }),

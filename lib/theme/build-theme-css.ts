@@ -35,12 +35,12 @@ export function buildThemeCss(theme: AdminTheme): string {
   // landing on lavender instead of light blue. OKLab interpolates on a
   // straight line between the two colors, so blue stays blue.
   //
-  // ~22% in light reads as visibly branded; ~25% in dark mode compensates
-  // for visual absorption on dark surfaces.
+  // ~15% in light reads as a soft, lightly-branded tint for the active/hover
+  // item; ~18% in dark mode compensates for visual absorption on dark surfaces.
   const sidebarAccentLight =
-    "color-mix(in oklab, var(--primary) 22%, var(--sidebar))";
+    "color-mix(in oklab, var(--primary) 15%, var(--sidebar))";
   const sidebarAccentDark =
-    "color-mix(in oklab, var(--primary) 25%, var(--sidebar))";
+    "color-mix(in oklab, var(--primary) 18%, var(--sidebar))";
 
   return `
 [data-admin-theme] {

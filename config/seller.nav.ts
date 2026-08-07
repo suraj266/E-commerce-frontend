@@ -22,6 +22,9 @@ import {
   Settings,
   Truck,
   PackageX,
+  FolderTree,
+  Building2,
+  Ticket,
 } from "lucide-react";
 
 import type { NavGroup } from "./nav.types";
@@ -60,6 +63,12 @@ export const sellerNavigation: NavGroup[] = [
         href: "/seller/inventory",
         icon: Boxes,
       },
+      {
+        // Read-only category browser (Phase 4).
+        title: "Categories",
+        href: "/seller/categories",
+        icon: FolderTree,
+      },
     ],
   },
   {
@@ -81,6 +90,11 @@ export const sellerNavigation: NavGroup[] = [
         icon: Truck,
       },
       {
+        title: "Coupons",
+        href: "/seller/coupons",
+        icon: Ticket,
+      },
+      {
         title: "Payouts",
         href: "/seller/payouts",
         icon: Wallet,
@@ -90,6 +104,12 @@ export const sellerNavigation: NavGroup[] = [
   {
     label: "Account",
     items: [
+      {
+        // Standalone business-profile editor (Phase 4).
+        title: "Profile",
+        href: "/seller/profile",
+        icon: Building2,
+      },
       {
         title: "KYC",
         href: "/seller/onboarding",

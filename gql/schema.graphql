@@ -83,6 +83,16 @@ input AdjustInventoryInput {
   warehouseId: ID
 }
 
+type AdminAnalytics {
+  gmvSeries: [AnalyticsSeriesPoint!]!
+  newSignups: NewSignups!
+  ordersByStatus: [OrderStatusCount!]!
+  range: AnalyticsRange!
+  revenue: RevenueSummary!
+  topProducts: [TopProduct!]!
+  topSellers: [TopSeller!]!
+}
+
 input AdminCreateProductInput {
   brandId: ID
   categoryId: ID
@@ -313,6 +323,33 @@ input AdminUpdateProductInput {
   width: Float
 }
 
+"""Granularity of a time-bucketed analytics series."""
+enum AnalyticsBucket {
+  DAY
+  MONTH
+  WEEK
+}
+
+type AnalyticsRange {
+  from: DateTime!
+  granularity: AnalyticsBucket!
+  to: DateTime!
+}
+
+input AnalyticsRangeInput {
+  from: DateTime
+  granularity: AnalyticsBucket
+  to: DateTime
+  topLimit: Int
+}
+
+type AnalyticsSeriesPoint {
+  bucket: String!
+  gmv: Float!
+  label: String!
+  orderCount: Int!
+}
+
 type ApiKeyEntity {
   createdAt: DateTime!
   expiresAt: DateTime
@@ -323,6 +360,12 @@ type ApiKeyEntity {
   ownerUserId: ID!
   revokedAt: DateTime
   scopes: [String!]!
+}
+
+input AssignGrievanceInput {
+  assigneeUserId: ID!
+  grievanceId: ID!
+  priority: GrievancePriority
 }
 
 enum AttributeType {
@@ -915,6 +958,12 @@ input CreateSellerInput {
   supportEmail: String
 }
 
+input CreateSellerRefundInput {
+  amount: Float
+  reason: String
+  sellerOrderId: ID!
+}
+
 input CreateSliderInput {
   """JSON-encoded config object."""
   config: String
@@ -1045,6 +1094,20 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type DeliveryEstimate {
+  codAvailable: Boolean!
+  courierName: String
+  estimatedDispatchDays: Int
+  freeShipping: Boolean!
+  maxDeliveryDays: Int
+  message: String
+  minDeliveryDays: Int
+  pincode: String!
+  rateSource: String!
+  serviceable: Boolean!
+  shippingCharge: Float
+}
+
 enum EmailEncryption {
   NONE
   SSL
@@ -1095,6 +1158,15 @@ enum EmailTemplateCategory {
   SYSTEM
 }
 
+input FileGrievanceInput {
+  category: GrievanceCategory!
+  contactEmail: String
+  description: String!
+  orderId: ID
+  sellerOrderId: ID
+  subject: String!
+}
+
 enum GatewayPaymentType {
   REDIRECT
   WEBSITE_EMBEDDED
@@ -1108,6 +1180,117 @@ input GenerateVariantMatrixInput {
   """Default price applied to all generated variants"""
   basePrice: Float!
   productId: ID!
+}
+
+"""Who authored a thread message: CUSTOMER, OFFICER or SYSTEM."""
+enum GrievanceAuthorRole {
+  CUSTOMER
+  OFFICER
+  SYSTEM
+}
+
+"""Complaint category (CP-EC redressal)."""
+enum GrievanceCategory {
+  DATA_PRIVACY
+  DELIVERY
+  ORDER_ISSUE
+  OTHER
+  PAYMENT
+  PRODUCT_QUALITY
+  REFUND
+  SELLER_CONDUCT
+}
+
+type GrievanceComplianceReport {
+  avgResolutionHours: Float
+  byCategory: [GrievanceCountBucket!]!
+  byStatus: [GrievanceCountBucket!]!
+  closed: Int!
+  disclaimer: String!
+  escalated: Int!
+  officerEmail: String
+  officerName: String
+  officerPhone: String
+  openingBacklog: Int!
+  pending: Int!
+  period: String!
+  received: Int!
+  resolved: Int!
+  slaBreached: Int!
+  slaComplianceRate: Float
+}
+
+type GrievanceCountBucket {
+  count: Int!
+  key: String!
+}
+
+type GrievanceEntity {
+  assignedToUserId: ID
+  category: GrievanceCategory!
+  closedAt: DateTime
+  contactEmail: String
+  contactName: String
+  createdAt: DateTime!
+  description: String!
+  escalatedAt: DateTime
+  firstResponseAt: DateTime
+  id: ID!
+  messages: [GrievanceMessageEntity!]
+  orderId: ID
+  priority: GrievancePriority!
+  raisedByUserId: ID
+  resolutionNote: String
+  resolvedAt: DateTime
+  sellerOrderId: ID
+  slaBreached: Boolean!
+  slaDueAt: DateTime!
+  status: GrievanceStatus!
+  subject: String!
+  ticketNumber: String!
+  updatedAt: DateTime!
+}
+
+input GrievanceFilterInput {
+  assignedToUserId: ID
+  breachedOnly: Boolean
+  category: GrievanceCategory
+  page: Int = 1
+  pageSize: Int = 20
+  priority: GrievancePriority
+  status: GrievanceStatus
+}
+
+type GrievanceMessageEntity {
+  authorRole: GrievanceAuthorRole!
+  authorUserId: ID
+  body: String!
+  createdAt: DateTime!
+  id: ID!
+  internal: Boolean!
+}
+
+input GrievanceMessageInput {
+  body: String!
+  grievanceId: ID!
+  internal: Boolean
+}
+
+"""Drives the SLA clock (GRIEVANCE_SLA_HOURS)."""
+enum GrievancePriority {
+  HIGH
+  LOW
+  NORMAL
+  URGENT
+}
+
+"""OPEN → IN_PROGRESS → RESOLVED → CLOSED (+ ESCALATED)."""
+enum GrievanceStatus {
+  CLOSED
+  ESCALATED
+  IN_PROGRESS
+  OPEN
+  RESOLVED
 }
 
 type Image {
@@ -1323,6 +1506,7 @@ type Mutation {
   approveRefund(refundId: ID!): RefundEntity!
   approveReturn(id: ID!): ReturnRequestEntity!
   approveReview(id: ID!): AdminReview!
+  assignGrievance(input: AssignGrievanceInput!): GrievanceEntity!
   assignPermission(permissionId: ID!, roleId: ID!): Role!
   bulkUpdateMyProductVariants(bulkUpdateVariantsInput: BulkUpdateVariantsInput!): Float!
   cancelCheckout(orderId: ID!): Order!
@@ -1330,6 +1514,7 @@ type Mutation {
   cancelMyOrder(id: ID!, notes: String): Order!
   clearCart: Cart!
   clearWishlist: Wishlist!
+  closeGrievance(id: ID!): GrievanceEntity!
   confirmImageUpload(confirmUploadInput: ConfirmUploadInput!): Image!
   confirmNewsletter(token: String!): Boolean!
   connectCourierAccount(input: ConnectCourierAccountInput!): CourierAccountSafe!
@@ -1345,6 +1530,7 @@ type Mutation {
   createMyProduct(createProductInput: CreateProductInput!): Product!
   createMySeller(createSellerInput: CreateSellerInput!): Seller!
   createMyStore(createStoreInput: CreateStoreInput!): Store!
+  createMyStoreCoupon(input: CreateCouponInput!): Coupon!
   createMyWarehouse(createWarehouseInput: CreateWarehouseInput!): Warehouse!
   createNewsletterCampaign(input: CreateNewsletterCampaignInput!): NewsletterCampaign!
   createPage(createPageInput: CreatePageInput!): Page!
@@ -1352,6 +1538,7 @@ type Mutation {
   createPayoutRun(sellerId: ID): [PayoutEntity!]!
   createReview(input: CreateReviewInput!): Review!
   createRole(createRoleInput: CreateRoleInput!): Role!
+  createSellerRefund(input: CreateSellerRefundInput!): RefundEntity!
   createSlider(createSliderInput: CreateSliderInput!): Slider!
   createTag(createTagInput: CreateTagInput!): Tag!
   createTax(createTaxInput: CreateTaxInput!): Tax!
@@ -1359,6 +1546,8 @@ type Mutation {
   deleteImage(id: ID!): Image!
   deleteReview(id: ID!): Review
   disburseManualRefund(note: String, reference: String!, refundId: ID!): RefundEntity!
+  escalateGrievance(id: ID!, note: String): GrievanceEntity!
+  fileGrievance(input: FileGrievanceInput!): GrievanceEntity!
   generateMyProductVariantMatrix(generateVariantMatrixInput: GenerateVariantMatrixInput!): [ProductVariant!]!
   initiateCheckout(input: InitiateCheckoutInput!): CheckoutResult!
   markAllNotificationsRead: Int!
@@ -1378,6 +1567,7 @@ type Mutation {
   Force-regenerate the tax invoice for a SellerOrder. Keeps the original invoice number; only replaces the rendered PDF.
   """
   regenerateSellerOrderInvoice(sellerOrderId: ID!): String!
+  registerPushSubscription(input: RegisterPushSubscriptionInput!): PushSubscription!
   rejectRefund(reason: String, refundId: ID!): RefundEntity!
   rejectReturn(id: ID!, reason: String): ReturnRequestEntity!
   rejectReview(id: ID!, reason: String): AdminReview!
@@ -1398,6 +1588,7 @@ type Mutation {
   removeMyProductImage(id: ID!): ProductImage!
   removeMyProductVariant(id: ID!): ProductVariant!
   removeMyStore(id: ID!): Store!
+  removeMyStoreCoupon(id: ID!): Coupon
   removeMyWarehouse(id: ID!): Warehouse!
   removePage(id: ID!): Page!
   removeRole(id: ID!): Role!
@@ -1410,11 +1601,14 @@ type Mutation {
   reorderAttributeValues(reorderAttributeValuesInput: ReorderAttributeValuesInput!): Boolean!
   reorderMyProductImages(reorderProductImagesInput: ReorderProductImagesInput!): Boolean!
   reorderSlideItems(reorderSlideItemsInput: ReorderSlideItemsInput!): Boolean!
+  replyToGrievance(body: String!, id: ID!): GrievanceEntity!
   requestMyAccountDeletion: AccountDeletionRequestEntity!
   requestMyDataExport: DataExportRequestEntity!
   requestRefund(input: RequestRefundInput!): RefundEntity!
   requestReturn(input: RequestReturnInput!): ReturnRequestEntity!
   resetAdminTheme: AdminTheme!
+  resolveGrievance(input: ResolveGrievanceInput!): GrievanceEntity!
+  respondToGrievance(input: GrievanceMessageInput!): GrievanceEntity!
   restoreCustomer(id: ID!): AdminCustomer!
   revokeApiKey(id: ID!): ApiKeyEntity!
   revokePermission(permissionId: ID!, roleId: ID!): Role!
@@ -1444,6 +1638,7 @@ type Mutation {
   subscribeToNewsletter(input: SubscribeNewsletterInput!): NewsletterSubscribeResult!
   testCourierConnection(provider: CourierProvider!): CourierAccountSafe!
   togglePaymentGateway(enabled: Boolean!, id: ID!): PaymentGatewayConfigEntity!
+  unregisterPushSubscription(endpoint: String!): Boolean!
   unsubscribeFromNewsletter(token: String!): Boolean!
   unsubscribeNewsletter(id: ID!): NewsletterSubscription!
   updateAdminTheme(updateAdminThemeInput: UpdateAdminThemeInput!): AdminTheme!
@@ -1470,6 +1665,7 @@ type Mutation {
   updateMyProfile(input: UpdateMyProfileInput!): AdminCustomer!
   updateMySeller(updateSellerInput: UpdateSellerInput!): Seller!
   updateMyStore(updateStoreInput: UpdateStoreInput!): Store!
+  updateMyStoreCoupon(input: UpdateCouponInput!): Coupon!
   updateMyStoreShipping(input: UpdateStoreShippingInput!): Store!
   updateMyWarehouse(updateWarehouseInput: UpdateWarehouseInput!): Warehouse!
   updatePage(updatePageInput: UpdatePageInput!): Page!
@@ -1489,6 +1685,11 @@ type Mutation {
   validateCoupon(input: ValidateCouponInput!): CouponValidation!
   verifyPayment(input: VerifyPaymentInput!): Order!
   verifySellerSection(verifySectionInput: VerifySellerSectionInput!): Seller!
+}
+
+type NewSignups {
+  sellers: Int!
+  users: Int!
 }
 
 enum NewsletterAudience {
@@ -1648,6 +1849,11 @@ enum OrderStatus {
   SHIPPED
 }
 
+type OrderStatusCount {
+  count: Int!
+  status: OrderStatus!
+}
+
 type OrderStatusHistoryEntry {
   changedById: ID
   createdAt: DateTime!
@@ -1709,6 +1915,14 @@ type PaginatedAuditLogs {
 type PaginatedCategories {
   currentPage: Int!
   items: [Category!]!
+  pageSize: Int!
+  totalCount: Int!
+  totalPages: Int!
+}
+
+type PaginatedGrievances {
+  currentPage: Int!
+  items: [GrievanceEntity!]!
   pageSize: Int!
   totalCount: Int!
   totalPages: Int!
@@ -2200,8 +2414,16 @@ type ProductVariantAttribute {
   valueSlug: String!
 }
 
+type PushSubscription {
+  createdAt: DateTime!
+  endpoint: String!
+  id: ID!
+  userAgent: String
+}
+
 type Query {
   activePaymentGateways: [PaymentGatewayConfigEntity!]!
+  adminAnalytics(input: AnalyticsRangeInput): AdminAnalytics!
   adminAttributes(type: AttributeType): [ProductAttribute!]!
   adminBrands(status: BrandStatus): [Brand!]!
   adminCategoriesPaginated(page: Int, pageSize: Int, search: String): PaginatedCategories!
@@ -2211,6 +2433,8 @@ type Query {
   adminCustomer(id: ID!): AdminCustomer!
   adminCustomers(includeDeleted: Boolean, page: Int, pageSize: Int, search: String, status: String): PaginatedAdminCustomers!
   adminDashboardStats: AdminDashboardStats!
+  adminGrievance(id: ID!): GrievanceEntity!
+  adminGrievances(filter: GrievanceFilterInput): PaginatedGrievances!
   adminInventoryByProduct(productId: ID!): [Inventory!]!
   adminLabels: [Label!]!
   adminMenu(location: MenuLocation!): Menu!
@@ -2257,9 +2481,12 @@ type Query {
   courierOptionsForOrder(sellerOrderId: ID!): CourierOptionsResult!
   courierPickupLocations(provider: CourierProvider!): [CourierPickupLocation!]!
   courierWebhookUrl: String!
+  deliveryEstimate(pincode: String!, productId: ID, variantId: ID): DeliveryEstimate!
   emailSetting: EmailSetting!
   emailTemplate(id: ID!): EmailTemplate!
   emailTemplates: [EmailTemplate!]!
+  grievanceComplianceReport(period: String!): GrievanceComplianceReport!
+  grievanceComplianceReportJson(period: String!): String!
 
   """
   The current guest cart (from the guestCartToken cookie). Null if none exists yet.
@@ -2276,6 +2503,8 @@ type Query {
   myCartItemCount: Int!
   myCourierAccounts: [CourierAccountSafe!]!
   myDataExports: [DataExportRequestEntity!]!
+  myGrievance(id: ID!): GrievanceEntity!
+  myGrievances: [GrievanceEntity!]!
   myInventory(lowStockOnly: Boolean, productId: ID, search: String, storeId: ID, warehouseId: ID): [Inventory!]!
   myInventoryByVariant(variantId: ID!, warehouseId: ID): Inventory
   myInventoryMovements(limit: Int, variantId: ID, warehouseId: ID): [InventoryMovement!]!
@@ -2283,21 +2512,26 @@ type Query {
   myNotifications(limit: Int = 20, offset: Int = 0): [Notification!]!
   myOrder(id: ID!): Order!
   myOrders(page: Int, pageSize: Int, status: OrderStatus): PaginatedOrders!
+  myPayouts(page: Int! = 1, pageSize: Int! = 10, status: PayoutStatus): PaginatedPayouts!
   myPermissions: [String!]!
   myProduct(id: ID!): Product!
   myProductVariantAxes(productId: ID!): [VariantAxis!]!
   myProductVariants(productId: ID!): [ProductVariant!]!
   myProducts(status: ProductStatus, storeId: ID): [Product!]!
   myProfile: AdminCustomer!
+  myPushSubscriptions: [PushSubscription!]!
   myRefunds: [RefundEntity!]!
   myReturn(id: ID!): ReturnRequestEntity!
   myReturns: [ReturnRequestEntity!]!
   myReview(productId: ID!): Review
+  myReviews: [Review!]!
   mySeller: Seller
   mySellerOrder(id: ID!): SellerOrder!
+  mySellerOrderRefundPreview(sellerOrderId: ID!): SellerRefundPreview!
   mySellerOrders(page: Int, pageSize: Int, status: OrderStatus): PaginatedSellerOrders!
   mySellerStats: SellerStats!
   myStore(id: ID!): Store
+  myStoreCoupons(storeId: ID): [Coupon!]!
   myStores: [Store!]!
   myWarehouses(storeId: ID!): [Warehouse!]!
   myWishlist: Wishlist!
@@ -2322,6 +2556,7 @@ type Query {
   reviewEligibility(productId: ID!): ReviewEligibility!
   role(id: ID!): Role!
   roles: [Role!]!
+  searchProducts(brandSlug: String, categorySlug: String, maxPrice: Float, minPrice: Float, page: Int, pageSize: Int, query: String!, sort: ProductSortOrder): PaginatedProducts!
   searchSuggestions(limit: Int, q: String!): SearchSuggestions!
   seller(id: ID!): Seller!
   sellerReturn(id: ID!): ReturnRequestEntity!
@@ -2352,6 +2587,7 @@ type Query {
   Advisory stock/price re-validation. Non-mutating; placement keeps the authoritative oversell guard.
   """
   validateCart: CartValidationResult!
+  webPushPublicKey: String
 }
 
 type RecentOrderItem {
@@ -2388,6 +2624,13 @@ enum RefundStatus {
   PROCESSING
   REJECTED
   REQUESTED
+}
+
+input RegisterPushSubscriptionInput {
+  auth: String!
+  endpoint: String!
+  p256dh: String!
+  userAgent: String
 }
 
 input RemoveCartItemInput {
@@ -2433,6 +2676,11 @@ input RequestReturnItemInput {
   condition: String
   orderItemId: ID!
   quantity: Int!
+}
+
+input ResolveGrievanceInput {
+  grievanceId: ID!
+  resolutionNote: String!
 }
 
 type ReturnEventEntity {
@@ -2501,6 +2749,14 @@ enum ReturnStatus {
   REQUESTED
 }
 
+type RevenueSummary {
+  avgOrderValue: Float!
+  gross: Float!
+  net: Float!
+  orderCount: Int!
+  refunds: Float!
+}
+
 type Review {
   body: String!
   createdAt: DateTime!
@@ -2510,6 +2766,8 @@ type Review {
   id: ID!
   media: [ReviewMedia!]!
   productId: ID!
+  productName: String
+  productSlug: String
   rating: Int!
   status: ReviewStatus!
   title: String
@@ -2707,6 +2965,23 @@ type SellerPayoutAccount {
   updatedAt: DateTime!
   upiId: String
   walletProvider: String
+}
+
+type SellerRefundPreview {
+  alreadyRefunded: Float!
+  blockedReason: String
+  currencyCode: String!
+  discountAmount: Float!
+  maxRefundable: Float!
+  orderNumber: String!
+  paymentGateway: String
+  refundable: Boolean!
+  refunds: [RefundEntity!]!
+  sellerOrderId: ID!
+  shippingAmount: Float!
+  sliceTotal: Float!
+  subtotal: Float!
+  taxAmount: Float!
 }
 
 type SellerShippingQuote {
@@ -3079,6 +3354,21 @@ type TcsPeriodSummary {
 input ToggleWishlistInput {
   productId: ID!
   variantId: ID
+}
+
+type TopProduct {
+  grossRevenue: Float!
+  name: String!
+  productId: ID!
+  unitsSold: Int!
+}
+
+type TopSeller {
+  gmv: Float!
+  netPayable: Float!
+  orderCount: Int!
+  sellerId: ID!
+  sellerName: String!
 }
 
 input UpdateAddressInput {

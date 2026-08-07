@@ -7,8 +7,9 @@
  * centre. Reuses the shop's product card, pagination, filters, and price
  * bucket logic — same look, same filters, term-aware copy.
  *
- * v1 backend uses ILIKE across product name / shortDescription / brand name.
- * Faster, weighted full-text search lands later (see SEARCH.md).
+ * Backend ranking uses Postgres full-text search (websearch_to_tsquery over
+ * the product's weighted search vector + brand name) via `searchProducts`, so
+ * results come back relevance-ordered; "Most relevant" maps to that default.
  */
 
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -17,12 +18,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@apollo/client/react";
 import { Search as SearchIcon } from "lucide-react";
 
-import { GET_PAGINATED_PUBLIC_PRODUCTS } from "@/lib/graphql/products";
-import type {
-  GetPaginatedPublicProductsData,
-  Product,
-  ProductSortOrder,
-} from "@/types/product.types";
+import { SEARCH_PRODUCTS, type GetSearchProductsData } from "@/lib/graphql/search";
+import type { Product, ProductSortOrder } from "@/types/product.types";
 
 import {
   ShopFilters,
@@ -111,27 +108,27 @@ function SearchPageInner() {
 
   const bucket = PRICE_BUCKETS.find((b) => b.key === filters.priceBucket);
   const queryVars = {
-    search: q || null,
+    // `query` is required by searchProducts; we only send it when non-empty
+    // (see `skip` below), so it is never dispatched blank.
+    query: q,
     categorySlug: filters.categorySlug,
     minPrice: bucket?.min ?? null,
     maxPrice: bucket?.max ?? null,
+    // "RECOMMENDED" → null → backend relevance ranking (ts_rank).
     sort: sort === "RECOMMENDED" ? null : sort,
     page,
     pageSize: PAGE_SIZE,
   };
 
-  const { data, loading } = useQuery<GetPaginatedPublicProductsData>(
-    GET_PAGINATED_PUBLIC_PRODUCTS,
-    {
-      variables: queryVars,
-      // Skip while the user hasn't entered a search — show the empty hero
-      // and don't waste a roundtrip listing every product on first load.
-      skip: !q,
-      fetchPolicy: "cache-and-network",
-    },
-  );
+  const { data, loading } = useQuery<GetSearchProductsData>(SEARCH_PRODUCTS, {
+    variables: queryVars,
+    // Skip while the user hasn't entered a search — show the empty hero
+    // and don't waste a roundtrip (or send a blank required `query`).
+    skip: !q,
+    fetchPolicy: "cache-and-network",
+  });
 
-  const result = data?.paginatedPublicProducts;
+  const result = data?.searchProducts;
   const items: Product[] = result?.items ?? [];
   const totalCount = result?.totalCount ?? 0;
   const totalPages = result?.totalPages ?? 1;

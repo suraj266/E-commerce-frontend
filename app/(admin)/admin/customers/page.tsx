@@ -15,6 +15,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -121,8 +122,16 @@ type EditValues = z.infer<typeof editSchema>;
 export default function AdminCustomersPage() {
   useSetPageTitle("Customers");
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  // Deep-link support for the header command palette: it navigates here as
+  // `?search=<email>`. Seed from the URL; the effect below re-applies it on a
+  // same-route push (which doesn't remount).
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("search") ?? "",
+  );
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    () => searchParams.get("search") ?? "",
+  );
   const [statusFilter, setStatusFilter] = useState<"all" | UserStatus>("all");
   const [includeDeleted, setIncludeDeleted] = useState(false);
 
@@ -134,6 +143,13 @@ export default function AdminCustomersPage() {
     const t = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
+
+  // Re-apply `?search=` when the command palette navigates here on the same route.
+  useEffect(() => {
+    const s = searchParams.get("search") ?? "";
+    setSearchQuery(s);
+    setDebouncedSearch(s);
+  }, [searchParams]);
 
   // Server pagination — pass server's totalCount as totalRows after the first
   // response so totalPages computes correctly. Pre-fetch we treat as a single

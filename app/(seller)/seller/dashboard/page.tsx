@@ -10,6 +10,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ComponentType } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   ShieldCheck,
@@ -21,9 +22,18 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  IndianRupee,
+  TrendingUp,
+  TrendingDown,
+  ShoppingCart,
 } from "lucide-react";
 
 import { GET_MY_SELLER } from "@/lib/graphql/sellers";
+import {
+  GET_MY_SELLER_STATS,
+  type MySellerStatsData,
+  type SellerStats,
+} from "@/lib/graphql/seller-stats";
 import {
   GetMySellerData,
   Seller,
@@ -33,6 +43,7 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatPrice } from "@/lib/utils/currency";
 
 const STATUS_BADGE: Record<
   SellerStatus,
@@ -50,6 +61,16 @@ export default function SellerDashboardPage() {
   const user = useAuthStore((s) => s.user);
   const { data, loading } = useQuery<GetMySellerData>(GET_MY_SELLER);
   const seller = data?.mySeller ?? null;
+  const verified = seller?.overallStatus === "VERIFIED";
+
+  // Real earnings/sales analytics — only fetched once the seller can transact
+  // (VERIFIED). `mySellerStats` is scoped to the caller's own store server-side.
+  const { data: statsData, loading: statsLoading } =
+    useQuery<MySellerStatsData>(GET_MY_SELLER_STATS, {
+      skip: !verified,
+      fetchPolicy: "cache-and-network",
+    });
+  const stats = statsData?.mySellerStats ?? null;
 
   return (
     <div className="space-y-6">
@@ -72,7 +93,11 @@ export default function SellerDashboardPage() {
         <KycProgressCard seller={seller} />
       )}
 
-      <QuickLinks verified={seller?.overallStatus === "VERIFIED"} />
+      {verified && (
+        <SellerAnalytics stats={stats} loading={statsLoading && !stats} />
+      )}
+
+      <QuickLinks verified={verified} />
     </div>
   );
 }
@@ -273,6 +298,218 @@ function QuickLinks({ verified }: { verified: boolean }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Seller analytics — real earnings/sales aggregations (mySellerStats), scoped
+// server-side to the caller's own store. Shown once the seller is VERIFIED.
+// ---------------------------------------------------------------------------
+function SellerAnalytics({
+  stats,
+  loading,
+}: {
+  stats: SellerStats | null;
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border bg-card p-8 flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (!stats) return null;
+
+  const monthly = stats.monthlyEarnings ?? [];
+  const maxEarnings = Math.max(1, ...monthly.map((m) => m.value));
+  const noEarnings = monthly.every((m) => m.value === 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Earnings + payout tiles */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <SellerStatTile
+          icon={IndianRupee}
+          label="Net This Month"
+          value={formatPrice(stats.netEarningsThisMonth, "INR")}
+          delta={stats.netEarningsChangePct}
+        />
+        <SellerStatTile
+          icon={Wallet}
+          label="Lifetime Net"
+          value={formatPrice(stats.lifetimeNetEarnings, "INR")}
+          sub="After commission"
+        />
+        <SellerStatTile
+          icon={Clock}
+          label="Pending Payout"
+          value={formatPrice(stats.pendingPayoutAmount, "INR")}
+          sub="Awaiting settlement"
+        />
+        <SellerStatTile
+          icon={CheckCircle2}
+          label="Paid Out"
+          value={formatPrice(stats.paidPayoutAmount, "INR")}
+          sub="Settled to date"
+        />
+      </div>
+
+      {/* Order pipeline */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <SellerStatTile
+          icon={ShoppingCart}
+          label="Orders This Month"
+          value={stats.ordersThisMonth.toLocaleString("en-IN")}
+          delta={stats.ordersChangePct}
+          compact
+        />
+        <SellerStatTile
+          icon={Clock}
+          label="Pending"
+          value={stats.pendingOrders.toLocaleString("en-IN")}
+          compact
+        />
+        <SellerStatTile
+          icon={Package}
+          label="To Ship"
+          value={stats.toShipOrders.toLocaleString("en-IN")}
+          compact
+        />
+        <SellerStatTile
+          icon={CheckCircle2}
+          label="Delivered"
+          value={stats.deliveredOrders.toLocaleString("en-IN")}
+          compact
+        />
+        <SellerStatTile
+          icon={AlertTriangle}
+          label="Cancelled"
+          value={stats.cancelledOrders.toLocaleString("en-IN")}
+          compact
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-5">
+        {/* Monthly net-earnings chart */}
+        <div className="rounded-lg border bg-card p-5 lg:col-span-3">
+          <div className="mb-4">
+            <h2 className="font-semibold">Net Earnings</h2>
+            <p className="text-xs text-muted-foreground">
+              Payouts by month, current year
+            </p>
+          </div>
+          {noEarnings ? (
+            <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
+              No earnings yet.
+            </div>
+          ) : (
+            <div className="flex h-[200px] items-end gap-1.5">
+              {monthly.map((m) => (
+                <div
+                  key={m.label}
+                  className="flex flex-1 flex-col items-center gap-1"
+                  title={`${m.label}: ${formatPrice(m.value, "INR")}`}
+                >
+                  <div
+                    className="min-h-[3px] w-full rounded-t-md bg-primary/80 transition-colors hover:bg-primary"
+                    style={{ height: `${(m.value / maxEarnings) * 160}px` }}
+                  />
+                  <span className="text-[9px] text-muted-foreground">
+                    {m.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Best sellers */}
+        <div className="rounded-lg border bg-card p-5 lg:col-span-2">
+          <div className="mb-4">
+            <h2 className="font-semibold">Best Sellers</h2>
+            <p className="text-xs text-muted-foreground">
+              Top products, last 30 days
+            </p>
+          </div>
+          {stats.bestSellers.length === 0 ? (
+            <div className="flex h-[160px] items-center justify-center text-sm text-muted-foreground">
+              No sales in the last 30 days.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {stats.bestSellers.map((b) => (
+                <li
+                  key={b.productId}
+                  className="flex items-center justify-between gap-3 rounded-md bg-muted/40 px-3 py-2"
+                >
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                    {b.name}
+                  </span>
+                  <span className="whitespace-nowrap text-xs text-muted-foreground">
+                    {b.unitsSold} sold
+                  </span>
+                  <span className="whitespace-nowrap text-sm font-semibold">
+                    {formatPrice(b.revenue, "INR")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SellerStatTile({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  delta,
+  compact,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  sub?: string;
+  delta?: number;
+  compact?: boolean;
+}) {
+  const positive = (delta ?? 0) >= 0;
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground">
+          {label}
+        </span>
+        <Icon className="h-4 w-4 text-primary" />
+      </div>
+      <div className={`mt-1 font-bold ${compact ? "text-xl" : "text-2xl"}`}>
+        {value}
+      </div>
+      {delta !== undefined ? (
+        <div className="mt-1 flex items-center gap-1">
+          {positive ? (
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
+          ) : (
+            <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+          )}
+          <span
+            className={`text-xs font-medium ${
+              positive ? "text-emerald-600" : "text-red-500"
+            }`}
+          >
+            {positive ? "+" : ""}
+            {delta.toFixed(1)}%
+          </span>
+          <span className="text-xs text-muted-foreground">vs last month</span>
+        </div>
+      ) : sub ? (
+        <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+      ) : null}
     </div>
   );
 }

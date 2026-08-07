@@ -24,6 +24,9 @@ import {
   Smartphone,
   ShieldAlert,
   ArrowRight,
+  Hourglass,
+  TrendingUp,
+  Coins,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,6 +36,16 @@ import {
   UPDATE_MY_PAYOUT_ACCOUNT,
   REMOVE_MY_PAYOUT_ACCOUNT,
 } from "@/lib/graphql/sellers";
+import {
+  GET_MY_SELLER_STATS,
+  MySellerStatsData,
+  SellerStats,
+} from "@/lib/graphql/seller-stats";
+import {
+  GET_MY_PAYOUTS,
+  type MyPayoutsData,
+  type PayoutStatus,
+} from "@/lib/graphql/seller-payouts";
 import {
   GetMySellerData,
   PayoutAccountType,
@@ -69,6 +82,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TableEmpty, TableSkeleton } from "@/components/ui/data-table";
 
 interface FormState {
   accountType: PayoutAccountType;
@@ -107,6 +129,14 @@ function maskAccountNumber(num?: string | null): string {
   return `•••• ${last4}`;
 }
 
+function formatINR(amount?: number | null): string {
+  const n = Number(amount ?? 0);
+  return `₹${n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 export default function SellerPayoutsPage() {
   const { data, loading, refetch } =
     useQuery<GetMySellerData>(GET_MY_SELLER, {
@@ -115,6 +145,13 @@ export default function SellerPayoutsPage() {
   const seller = data?.mySeller ?? null;
   const verified = seller?.overallStatus === "VERIFIED";
   const accounts = seller?.payoutAccounts ?? [];
+
+  // Earnings summary — seller-scoped stats (mySellerStats is JwtAuthGuard +
+  // service ownership). Read-only; drives the summary cards above the accounts.
+  const { data: statsData } = useQuery<MySellerStatsData>(GET_MY_SELLER_STATS, {
+    fetchPolicy: "cache-and-network",
+  });
+  const stats = statsData?.mySellerStats ?? null;
 
   const [createAccount] = useMutation(CREATE_MY_PAYOUT_ACCOUNT);
   const [updateAccount] = useMutation(UPDATE_MY_PAYOUT_ACCOUNT);
@@ -264,10 +301,10 @@ export default function SellerPayoutsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" />
-            Payout Accounts
+            Payouts
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Where we send your earnings. Add a bank account, UPI ID, or wallet.
+            Your earnings and the accounts we send them to.
           </p>
         </div>
         {verified && (
@@ -277,6 +314,9 @@ export default function SellerPayoutsPage() {
           </Button>
         )}
       </div>
+
+      {/* Earnings summary */}
+      <EarningsSummary stats={stats} />
 
       {loading && (
         <div className="rounded-lg border bg-card p-8 flex items-center justify-center">
@@ -423,6 +463,9 @@ export default function SellerPayoutsPage() {
           })}
         </div>
       )}
+
+      {/* Payout-run history */}
+      <PayoutHistory />
 
       {/* Add / edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -579,6 +622,165 @@ export default function SellerPayoutsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/**
+ * Read-only earnings summary sourced from `mySellerStats` — the accrued totals.
+ * Individual settlement runs are listed below by <PayoutHistory /> (the
+ * seller-scoped `myPayouts` query, P4-03).
+ */
+function EarningsSummary({ stats }: { stats: SellerStats | null }) {
+  const cards: {
+    label: string;
+    value: string;
+    hint: string;
+    icon: typeof Wallet;
+  }[] = [
+    {
+      label: "Pending payout",
+      value: formatINR(stats?.pendingPayoutAmount),
+      hint: "Awaiting settlement",
+      icon: Hourglass,
+    },
+    {
+      label: "Paid to date",
+      value: formatINR(stats?.paidPayoutAmount),
+      hint: "Disbursed to you",
+      icon: CheckCircle2,
+    },
+    {
+      label: "Net this month",
+      value: formatINR(stats?.netEarningsThisMonth),
+      hint: "After commission & fees",
+      icon: TrendingUp,
+    },
+    {
+      label: "Lifetime net",
+      value: formatINR(stats?.lifetimeNetEarnings),
+      hint: "Total net earnings",
+      icon: Coins,
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {cards.map((c) => {
+        const Icon = c.icon;
+        return (
+          <div key={c.label} className="rounded-lg border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">
+                {c.label}
+              </span>
+              <Icon className="h-4 w-4 text-primary" />
+            </div>
+            <div className="mt-2 text-xl font-bold tracking-tight">
+              {c.value}
+            </div>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              {c.hint}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const PAYOUT_STATUS_VARIANT: Record<
+  PayoutStatus,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  PENDING: "outline",
+  PROCESSING: "secondary",
+  PAID: "default",
+  FAILED: "destructive",
+};
+
+/**
+ * Read-only payout-run history from the seller-scoped `myPayouts` query. Each
+ * row is one settlement run — gross, refund adjustment, and the net actually
+ * disbursed — newest first. Scoped server-side to the caller's own seller.
+ */
+function PayoutHistory() {
+  const { data, loading } = useQuery<MyPayoutsData>(GET_MY_PAYOUTS, {
+    variables: { page: 1, pageSize: 20 },
+    fetchPolicy: "cache-and-network",
+  });
+  const payouts = data?.myPayouts?.items ?? [];
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <h2 className="text-lg font-semibold tracking-tight">Payout history</h2>
+        <p className="text-sm text-muted-foreground">
+          Your settlement runs. Each groups delivered orders paid out together.
+        </p>
+      </div>
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/40 hover:bg-muted/40">
+              <TableHead>Date</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="hidden sm:table-cell text-right">
+                Gross
+              </TableHead>
+              <TableHead className="hidden md:table-cell text-right">
+                Refunds
+              </TableHead>
+              <TableHead className="text-right">Net paid</TableHead>
+              <TableHead className="hidden lg:table-cell">Reference</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && payouts.length === 0 ? (
+              <TableSkeleton colSpan={6} />
+            ) : payouts.length === 0 ? (
+              <TableEmpty colSpan={6} icon={Wallet}>
+                No payouts yet. Settlements show here once your delivered orders
+                are paid out.
+              </TableEmpty>
+            ) : (
+              payouts.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {new Date(p.createdAt).toLocaleDateString("en-IN")}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge
+                      variant={PAYOUT_STATUS_VARIANT[p.status]}
+                      className="text-[10px]"
+                    >
+                      {p.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-right tabular-nums">
+                    {formatINR(p.grossAmount)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-right tabular-nums text-muted-foreground">
+                    {p.refundAdjustment > 0
+                      ? `− ${formatINR(p.refundAdjustment)}`
+                      : "—"}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {formatINR(p.netAmount)}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-xs font-mono text-muted-foreground">
+                    {p.utr
+                      ? `UTR ${p.utr}`
+                      : p.status === "FAILED" && p.failureReason
+                        ? p.failureReason
+                        : "—"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

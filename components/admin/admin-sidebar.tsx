@@ -55,6 +55,7 @@ export function AdminSidebar() {
       }}
       navigation={navigation}
       logoutRedirect="/admin/login"
+      settingsHref="/admin/settings"
     />
   );
 }

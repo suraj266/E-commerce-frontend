@@ -31,6 +31,8 @@ export const ROUTE_PERMISSIONS = {
   apiKeys: ["apikey:read"],
   // Newsletter broadcast (Wave 4).
   newsletter: ["newsletter:send"],
+  // CP-EC grievance redressal + compliance report (Phase 4).
+  grievances: ["grievance:read"],
   // /api-keys is a skeleton (no backend yet); gate on a plausible future slug
   // OR fall back to super-admin visibility. Kept out of the strict gate for now.
 } as const;

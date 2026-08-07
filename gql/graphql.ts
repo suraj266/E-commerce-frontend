@@ -98,6 +98,17 @@ export type AdjustInventoryInput = {
   warehouseId?: InputMaybe<Scalars['ID']['input']>;
 };
 
+export type AdminAnalytics = {
+  __typename?: 'AdminAnalytics';
+  gmvSeries: Array<AnalyticsSeriesPoint>;
+  newSignups: NewSignups;
+  ordersByStatus: Array<OrderStatusCount>;
+  range: AnalyticsRange;
+  revenue: RevenueSummary;
+  topProducts: Array<TopProduct>;
+  topSellers: Array<TopSeller>;
+};
+
 export type AdminCreateProductInput = {
   brandId?: InputMaybe<Scalars['ID']['input']>;
   categoryId?: InputMaybe<Scalars['ID']['input']>;
@@ -297,6 +308,35 @@ export type AdminUpdateProductInput = {
   width?: InputMaybe<Scalars['Float']['input']>;
 };
 
+/** Granularity of a time-bucketed analytics series. */
+export enum AnalyticsBucket {
+  Day = 'DAY',
+  Month = 'MONTH',
+  Week = 'WEEK'
+}
+
+export type AnalyticsRange = {
+  __typename?: 'AnalyticsRange';
+  from: Scalars['DateTime']['output'];
+  granularity: AnalyticsBucket;
+  to: Scalars['DateTime']['output'];
+};
+
+export type AnalyticsRangeInput = {
+  from?: InputMaybe<Scalars['DateTime']['input']>;
+  granularity?: InputMaybe<AnalyticsBucket>;
+  to?: InputMaybe<Scalars['DateTime']['input']>;
+  topLimit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type AnalyticsSeriesPoint = {
+  __typename?: 'AnalyticsSeriesPoint';
+  bucket: Scalars['String']['output'];
+  gmv: Scalars['Float']['output'];
+  label: Scalars['String']['output'];
+  orderCount: Scalars['Int']['output'];
+};
+
 export type ApiKeyEntity = {
   __typename?: 'ApiKeyEntity';
   createdAt: Scalars['DateTime']['output'];
@@ -308,6 +348,12 @@ export type ApiKeyEntity = {
   ownerUserId: Scalars['ID']['output'];
   revokedAt?: Maybe<Scalars['DateTime']['output']>;
   scopes: Array<Scalars['String']['output']>;
+};
+
+export type AssignGrievanceInput = {
+  assigneeUserId: Scalars['ID']['input'];
+  grievanceId: Scalars['ID']['input'];
+  priority?: InputMaybe<GrievancePriority>;
 };
 
 export enum AttributeType {
@@ -866,6 +912,12 @@ export type CreateSellerInput = {
   supportEmail?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type CreateSellerRefundInput = {
+  amount?: InputMaybe<Scalars['Float']['input']>;
+  reason?: InputMaybe<Scalars['String']['input']>;
+  sellerOrderId: Scalars['ID']['input'];
+};
+
 export type CreateSliderInput = {
   /** JSON-encoded config object. */
   config?: InputMaybe<Scalars['String']['input']>;
@@ -979,6 +1031,21 @@ export enum DataExportStatus {
   Ready = 'READY'
 }
 
+export type DeliveryEstimate = {
+  __typename?: 'DeliveryEstimate';
+  codAvailable: Scalars['Boolean']['output'];
+  courierName?: Maybe<Scalars['String']['output']>;
+  estimatedDispatchDays?: Maybe<Scalars['Int']['output']>;
+  freeShipping: Scalars['Boolean']['output'];
+  maxDeliveryDays?: Maybe<Scalars['Int']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+  minDeliveryDays?: Maybe<Scalars['Int']['output']>;
+  pincode: Scalars['String']['output'];
+  rateSource: Scalars['String']['output'];
+  serviceable: Scalars['Boolean']['output'];
+  shippingCharge?: Maybe<Scalars['Float']['output']>;
+};
+
 export enum EmailEncryption {
   None = 'NONE',
   Ssl = 'SSL',
@@ -1031,6 +1098,15 @@ export enum EmailTemplateCategory {
   System = 'SYSTEM'
 }
 
+export type FileGrievanceInput = {
+  category: GrievanceCategory;
+  contactEmail?: InputMaybe<Scalars['String']['input']>;
+  description: Scalars['String']['input'];
+  orderId?: InputMaybe<Scalars['ID']['input']>;
+  sellerOrderId?: InputMaybe<Scalars['ID']['input']>;
+  subject: Scalars['String']['input'];
+};
+
 export enum GatewayPaymentType {
   Redirect = 'REDIRECT',
   WebsiteEmbedded = 'WEBSITE_EMBEDDED'
@@ -1044,6 +1120,121 @@ export type GenerateVariantMatrixInput = {
   basePrice: Scalars['Float']['input'];
   productId: Scalars['ID']['input'];
 };
+
+/** Who authored a thread message: CUSTOMER, OFFICER or SYSTEM. */
+export enum GrievanceAuthorRole {
+  Customer = 'CUSTOMER',
+  Officer = 'OFFICER',
+  System = 'SYSTEM'
+}
+
+/** Complaint category (CP-EC redressal). */
+export enum GrievanceCategory {
+  DataPrivacy = 'DATA_PRIVACY',
+  Delivery = 'DELIVERY',
+  OrderIssue = 'ORDER_ISSUE',
+  Other = 'OTHER',
+  Payment = 'PAYMENT',
+  ProductQuality = 'PRODUCT_QUALITY',
+  Refund = 'REFUND',
+  SellerConduct = 'SELLER_CONDUCT'
+}
+
+export type GrievanceComplianceReport = {
+  __typename?: 'GrievanceComplianceReport';
+  avgResolutionHours?: Maybe<Scalars['Float']['output']>;
+  byCategory: Array<GrievanceCountBucket>;
+  byStatus: Array<GrievanceCountBucket>;
+  closed: Scalars['Int']['output'];
+  disclaimer: Scalars['String']['output'];
+  escalated: Scalars['Int']['output'];
+  officerEmail?: Maybe<Scalars['String']['output']>;
+  officerName?: Maybe<Scalars['String']['output']>;
+  officerPhone?: Maybe<Scalars['String']['output']>;
+  openingBacklog: Scalars['Int']['output'];
+  pending: Scalars['Int']['output'];
+  period: Scalars['String']['output'];
+  received: Scalars['Int']['output'];
+  resolved: Scalars['Int']['output'];
+  slaBreached: Scalars['Int']['output'];
+  slaComplianceRate?: Maybe<Scalars['Float']['output']>;
+};
+
+export type GrievanceCountBucket = {
+  __typename?: 'GrievanceCountBucket';
+  count: Scalars['Int']['output'];
+  key: Scalars['String']['output'];
+};
+
+export type GrievanceEntity = {
+  __typename?: 'GrievanceEntity';
+  assignedToUserId?: Maybe<Scalars['ID']['output']>;
+  category: GrievanceCategory;
+  closedAt?: Maybe<Scalars['DateTime']['output']>;
+  contactEmail?: Maybe<Scalars['String']['output']>;
+  contactName?: Maybe<Scalars['String']['output']>;
+  createdAt: Scalars['DateTime']['output'];
+  description: Scalars['String']['output'];
+  escalatedAt?: Maybe<Scalars['DateTime']['output']>;
+  firstResponseAt?: Maybe<Scalars['DateTime']['output']>;
+  id: Scalars['ID']['output'];
+  messages?: Maybe<Array<GrievanceMessageEntity>>;
+  orderId?: Maybe<Scalars['ID']['output']>;
+  priority: GrievancePriority;
+  raisedByUserId?: Maybe<Scalars['ID']['output']>;
+  resolutionNote?: Maybe<Scalars['String']['output']>;
+  resolvedAt?: Maybe<Scalars['DateTime']['output']>;
+  sellerOrderId?: Maybe<Scalars['ID']['output']>;
+  slaBreached: Scalars['Boolean']['output'];
+  slaDueAt: Scalars['DateTime']['output'];
+  status: GrievanceStatus;
+  subject: Scalars['String']['output'];
+  ticketNumber: Scalars['String']['output'];
+  updatedAt: Scalars['DateTime']['output'];
+};
+
+export type GrievanceFilterInput = {
+  assignedToUserId?: InputMaybe<Scalars['ID']['input']>;
+  breachedOnly?: InputMaybe<Scalars['Boolean']['input']>;
+  category?: InputMaybe<GrievanceCategory>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  priority?: InputMaybe<GrievancePriority>;
+  status?: InputMaybe<GrievanceStatus>;
+};
+
+export type GrievanceMessageEntity = {
+  __typename?: 'GrievanceMessageEntity';
+  authorRole: GrievanceAuthorRole;
+  authorUserId?: Maybe<Scalars['ID']['output']>;
+  body: Scalars['String']['output'];
+  createdAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  internal: Scalars['Boolean']['output'];
+};
+
+export type GrievanceMessageInput = {
+  body: Scalars['String']['input'];
+  grievanceId: Scalars['ID']['input'];
+  internal?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+/** Drives the SLA clock (GRIEVANCE_SLA_HOURS). */
+export enum GrievancePriority {
+  High = 'HIGH',
+  Low = 'LOW',
+  Normal = 'NORMAL',
+  Urgent = 'URGENT'
+}
+
+/** OPEN → IN_PROGRESS → RESOLVED → CLOSED (+ ESCALATED). */
+export enum GrievanceStatus {
+  Closed = 'CLOSED',
+  Escalated = 'ESCALATED',
+  InProgress = 'IN_PROGRESS',
+  Open = 'OPEN',
+  Resolved = 'RESOLVED'
+}
 
 export type Image = {
   __typename?: 'Image';
@@ -1256,6 +1447,7 @@ export type Mutation = {
   approveRefund: RefundEntity;
   approveReturn: ReturnRequestEntity;
   approveReview: AdminReview;
+  assignGrievance: GrievanceEntity;
   assignPermission: Role;
   bulkUpdateMyProductVariants: Scalars['Float']['output'];
   cancelCheckout: Order;
@@ -1263,6 +1455,7 @@ export type Mutation = {
   cancelMyOrder: Order;
   clearCart: Cart;
   clearWishlist: Wishlist;
+  closeGrievance: GrievanceEntity;
   confirmImageUpload: Image;
   confirmNewsletter: Scalars['Boolean']['output'];
   connectCourierAccount: CourierAccountSafe;
@@ -1278,6 +1471,7 @@ export type Mutation = {
   createMyProduct: Product;
   createMySeller: Seller;
   createMyStore: Store;
+  createMyStoreCoupon: Coupon;
   createMyWarehouse: Warehouse;
   createNewsletterCampaign: NewsletterCampaign;
   createPage: Page;
@@ -1285,6 +1479,7 @@ export type Mutation = {
   createPayoutRun: Array<PayoutEntity>;
   createReview: Review;
   createRole: Role;
+  createSellerRefund: RefundEntity;
   createSlider: Slider;
   createTag: Tag;
   createTax: Tax;
@@ -1292,6 +1487,8 @@ export type Mutation = {
   deleteImage: Image;
   deleteReview?: Maybe<Review>;
   disburseManualRefund: RefundEntity;
+  escalateGrievance: GrievanceEntity;
+  fileGrievance: GrievanceEntity;
   generateMyProductVariantMatrix: Array<ProductVariant>;
   initiateCheckout: CheckoutResult;
   markAllNotificationsRead: Scalars['Int']['output'];
@@ -1308,6 +1505,7 @@ export type Mutation = {
   refreshTcsDeposit: TcsDepositEntity;
   /** Force-regenerate the tax invoice for a SellerOrder. Keeps the original invoice number; only replaces the rendered PDF. */
   regenerateSellerOrderInvoice: Scalars['String']['output'];
+  registerPushSubscription: PushSubscription;
   rejectRefund: RefundEntity;
   rejectReturn: ReturnRequestEntity;
   rejectReview: AdminReview;
@@ -1328,6 +1526,7 @@ export type Mutation = {
   removeMyProductImage: ProductImage;
   removeMyProductVariant: ProductVariant;
   removeMyStore: Store;
+  removeMyStoreCoupon?: Maybe<Coupon>;
   removeMyWarehouse: Warehouse;
   removePage: Page;
   removeRole: Role;
@@ -1340,11 +1539,14 @@ export type Mutation = {
   reorderAttributeValues: Scalars['Boolean']['output'];
   reorderMyProductImages: Scalars['Boolean']['output'];
   reorderSlideItems: Scalars['Boolean']['output'];
+  replyToGrievance: GrievanceEntity;
   requestMyAccountDeletion: AccountDeletionRequestEntity;
   requestMyDataExport: DataExportRequestEntity;
   requestRefund: RefundEntity;
   requestReturn: ReturnRequestEntity;
   resetAdminTheme: AdminTheme;
+  resolveGrievance: GrievanceEntity;
+  respondToGrievance: GrievanceEntity;
   restoreCustomer: AdminCustomer;
   revokeApiKey: ApiKeyEntity;
   revokePermission: Role;
@@ -1374,6 +1576,7 @@ export type Mutation = {
   subscribeToNewsletter: NewsletterSubscribeResult;
   testCourierConnection: CourierAccountSafe;
   togglePaymentGateway: PaymentGatewayConfigEntity;
+  unregisterPushSubscription: Scalars['Boolean']['output'];
   unsubscribeFromNewsletter: Scalars['Boolean']['output'];
   unsubscribeNewsletter: NewsletterSubscription;
   updateAdminTheme: AdminTheme;
@@ -1400,6 +1603,7 @@ export type Mutation = {
   updateMyProfile: AdminCustomer;
   updateMySeller: Seller;
   updateMyStore: Store;
+  updateMyStoreCoupon: Coupon;
   updateMyStoreShipping: Store;
   updateMyWarehouse: Warehouse;
   updatePage: Page;
@@ -1522,6 +1726,11 @@ export type MutationApproveReviewArgs = {
 };
 
 
+export type MutationAssignGrievanceArgs = {
+  input: AssignGrievanceInput;
+};
+
+
 export type MutationAssignPermissionArgs = {
   permissionId: Scalars['ID']['input'];
   roleId: Scalars['ID']['input'];
@@ -1541,6 +1750,11 @@ export type MutationCancelCheckoutArgs = {
 export type MutationCancelMyOrderArgs = {
   id: Scalars['ID']['input'];
   notes?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationCloseGrievanceArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -1619,6 +1833,11 @@ export type MutationCreateMyStoreArgs = {
 };
 
 
+export type MutationCreateMyStoreCouponArgs = {
+  input: CreateCouponInput;
+};
+
+
 export type MutationCreateMyWarehouseArgs = {
   createWarehouseInput: CreateWarehouseInput;
 };
@@ -1651,6 +1870,11 @@ export type MutationCreateReviewArgs = {
 
 export type MutationCreateRoleArgs = {
   createRoleInput: CreateRoleInput;
+};
+
+
+export type MutationCreateSellerRefundArgs = {
+  input: CreateSellerRefundInput;
 };
 
 
@@ -1688,6 +1912,17 @@ export type MutationDisburseManualRefundArgs = {
   note?: InputMaybe<Scalars['String']['input']>;
   reference: Scalars['String']['input'];
   refundId: Scalars['ID']['input'];
+};
+
+
+export type MutationEscalateGrievanceArgs = {
+  id: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type MutationFileGrievanceArgs = {
+  input: FileGrievanceInput;
 };
 
 
@@ -1758,6 +1993,11 @@ export type MutationRefreshTcsDepositArgs = {
 
 export type MutationRegenerateSellerOrderInvoiceArgs = {
   sellerOrderId: Scalars['ID']['input'];
+};
+
+
+export type MutationRegisterPushSubscriptionArgs = {
+  input: RegisterPushSubscriptionInput;
 };
 
 
@@ -1864,6 +2104,11 @@ export type MutationRemoveMyStoreArgs = {
 };
 
 
+export type MutationRemoveMyStoreCouponArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRemoveMyWarehouseArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1924,6 +2169,12 @@ export type MutationReorderSlideItemsArgs = {
 };
 
 
+export type MutationReplyToGrievanceArgs = {
+  body: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationRequestRefundArgs = {
   input: RequestRefundInput;
 };
@@ -1931,6 +2182,16 @@ export type MutationRequestRefundArgs = {
 
 export type MutationRequestReturnArgs = {
   input: RequestReturnInput;
+};
+
+
+export type MutationResolveGrievanceArgs = {
+  input: ResolveGrievanceInput;
+};
+
+
+export type MutationRespondToGrievanceArgs = {
+  input: GrievanceMessageInput;
 };
 
 
@@ -2087,6 +2348,11 @@ export type MutationTogglePaymentGatewayArgs = {
 };
 
 
+export type MutationUnregisterPushSubscriptionArgs = {
+  endpoint: Scalars['String']['input'];
+};
+
+
 export type MutationUnsubscribeFromNewsletterArgs = {
   token: Scalars['String']['input'];
 };
@@ -2217,6 +2483,11 @@ export type MutationUpdateMyStoreArgs = {
 };
 
 
+export type MutationUpdateMyStoreCouponArgs = {
+  input: UpdateCouponInput;
+};
+
+
 export type MutationUpdateMyStoreShippingArgs = {
   input: UpdateStoreShippingInput;
 };
@@ -2299,6 +2570,12 @@ export type MutationVerifyPaymentArgs = {
 
 export type MutationVerifySellerSectionArgs = {
   verifySectionInput: VerifySellerSectionInput;
+};
+
+export type NewSignups = {
+  __typename?: 'NewSignups';
+  sellers: Scalars['Int']['output'];
+  users: Scalars['Int']['output'];
 };
 
 export enum NewsletterAudience {
@@ -2460,6 +2737,12 @@ export enum OrderStatus {
   Shipped = 'SHIPPED'
 }
 
+export type OrderStatusCount = {
+  __typename?: 'OrderStatusCount';
+  count: Scalars['Int']['output'];
+  status: OrderStatus;
+};
+
 export type OrderStatusHistoryEntry = {
   __typename?: 'OrderStatusHistoryEntry';
   changedById?: Maybe<Scalars['ID']['output']>;
@@ -2525,6 +2808,15 @@ export type PaginatedCategories = {
   __typename?: 'PaginatedCategories';
   currentPage: Scalars['Int']['output'];
   items: Array<Category>;
+  pageSize: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
+  totalPages: Scalars['Int']['output'];
+};
+
+export type PaginatedGrievances = {
+  __typename?: 'PaginatedGrievances';
+  currentPage: Scalars['Int']['output'];
+  items: Array<GrievanceEntity>;
   pageSize: Scalars['Int']['output'];
   totalCount: Scalars['Int']['output'];
   totalPages: Scalars['Int']['output'];
@@ -3023,9 +3315,18 @@ export type ProductVariantAttribute = {
   valueSlug: Scalars['String']['output'];
 };
 
+export type PushSubscription = {
+  __typename?: 'PushSubscription';
+  createdAt: Scalars['DateTime']['output'];
+  endpoint: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  userAgent?: Maybe<Scalars['String']['output']>;
+};
+
 export type Query = {
   __typename?: 'Query';
   activePaymentGateways: Array<PaymentGatewayConfigEntity>;
+  adminAnalytics: AdminAnalytics;
   adminAttributes: Array<ProductAttribute>;
   adminBrands: Array<Brand>;
   adminCategoriesPaginated: PaginatedCategories;
@@ -3035,6 +3336,8 @@ export type Query = {
   adminCustomer: AdminCustomer;
   adminCustomers: PaginatedAdminCustomers;
   adminDashboardStats: AdminDashboardStats;
+  adminGrievance: GrievanceEntity;
+  adminGrievances: PaginatedGrievances;
   adminInventoryByProduct: Array<Inventory>;
   adminLabels: Array<Label>;
   adminMenu: Menu;
@@ -3081,9 +3384,12 @@ export type Query = {
   courierOptionsForOrder: CourierOptionsResult;
   courierPickupLocations: Array<CourierPickupLocation>;
   courierWebhookUrl: Scalars['String']['output'];
+  deliveryEstimate: DeliveryEstimate;
   emailSetting: EmailSetting;
   emailTemplate: EmailTemplate;
   emailTemplates: Array<EmailTemplate>;
+  grievanceComplianceReport: GrievanceComplianceReport;
+  grievanceComplianceReportJson: Scalars['String']['output'];
   /** The current guest cart (from the guestCartToken cookie). Null if none exists yet. */
   guestCart?: Maybe<Cart>;
   image?: Maybe<Image>;
@@ -3097,6 +3403,8 @@ export type Query = {
   myCartItemCount: Scalars['Int']['output'];
   myCourierAccounts: Array<CourierAccountSafe>;
   myDataExports: Array<DataExportRequestEntity>;
+  myGrievance: GrievanceEntity;
+  myGrievances: Array<GrievanceEntity>;
   myInventory: Array<Inventory>;
   myInventoryByVariant?: Maybe<Inventory>;
   myInventoryMovements: Array<InventoryMovement>;
@@ -3104,21 +3412,26 @@ export type Query = {
   myNotifications: Array<Notification>;
   myOrder: Order;
   myOrders: PaginatedOrders;
+  myPayouts: PaginatedPayouts;
   myPermissions: Array<Scalars['String']['output']>;
   myProduct: Product;
   myProductVariantAxes: Array<VariantAxis>;
   myProductVariants: Array<ProductVariant>;
   myProducts: Array<Product>;
   myProfile: AdminCustomer;
+  myPushSubscriptions: Array<PushSubscription>;
   myRefunds: Array<RefundEntity>;
   myReturn: ReturnRequestEntity;
   myReturns: Array<ReturnRequestEntity>;
   myReview?: Maybe<Review>;
+  myReviews: Array<Review>;
   mySeller?: Maybe<Seller>;
   mySellerOrder: SellerOrder;
+  mySellerOrderRefundPreview: SellerRefundPreview;
   mySellerOrders: PaginatedSellerOrders;
   mySellerStats: SellerStats;
   myStore?: Maybe<Store>;
+  myStoreCoupons: Array<Coupon>;
   myStores: Array<Store>;
   myWarehouses: Array<Warehouse>;
   myWishlist: Wishlist;
@@ -3143,6 +3456,7 @@ export type Query = {
   reviewEligibility: ReviewEligibility;
   role: Role;
   roles: Array<Role>;
+  searchProducts: PaginatedProducts;
   searchSuggestions: SearchSuggestions;
   seller: Seller;
   sellerReturn: ReturnRequestEntity;
@@ -3169,6 +3483,12 @@ export type Query = {
   users: Array<User>;
   /** Advisory stock/price re-validation. Non-mutating; placement keeps the authoritative oversell guard. */
   validateCart: CartValidationResult;
+  webPushPublicKey?: Maybe<Scalars['String']['output']>;
+};
+
+
+export type QueryAdminAnalyticsArgs = {
+  input?: InputMaybe<AnalyticsRangeInput>;
 };
 
 
@@ -3216,6 +3536,16 @@ export type QueryAdminCustomersArgs = {
   pageSize?: InputMaybe<Scalars['Int']['input']>;
   search?: InputMaybe<Scalars['String']['input']>;
   status?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+export type QueryAdminGrievanceArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryAdminGrievancesArgs = {
+  filter?: InputMaybe<GrievanceFilterInput>;
 };
 
 
@@ -3458,8 +3788,25 @@ export type QueryCourierPickupLocationsArgs = {
 };
 
 
+export type QueryDeliveryEstimateArgs = {
+  pincode: Scalars['String']['input'];
+  productId?: InputMaybe<Scalars['ID']['input']>;
+  variantId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
 export type QueryEmailTemplateArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryGrievanceComplianceReportArgs = {
+  period: Scalars['String']['input'];
+};
+
+
+export type QueryGrievanceComplianceReportJsonArgs = {
+  period: Scalars['String']['input'];
 };
 
 
@@ -3469,6 +3816,11 @@ export type QueryImageArgs = {
 
 
 export type QueryLabelArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryMyGrievanceArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -3513,6 +3865,13 @@ export type QueryMyOrdersArgs = {
 };
 
 
+export type QueryMyPayoutsArgs = {
+  page?: Scalars['Int']['input'];
+  pageSize?: Scalars['Int']['input'];
+  status?: InputMaybe<PayoutStatus>;
+};
+
+
 export type QueryMyProductArgs = {
   id: Scalars['ID']['input'];
 };
@@ -3549,6 +3908,11 @@ export type QueryMySellerOrderArgs = {
 };
 
 
+export type QueryMySellerOrderRefundPreviewArgs = {
+  sellerOrderId: Scalars['ID']['input'];
+};
+
+
 export type QueryMySellerOrdersArgs = {
   page?: InputMaybe<Scalars['Int']['input']>;
   pageSize?: InputMaybe<Scalars['Int']['input']>;
@@ -3558,6 +3922,11 @@ export type QueryMySellerOrdersArgs = {
 
 export type QueryMyStoreArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryMyStoreCouponsArgs = {
+  storeId?: InputMaybe<Scalars['ID']['input']>;
 };
 
 
@@ -3673,6 +4042,18 @@ export type QueryReviewEligibilityArgs = {
 
 export type QueryRoleArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QuerySearchProductsArgs = {
+  brandSlug?: InputMaybe<Scalars['String']['input']>;
+  categorySlug?: InputMaybe<Scalars['String']['input']>;
+  maxPrice?: InputMaybe<Scalars['Float']['input']>;
+  minPrice?: InputMaybe<Scalars['Float']['input']>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  query: Scalars['String']['input'];
+  sort?: InputMaybe<ProductSortOrder>;
 };
 
 
@@ -3808,6 +4189,13 @@ export enum RefundStatus {
   Requested = 'REQUESTED'
 }
 
+export type RegisterPushSubscriptionInput = {
+  auth: Scalars['String']['input'];
+  endpoint: Scalars['String']['input'];
+  p256dh: Scalars['String']['input'];
+  userAgent?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type RemoveCartItemInput = {
   variantId: Scalars['ID']['input'];
 };
@@ -3850,6 +4238,11 @@ export type RequestReturnItemInput = {
   condition?: InputMaybe<Scalars['String']['input']>;
   orderItemId: Scalars['ID']['input'];
   quantity: Scalars['Int']['input'];
+};
+
+export type ResolveGrievanceInput = {
+  grievanceId: Scalars['ID']['input'];
+  resolutionNote: Scalars['String']['input'];
 };
 
 export type ReturnEventEntity = {
@@ -3921,6 +4314,15 @@ export enum ReturnStatus {
   Requested = 'REQUESTED'
 }
 
+export type RevenueSummary = {
+  __typename?: 'RevenueSummary';
+  avgOrderValue: Scalars['Float']['output'];
+  gross: Scalars['Float']['output'];
+  net: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+  refunds: Scalars['Float']['output'];
+};
+
 export type Review = {
   __typename?: 'Review';
   body: Scalars['String']['output'];
@@ -3931,6 +4333,8 @@ export type Review = {
   id: Scalars['ID']['output'];
   media: Array<ReviewMedia>;
   productId: Scalars['ID']['output'];
+  productName?: Maybe<Scalars['String']['output']>;
+  productSlug?: Maybe<Scalars['String']['output']>;
   rating: Scalars['Int']['output'];
   status: ReviewStatus;
   title?: Maybe<Scalars['String']['output']>;
@@ -4138,6 +4542,24 @@ export type SellerPayoutAccount = {
   updatedAt: Scalars['DateTime']['output'];
   upiId?: Maybe<Scalars['String']['output']>;
   walletProvider?: Maybe<Scalars['String']['output']>;
+};
+
+export type SellerRefundPreview = {
+  __typename?: 'SellerRefundPreview';
+  alreadyRefunded: Scalars['Float']['output'];
+  blockedReason?: Maybe<Scalars['String']['output']>;
+  currencyCode: Scalars['String']['output'];
+  discountAmount: Scalars['Float']['output'];
+  maxRefundable: Scalars['Float']['output'];
+  orderNumber: Scalars['String']['output'];
+  paymentGateway?: Maybe<Scalars['String']['output']>;
+  refundable: Scalars['Boolean']['output'];
+  refunds: Array<RefundEntity>;
+  sellerOrderId: Scalars['ID']['output'];
+  shippingAmount: Scalars['Float']['output'];
+  sliceTotal: Scalars['Float']['output'];
+  subtotal: Scalars['Float']['output'];
+  taxAmount: Scalars['Float']['output'];
 };
 
 export type SellerShippingQuote = {
@@ -4514,6 +4936,23 @@ export type TcsPeriodSummary = {
 export type ToggleWishlistInput = {
   productId: Scalars['ID']['input'];
   variantId?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type TopProduct = {
+  __typename?: 'TopProduct';
+  grossRevenue: Scalars['Float']['output'];
+  name: Scalars['String']['output'];
+  productId: Scalars['ID']['output'];
+  unitsSold: Scalars['Int']['output'];
+};
+
+export type TopSeller = {
+  __typename?: 'TopSeller';
+  gmv: Scalars['Float']['output'];
+  netPayable: Scalars['Float']['output'];
+  orderCount: Scalars['Int']['output'];
+  sellerId: Scalars['ID']['output'];
+  sellerName: Scalars['String']['output'];
 };
 
 export type UpdateAddressInput = {
@@ -5068,6 +5507,11 @@ export type UnsubscribeFromNewsletterMutationVariables = Exact<{
 
 export type UnsubscribeFromNewsletterMutation = { __typename?: 'Mutation', unsubscribeFromNewsletter: boolean };
 
+export type GetMyReviewsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetMyReviewsQuery = { __typename?: 'Query', myReviews: Array<{ __typename?: 'Review', id: string, productId: string, productName?: string | null, productSlug?: string | null, rating: number, title?: string | null, body: string, status: ReviewStatus, createdAt: any, updatedAt: any }> };
+
 export type GetMyProfileQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -5179,6 +5623,91 @@ export type GetAuditLogsQuery = { __typename?: 'Query', auditLogs: { __typename?
       { __typename?: 'AuditLogEntity' }
       & { ' $fragmentRefs'?: { 'AuditLogFieldsFragment': AuditLogFieldsFragment } }
     )> } };
+
+export type GetAdminGrievancesQueryVariables = Exact<{
+  filter?: InputMaybe<GrievanceFilterInput>;
+}>;
+
+
+export type GetAdminGrievancesQuery = { __typename?: 'Query', adminGrievances: { __typename?: 'PaginatedGrievances', totalCount: number, totalPages: number, currentPage: number, pageSize: number, items: Array<(
+      { __typename?: 'GrievanceEntity' }
+      & { ' $fragmentRefs'?: { 'GrievanceFieldsFragment': GrievanceFieldsFragment } }
+    )> } };
+
+export type GetAdminGrievanceQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetAdminGrievanceQuery = { __typename?: 'Query', adminGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
+
+export type GetGrievanceComplianceReportQueryVariables = Exact<{
+  period: Scalars['String']['input'];
+}>;
+
+
+export type GetGrievanceComplianceReportQuery = { __typename?: 'Query', grievanceComplianceReport: { __typename?: 'GrievanceComplianceReport', period: string, disclaimer: string, officerName?: string | null, officerEmail?: string | null, officerPhone?: string | null, openingBacklog: number, received: number, resolved: number, closed: number, escalated: number, pending: number, slaBreached: number, slaComplianceRate?: number | null, avgResolutionHours?: number | null, byCategory: Array<{ __typename?: 'GrievanceCountBucket', key: string, count: number }>, byStatus: Array<{ __typename?: 'GrievanceCountBucket', key: string, count: number }> } };
+
+export type GetGrievanceComplianceReportJsonQueryVariables = Exact<{
+  period: Scalars['String']['input'];
+}>;
+
+
+export type GetGrievanceComplianceReportJsonQuery = { __typename?: 'Query', grievanceComplianceReportJson: string };
+
+export type AssignGrievanceMutationVariables = Exact<{
+  input: AssignGrievanceInput;
+}>;
+
+
+export type AssignGrievanceMutation = { __typename?: 'Mutation', assignGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
+
+export type RespondToGrievanceMutationVariables = Exact<{
+  input: GrievanceMessageInput;
+}>;
+
+
+export type RespondToGrievanceMutation = { __typename?: 'Mutation', respondToGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
+
+export type ResolveGrievanceMutationVariables = Exact<{
+  input: ResolveGrievanceInput;
+}>;
+
+
+export type ResolveGrievanceMutation = { __typename?: 'Mutation', resolveGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
+
+export type EscalateGrievanceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  note?: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type EscalateGrievanceMutation = { __typename?: 'Mutation', escalateGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
+
+export type CloseGrievanceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type CloseGrievanceMutation = { __typename?: 'Mutation', closeGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
 
 export type NewsletterCampaignFieldsFragment = { __typename?: 'NewsletterCampaign', id: string, subject: string, htmlBody: string, audience: NewsletterAudience, status: NewsletterCampaignStatus, recipientCount: number, sentCount: number, skippedCount: number, sendStartedAt?: any | null, sentAt?: any | null, createdAt: any, updatedAt: any } & { ' $fragmentName'?: 'NewsletterCampaignFieldsFragment' };
 
@@ -5460,6 +5989,30 @@ export type RevokePermissionMutation = { __typename?: 'Mutation', revokePermissi
     { __typename?: 'Role' }
     & { ' $fragmentRefs'?: { 'RoleFieldsFragment': RoleFieldsFragment } }
   ) };
+
+export type AdminSearchProductsQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type AdminSearchProductsQuery = { __typename?: 'Query', searchProducts: { __typename?: 'PaginatedProducts', totalCount: number, items: Array<{ __typename?: 'Product', id: string, name: string, slug: string, status: ProductStatus, price?: number | null }> } };
+
+export type AdminSearchOrdersQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type AdminSearchOrdersQuery = { __typename?: 'Query', adminOrders: { __typename?: 'PaginatedOrders', totalCount: number, items: Array<{ __typename?: 'Order', id: string, orderNumber: string, status: OrderStatus, paymentStatus: PaymentStatus, totalAmount: number, currencyCode: string }> } };
+
+export type AdminSearchCustomersQueryVariables = Exact<{
+  search?: InputMaybe<Scalars['String']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type AdminSearchCustomersQuery = { __typename?: 'Query', adminCustomers: { __typename?: 'PaginatedAdminCustomers', totalCount: number, items: Array<{ __typename?: 'AdminCustomer', id: string, name: string, email: string, phone?: string | null, status?: string | null }> } };
 
 export type AdminThemeFieldsFragment = { __typename?: 'AdminTheme', id: string, primaryLight: string, primaryDark: string, accentLight: string, accentDark: string, sidebarLight: string, sidebarDark: string, destructiveLight: string, destructiveDark: string, radius: string, fontFamily?: string | null, updatedAt: any, updatedById?: string | null } & { ' $fragmentName'?: 'AdminThemeFieldsFragment' };
 
@@ -6209,6 +6762,13 @@ export type GetAdminDashboardStatsQueryVariables = Exact<{ [key: string]: never;
 
 export type GetAdminDashboardStatsQuery = { __typename?: 'Query', adminDashboardStats: { __typename?: 'AdminDashboardStats', conversionRate: number, avgOrderValue: number, activeSellers: number, pendingReturns: number, totalRevenue: { __typename?: 'StatDelta', current: number, previous: number, changePct: number }, totalOrders: { __typename?: 'StatDelta', current: number, previous: number, changePct: number }, totalProducts: { __typename?: 'StatDelta', current: number, previous: number, changePct: number }, activeUsers: { __typename?: 'StatDelta', current: number, previous: number, changePct: number }, monthlyRevenue: Array<{ __typename?: 'MonthlyRevenuePoint', month: string, value: number }>, recentOrders: Array<{ __typename?: 'RecentOrderItem', id: string, orderNumber: string, customerName: string, productSummary: string, totalAmount: number, status: OrderStatus, placedAt: any }> } };
 
+export type GetAdminAnalyticsQueryVariables = Exact<{
+  input?: InputMaybe<AnalyticsRangeInput>;
+}>;
+
+
+export type GetAdminAnalyticsQuery = { __typename?: 'Query', adminAnalytics: { __typename?: 'AdminAnalytics', range: { __typename?: 'AnalyticsRange', from: any, to: any, granularity: AnalyticsBucket }, revenue: { __typename?: 'RevenueSummary', gross: number, refunds: number, net: number, orderCount: number, avgOrderValue: number }, newSignups: { __typename?: 'NewSignups', users: number, sellers: number }, gmvSeries: Array<{ __typename?: 'AnalyticsSeriesPoint', bucket: string, label: string, gmv: number, orderCount: number }>, ordersByStatus: Array<{ __typename?: 'OrderStatusCount', status: OrderStatus, count: number }>, topProducts: Array<{ __typename?: 'TopProduct', productId: string, name: string, unitsSold: number, grossRevenue: number }>, topSellers: Array<{ __typename?: 'TopSeller', sellerId: string, sellerName: string, orderCount: number, gmv: number, netPayable: number }> } };
+
 export type GetEmailSettingQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -6246,6 +6806,52 @@ export type SendTestEmailMutationVariables = Exact<{
 
 
 export type SendTestEmailMutation = { __typename?: 'Mutation', sendTestEmail: { __typename?: 'SendTestResult', success: boolean, message?: string | null } };
+
+export type GrievanceFieldsFragment = { __typename?: 'GrievanceEntity', id: string, ticketNumber: string, orderId?: string | null, sellerOrderId?: string | null, category: GrievanceCategory, subject: string, description: string, status: GrievanceStatus, priority: GrievancePriority, slaDueAt: any, slaBreached: boolean, assignedToUserId?: string | null, resolutionNote?: string | null, firstResponseAt?: any | null, escalatedAt?: any | null, resolvedAt?: any | null, closedAt?: any | null, createdAt: any, updatedAt: any } & { ' $fragmentName'?: 'GrievanceFieldsFragment' };
+
+export type GrievanceDetailFieldsFragment = (
+  { __typename?: 'GrievanceEntity', contactName?: string | null, contactEmail?: string | null, messages?: Array<{ __typename?: 'GrievanceMessageEntity', id: string, authorRole: GrievanceAuthorRole, authorUserId?: string | null, body: string, internal: boolean, createdAt: any }> | null }
+  & { ' $fragmentRefs'?: { 'GrievanceFieldsFragment': GrievanceFieldsFragment } }
+) & { ' $fragmentName'?: 'GrievanceDetailFieldsFragment' };
+
+export type FileGrievanceMutationVariables = Exact<{
+  input: FileGrievanceInput;
+}>;
+
+
+export type FileGrievanceMutation = { __typename?: 'Mutation', fileGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceFieldsFragment': GrievanceFieldsFragment } }
+  ) };
+
+export type GetMyGrievancesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetMyGrievancesQuery = { __typename?: 'Query', myGrievances: Array<(
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceFieldsFragment': GrievanceFieldsFragment } }
+  )> };
+
+export type GetMyGrievanceQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetMyGrievanceQuery = { __typename?: 'Query', myGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
+
+export type ReplyToGrievanceMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  body: Scalars['String']['input'];
+}>;
+
+
+export type ReplyToGrievanceMutation = { __typename?: 'Mutation', replyToGrievance: (
+    { __typename?: 'GrievanceEntity' }
+    & { ' $fragmentRefs'?: { 'GrievanceDetailFieldsFragment': GrievanceDetailFieldsFragment } }
+  ) };
 
 export type ImageFieldsFragment = { __typename?: 'Image', id: string, provider: string, externalId: string, url: string, format: string, width: number, height: number, sizeBytes: number, ownerType: ImageOwnerType, ownerId?: string | null, purpose: ImagePurpose, alt?: string | null, createdAt: any } & { ' $fragmentName'?: 'ImageFieldsFragment' };
 
@@ -7423,6 +8029,99 @@ export type RejectReviewMutation = { __typename?: 'Mutation', rejectReview: (
     & { ' $fragmentRefs'?: { 'AdminReviewFieldsFragment': AdminReviewFieldsFragment } }
   ) };
 
+export type SearchProductsQueryVariables = Exact<{
+  query: Scalars['String']['input'];
+  categorySlug?: InputMaybe<Scalars['String']['input']>;
+  brandSlug?: InputMaybe<Scalars['String']['input']>;
+  minPrice?: InputMaybe<Scalars['Float']['input']>;
+  maxPrice?: InputMaybe<Scalars['Float']['input']>;
+  sort?: InputMaybe<ProductSortOrder>;
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+}>;
+
+
+export type SearchProductsQuery = { __typename?: 'Query', searchProducts: { __typename?: 'PaginatedProducts', totalCount: number, totalPages: number, currentPage: number, pageSize: number, items: Array<(
+      { __typename?: 'Product', variants?: Array<{ __typename?: 'ProductVariant', id: string, name?: string | null, price: number, priceWithTax?: number | null, taxAmount?: number | null, compareAtPrice?: number | null, imageUrl?: string | null, availableQuantity?: number | null, stockState?: StockState | null, attributes: Array<{ __typename?: 'ProductVariantAttribute', attributeName: string, value: string }> }> | null }
+      & { ' $fragmentRefs'?: { 'ProductSummaryFieldsFragment': ProductSummaryFieldsFragment } }
+    )> } };
+
+export type DeliveryEstimateQueryVariables = Exact<{
+  pincode: Scalars['String']['input'];
+  productId?: InputMaybe<Scalars['ID']['input']>;
+  variantId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type DeliveryEstimateQuery = { __typename?: 'Query', deliveryEstimate: { __typename?: 'DeliveryEstimate', pincode: string, serviceable: boolean, estimatedDispatchDays?: number | null, minDeliveryDays?: number | null, maxDeliveryDays?: number | null, rateSource: string, courierName?: string | null, shippingCharge?: number | null, freeShipping: boolean, codAvailable: boolean, message?: string | null } };
+
+export type SellerCouponFieldsFragment = { __typename?: 'Coupon', id: string, storeId?: string | null, code: string, name: string, description?: string | null, discountType: string, discountValue: number, minimumPurchaseAmount?: number | null, maximumDiscountAmount?: number | null, usageLimit?: number | null, usageLimitPerUser?: number | null, validFrom: any, validUntil: any, isActive: boolean, redemptionCount?: number | null, createdAt: any, updatedAt: any } & { ' $fragmentName'?: 'SellerCouponFieldsFragment' };
+
+export type GetMyStoreCouponsQueryVariables = Exact<{
+  storeId?: InputMaybe<Scalars['ID']['input']>;
+}>;
+
+
+export type GetMyStoreCouponsQuery = { __typename?: 'Query', myStoreCoupons: Array<(
+    { __typename?: 'Coupon' }
+    & { ' $fragmentRefs'?: { 'SellerCouponFieldsFragment': SellerCouponFieldsFragment } }
+  )> };
+
+export type CreateMyStoreCouponMutationVariables = Exact<{
+  input: CreateCouponInput;
+}>;
+
+
+export type CreateMyStoreCouponMutation = { __typename?: 'Mutation', createMyStoreCoupon: (
+    { __typename?: 'Coupon' }
+    & { ' $fragmentRefs'?: { 'SellerCouponFieldsFragment': SellerCouponFieldsFragment } }
+  ) };
+
+export type UpdateMyStoreCouponMutationVariables = Exact<{
+  input: UpdateCouponInput;
+}>;
+
+
+export type UpdateMyStoreCouponMutation = { __typename?: 'Mutation', updateMyStoreCoupon: (
+    { __typename?: 'Coupon' }
+    & { ' $fragmentRefs'?: { 'SellerCouponFieldsFragment': SellerCouponFieldsFragment } }
+  ) };
+
+export type RemoveMyStoreCouponMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type RemoveMyStoreCouponMutation = { __typename?: 'Mutation', removeMyStoreCoupon?: { __typename?: 'Coupon', id: string } | null };
+
+export type SellerPayoutFieldsFragment = { __typename?: 'PayoutEntity', id: string, status: PayoutStatus, grossAmount: number, refundAdjustment: number, netAmount: number, currencyCode: string, utr?: string | null, paidAt?: any | null, failedAt?: any | null, failureReason?: string | null, createdAt: any, items?: Array<{ __typename?: 'PayoutItemEntity', id: string, sellerOrderId: string, amount: number, refundedAmount: number }> | null } & { ' $fragmentName'?: 'SellerPayoutFieldsFragment' };
+
+export type GetMyPayoutsQueryVariables = Exact<{
+  page?: InputMaybe<Scalars['Int']['input']>;
+  pageSize?: InputMaybe<Scalars['Int']['input']>;
+  status?: InputMaybe<PayoutStatus>;
+}>;
+
+
+export type GetMyPayoutsQuery = { __typename?: 'Query', myPayouts: { __typename?: 'PaginatedPayouts', totalCount: number, totalPages: number, currentPage: number, pageSize: number, items: Array<(
+      { __typename?: 'PayoutEntity' }
+      & { ' $fragmentRefs'?: { 'SellerPayoutFieldsFragment': SellerPayoutFieldsFragment } }
+    )> } };
+
+export type MySellerOrderRefundPreviewQueryVariables = Exact<{
+  sellerOrderId: Scalars['ID']['input'];
+}>;
+
+
+export type MySellerOrderRefundPreviewQuery = { __typename?: 'Query', mySellerOrderRefundPreview: { __typename?: 'SellerRefundPreview', sellerOrderId: string, orderNumber: string, currencyCode: string, subtotal: number, taxAmount: number, shippingAmount: number, discountAmount: number, sliceTotal: number, alreadyRefunded: number, maxRefundable: number, refundable: boolean, blockedReason?: string | null, paymentGateway?: string | null, refunds: Array<{ __typename?: 'RefundEntity', id: string, amount: number, status: RefundStatus, reason?: string | null, failureReason?: string | null, createdAt: any }> } };
+
+export type CreateSellerRefundMutationVariables = Exact<{
+  input: CreateSellerRefundInput;
+}>;
+
+
+export type CreateSellerRefundMutation = { __typename?: 'Mutation', createSellerRefund: { __typename?: 'RefundEntity', id: string, amount: number, status: RefundStatus, failureReason?: string | null, gatewayRefundId?: string | null, createdAt: any } };
+
 export type MySellerStatsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -8138,6 +8837,8 @@ export const CollectionFieldsFragmentDoc = {"kind":"Document","definitions":[{"k
 export const CouponFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CouponFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Coupon"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"discountType"}},{"kind":"Field","name":{"kind":"Name","value":"discountValue"}},{"kind":"Field","name":{"kind":"Name","value":"minimumPurchaseAmount"}},{"kind":"Field","name":{"kind":"Name","value":"maximumDiscountAmount"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimit"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimitPerUser"}},{"kind":"Field","name":{"kind":"Name","value":"validFrom"}},{"kind":"Field","name":{"kind":"Name","value":"validUntil"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"redemptionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<CouponFieldsFragment, unknown>;
 export const CourierAccountFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"CourierAccountFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"CourierAccountSafe"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"hasCredentials"}},{"kind":"Field","name":{"kind":"Name","value":"pickupLocationNickname"}},{"kind":"Field","name":{"kind":"Name","value":"webhookConfigured"}},{"kind":"Field","name":{"kind":"Name","value":"lastError"}},{"kind":"Field","name":{"kind":"Name","value":"lastTestedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<CourierAccountFieldsFragment, unknown>;
 export const AdminCustomerFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminCustomerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCustomer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"userCreatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"marketingOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"preferredCurrency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]} as unknown as DocumentNode<AdminCustomerFieldsFragment, unknown>;
+export const GrievanceFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GrievanceFieldsFragment, unknown>;
+export const GrievanceDetailFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GrievanceDetailFieldsFragment, unknown>;
 export const ImageFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"format"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"height"}},{"kind":"Field","name":{"kind":"Name","value":"sizeBytes"}},{"kind":"Field","name":{"kind":"Name","value":"ownerType"}},{"kind":"Field","name":{"kind":"Name","value":"ownerId"}},{"kind":"Field","name":{"kind":"Name","value":"purpose"}},{"kind":"Field","name":{"kind":"Name","value":"alt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<ImageFieldsFragment, unknown>;
 export const InventoryFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"InventoryFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Inventory"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"warehouseId"}},{"kind":"Field","name":{"kind":"Name","value":"quantityAvailable"}},{"kind":"Field","name":{"kind":"Name","value":"quantityReserved"}},{"kind":"Field","name":{"kind":"Name","value":"quantityOnHand"}},{"kind":"Field","name":{"kind":"Name","value":"reorderPoint"}},{"kind":"Field","name":{"kind":"Name","value":"reorderQuantity"}},{"kind":"Field","name":{"kind":"Name","value":"lastCountedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"stockState"}},{"kind":"Field","name":{"kind":"Name","value":"warehouse"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}}]}},{"kind":"Field","name":{"kind":"Name","value":"variant"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"attributeId"}},{"kind":"Field","name":{"kind":"Name","value":"attributeValueId"}},{"kind":"Field","name":{"kind":"Name","value":"attributeName"}},{"kind":"Field","name":{"kind":"Name","value":"attributeSlug"}},{"kind":"Field","name":{"kind":"Name","value":"value"}},{"kind":"Field","name":{"kind":"Name","value":"valueSlug"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}}]}}]}}]} as unknown as DocumentNode<InventoryFieldsFragment, unknown>;
 export const InventoryMovementFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"InventoryMovementFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"InventoryMovement"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"inventoryId"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"warehouseId"}},{"kind":"Field","name":{"kind":"Name","value":"movementType"}},{"kind":"Field","name":{"kind":"Name","value":"quantityChange"}},{"kind":"Field","name":{"kind":"Name","value":"quantityBefore"}},{"kind":"Field","name":{"kind":"Name","value":"quantityAfter"}},{"kind":"Field","name":{"kind":"Name","value":"referenceType"}},{"kind":"Field","name":{"kind":"Name","value":"referenceId"}},{"kind":"Field","name":{"kind":"Name","value":"notes"}},{"kind":"Field","name":{"kind":"Name","value":"createdById"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<InventoryMovementFieldsFragment, unknown>;
@@ -8160,6 +8861,8 @@ export const ReturnFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind"
 export const ReturnDetailFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ReturnDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ReturnRequestEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ReturnFields"}},{"kind":"Field","name":{"kind":"Name","value":"events"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"fromStatus"}},{"kind":"Field","name":{"kind":"Name","value":"toStatus"}},{"kind":"Field","name":{"kind":"Name","value":"note"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ReturnFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ReturnRequestEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"returnNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerId"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionType"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"customerNote"}},{"kind":"Field","name":{"kind":"Name","value":"qcNote"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"reverseAwb"}},{"kind":"Field","name":{"kind":"Name","value":"reverseLabelUrl"}},{"kind":"Field","name":{"kind":"Name","value":"refundId"}},{"kind":"Field","name":{"kind":"Name","value":"refundAmount"}},{"kind":"Field","name":{"kind":"Name","value":"replacementReference"}},{"kind":"Field","name":{"kind":"Name","value":"replacementApprovedAt"}},{"kind":"Field","name":{"kind":"Name","value":"replacementShippedAt"}},{"kind":"Field","name":{"kind":"Name","value":"requestedAt"}},{"kind":"Field","name":{"kind":"Name","value":"approvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"receivedAt"}},{"kind":"Field","name":{"kind":"Name","value":"refundedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"orderItemId"}},{"kind":"Field","name":{"kind":"Name","value":"quantity"}},{"kind":"Field","name":{"kind":"Name","value":"condition"}}]}}]}}]} as unknown as DocumentNode<ReturnDetailFieldsFragment, unknown>;
 export const ReviewFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ReviewFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Review"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"customerName"}},{"kind":"Field","name":{"kind":"Name","value":"customerAvatarUrl"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"verifiedPurchase"}},{"kind":"Field","name":{"kind":"Name","value":"media"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"thumbnailUrl"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"height"}},{"kind":"Field","name":{"kind":"Name","value":"durationMs"}},{"kind":"Field","name":{"kind":"Name","value":"sizeBytes"}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<ReviewFieldsFragment, unknown>;
 export const AdminReviewFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminReviewFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminReview"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"productName"}},{"kind":"Field","name":{"kind":"Name","value":"productSlug"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"customerName"}},{"kind":"Field","name":{"kind":"Name","value":"customerEmail"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"verifiedPurchase"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenReason"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenById"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<AdminReviewFieldsFragment, unknown>;
+export const SellerCouponFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerCouponFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Coupon"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"discountType"}},{"kind":"Field","name":{"kind":"Name","value":"discountValue"}},{"kind":"Field","name":{"kind":"Name","value":"minimumPurchaseAmount"}},{"kind":"Field","name":{"kind":"Name","value":"maximumDiscountAmount"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimit"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimitPerUser"}},{"kind":"Field","name":{"kind":"Name","value":"validFrom"}},{"kind":"Field","name":{"kind":"Name","value":"validUntil"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"redemptionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<SellerCouponFieldsFragment, unknown>;
+export const SellerPayoutFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerPayoutFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PayoutEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"grossAmount"}},{"kind":"Field","name":{"kind":"Name","value":"refundAdjustment"}},{"kind":"Field","name":{"kind":"Name","value":"netAmount"}},{"kind":"Field","name":{"kind":"Name","value":"currencyCode"}},{"kind":"Field","name":{"kind":"Name","value":"utr"}},{"kind":"Field","name":{"kind":"Name","value":"paidAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedAt"}},{"kind":"Field","name":{"kind":"Name","value":"failureReason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"refundedAmount"}}]}}]}}]} as unknown as DocumentNode<SellerPayoutFieldsFragment, unknown>;
 export const PayoutAccountFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PayoutAccountFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"SellerPayoutAccount"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sellerId"}},{"kind":"Field","name":{"kind":"Name","value":"accountType"}},{"kind":"Field","name":{"kind":"Name","value":"accountHolderName"}},{"kind":"Field","name":{"kind":"Name","value":"accountNumber"}},{"kind":"Field","name":{"kind":"Name","value":"ifscCode"}},{"kind":"Field","name":{"kind":"Name","value":"bankName"}},{"kind":"Field","name":{"kind":"Name","value":"upiId"}},{"kind":"Field","name":{"kind":"Name","value":"walletProvider"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<PayoutAccountFieldsFragment, unknown>;
 export const SellerFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Seller"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"legalName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"businessType"}},{"kind":"Field","name":{"kind":"Name","value":"dateOfIncorporation"}},{"kind":"Field","name":{"kind":"Name","value":"registrationNumber"}},{"kind":"Field","name":{"kind":"Name","value":"panNumber"}},{"kind":"Field","name":{"kind":"Name","value":"gstin"}},{"kind":"Field","name":{"kind":"Name","value":"stateCode"}},{"kind":"Field","name":{"kind":"Name","value":"stateName"}},{"kind":"Field","name":{"kind":"Name","value":"businessEmail"}},{"kind":"Field","name":{"kind":"Name","value":"businessPhone"}},{"kind":"Field","name":{"kind":"Name","value":"supportEmail"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryName"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryPan"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryDesignation"}},{"kind":"Field","name":{"kind":"Name","value":"overallStatus"}},{"kind":"Field","name":{"kind":"Name","value":"panVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"gstinVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"bankVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"documentsVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"commissionRate"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"payoutAccounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"PayoutAccountFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PayoutAccountFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"SellerPayoutAccount"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sellerId"}},{"kind":"Field","name":{"kind":"Name","value":"accountType"}},{"kind":"Field","name":{"kind":"Name","value":"accountHolderName"}},{"kind":"Field","name":{"kind":"Name","value":"accountNumber"}},{"kind":"Field","name":{"kind":"Name","value":"ifscCode"}},{"kind":"Field","name":{"kind":"Name","value":"bankName"}},{"kind":"Field","name":{"kind":"Name","value":"upiId"}},{"kind":"Field","name":{"kind":"Name","value":"walletProvider"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<SellerFieldsFragment, unknown>;
 export const SlideItemFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SlideItemFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"SlideItem"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sliderId"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"link"}},{"kind":"Field","name":{"kind":"Name","value":"ctaLabel"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"tabletImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"mobileImageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"order"}},{"kind":"Field","name":{"kind":"Name","value":"isEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<SlideItemFieldsFragment, unknown>;
@@ -8170,6 +8873,7 @@ export const TagFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"F
 export const TaxFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"TaxFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Tax"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"rate"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"displayOrder"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<TaxFieldsFragment, unknown>;
 export const WishlistFieldsFragmentDoc = {"kind":"Document","definitions":[{"kind":"FragmentDefinition","name":{"kind":"Name","value":"WishlistFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Wishlist"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"isPublic"}},{"kind":"Field","name":{"kind":"Name","value":"itemCount"}},{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"variantId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"product"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ProductFields"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ProductImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ProductImage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"altText"}},{"kind":"Field","name":{"kind":"Name","value":"displayOrder"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ProductFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Product"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}},{"kind":"Field","name":{"kind":"Name","value":"categoryId"}},{"kind":"Field","name":{"kind":"Name","value":"brandId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"shortDescription"}},{"kind":"Field","name":{"kind":"Name","value":"productType"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFeatured"}},{"kind":"Field","name":{"kind":"Name","value":"isDigital"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"compareAtPrice"}},{"kind":"Field","name":{"kind":"Name","value":"costPrice"}},{"kind":"Field","name":{"kind":"Name","value":"priceWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"taxAmount"}},{"kind":"Field","name":{"kind":"Name","value":"sku"}},{"kind":"Field","name":{"kind":"Name","value":"weight"}},{"kind":"Field","name":{"kind":"Name","value":"length"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"height"}},{"kind":"Field","name":{"kind":"Name","value":"hsnCode"}},{"kind":"Field","name":{"kind":"Name","value":"countryOfOrigin"}},{"kind":"Field","name":{"kind":"Name","value":"isPriceTaxInclusive"}},{"kind":"Field","name":{"kind":"Name","value":"seoTitle"}},{"kind":"Field","name":{"kind":"Name","value":"seoDescription"}},{"kind":"Field","name":{"kind":"Name","value":"seoKeywords"}},{"kind":"Field","name":{"kind":"Name","value":"specifications"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"images"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ProductImageFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"brand"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"logoUrl"}}]}},{"kind":"Field","name":{"kind":"Name","value":"category"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"taxId"}},{"kind":"Field","name":{"kind":"Name","value":"tax"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"rate"}}]}},{"kind":"Field","name":{"kind":"Name","value":"tags"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}}]}},{"kind":"Field","name":{"kind":"Name","value":"labels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"textColor"}},{"kind":"Field","name":{"kind":"Name","value":"icon"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}}]}},{"kind":"Field","name":{"kind":"Name","value":"assignedLabelIds"}}]}}]} as unknown as DocumentNode<WishlistFieldsFragment, unknown>;
 export const UnsubscribeFromNewsletterDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UnsubscribeFromNewsletter"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"token"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"unsubscribeFromNewsletter"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"token"},"value":{"kind":"Variable","name":{"kind":"Name","value":"token"}}}]}]}}]} as unknown as DocumentNode<UnsubscribeFromNewsletterMutation, UnsubscribeFromNewsletterMutationVariables>;
+export const GetMyReviewsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyReviews"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myReviews"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"productName"}},{"kind":"Field","name":{"kind":"Name","value":"productSlug"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetMyReviewsQuery, GetMyReviewsQueryVariables>;
 export const GetMyProfileDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyProfile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myProfile"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminCustomerFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminCustomerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCustomer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"userCreatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"marketingOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"preferredCurrency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]} as unknown as DocumentNode<GetMyProfileQuery, GetMyProfileQueryVariables>;
 export const UpdateMyProfileDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateMyProfile"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateMyProfileInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateMyProfile"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminCustomerFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminCustomerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCustomer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"userCreatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"marketingOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"preferredCurrency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]} as unknown as DocumentNode<UpdateMyProfileMutation, UpdateMyProfileMutationVariables>;
 export const GetMyAddressesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyAddresses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myAddresses"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AddressFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AddressFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Address"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"type"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"firstName"}},{"kind":"Field","name":{"kind":"Name","value":"lastName"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"addressLine1"}},{"kind":"Field","name":{"kind":"Name","value":"addressLine2"}},{"kind":"Field","name":{"kind":"Name","value":"city"}},{"kind":"Field","name":{"kind":"Name","value":"state"}},{"kind":"Field","name":{"kind":"Name","value":"postalCode"}},{"kind":"Field","name":{"kind":"Name","value":"countryCode"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}}]}}]} as unknown as DocumentNode<GetMyAddressesQuery, GetMyAddressesQueryVariables>;
@@ -8181,6 +8885,15 @@ export const GetApiKeysDocument = {"kind":"Document","definitions":[{"kind":"Ope
 export const CreateApiKeyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateApiKey"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateApiKeyInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createApiKey"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"secret"}},{"kind":"Field","name":{"kind":"Name","value":"apiKey"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ApiKeyFields"}}]}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ApiKeyFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ApiKeyEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"keyPrefix"}},{"kind":"Field","name":{"kind":"Name","value":"scopes"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserId"}},{"kind":"Field","name":{"kind":"Name","value":"lastUsedAt"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"revokedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<CreateApiKeyMutation, CreateApiKeyMutationVariables>;
 export const RevokeApiKeyDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RevokeApiKey"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"revokeApiKey"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ApiKeyFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ApiKeyFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ApiKeyEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"keyPrefix"}},{"kind":"Field","name":{"kind":"Name","value":"scopes"}},{"kind":"Field","name":{"kind":"Name","value":"ownerUserId"}},{"kind":"Field","name":{"kind":"Name","value":"lastUsedAt"}},{"kind":"Field","name":{"kind":"Name","value":"expiresAt"}},{"kind":"Field","name":{"kind":"Name","value":"revokedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<RevokeApiKeyMutation, RevokeApiKeyMutationVariables>;
 export const GetAuditLogsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAuditLogs"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AuditLogFilterInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"auditLogs"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AuditLogFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"currentPage"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AuditLogFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AuditLogEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"actorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"actorEmail"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"entityType"}},{"kind":"Field","name":{"kind":"Name","value":"entityId"}},{"kind":"Field","name":{"kind":"Name","value":"before"}},{"kind":"Field","name":{"kind":"Name","value":"after"}},{"kind":"Field","name":{"kind":"Name","value":"ip"}},{"kind":"Field","name":{"kind":"Name","value":"userAgent"}},{"kind":"Field","name":{"kind":"Name","value":"requestId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<GetAuditLogsQuery, GetAuditLogsQueryVariables>;
+export const GetAdminGrievancesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminGrievances"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"filter"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceFilterInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminGrievances"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filter"},"value":{"kind":"Variable","name":{"kind":"Name","value":"filter"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"currentPage"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GetAdminGrievancesQuery, GetAdminGrievancesQueryVariables>;
+export const GetAdminGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<GetAdminGrievanceQuery, GetAdminGrievanceQueryVariables>;
+export const GetGrievanceComplianceReportDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetGrievanceComplianceReport"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"period"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"grievanceComplianceReport"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"period"},"value":{"kind":"Variable","name":{"kind":"Name","value":"period"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"period"}},{"kind":"Field","name":{"kind":"Name","value":"disclaimer"}},{"kind":"Field","name":{"kind":"Name","value":"officerName"}},{"kind":"Field","name":{"kind":"Name","value":"officerEmail"}},{"kind":"Field","name":{"kind":"Name","value":"officerPhone"}},{"kind":"Field","name":{"kind":"Name","value":"openingBacklog"}},{"kind":"Field","name":{"kind":"Name","value":"received"}},{"kind":"Field","name":{"kind":"Name","value":"resolved"}},{"kind":"Field","name":{"kind":"Name","value":"closed"}},{"kind":"Field","name":{"kind":"Name","value":"escalated"}},{"kind":"Field","name":{"kind":"Name","value":"pending"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"slaComplianceRate"}},{"kind":"Field","name":{"kind":"Name","value":"avgResolutionHours"}},{"kind":"Field","name":{"kind":"Name","value":"byCategory"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"byStatus"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}}]}}]}}]} as unknown as DocumentNode<GetGrievanceComplianceReportQuery, GetGrievanceComplianceReportQueryVariables>;
+export const GetGrievanceComplianceReportJsonDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetGrievanceComplianceReportJson"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"period"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"grievanceComplianceReportJson"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"period"},"value":{"kind":"Variable","name":{"kind":"Name","value":"period"}}}]}]}}]} as unknown as DocumentNode<GetGrievanceComplianceReportJsonQuery, GetGrievanceComplianceReportJsonQueryVariables>;
+export const AssignGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AssignGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"AssignGrievanceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assignGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<AssignGrievanceMutation, AssignGrievanceMutationVariables>;
+export const RespondToGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RespondToGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceMessageInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"respondToGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<RespondToGrievanceMutation, RespondToGrievanceMutationVariables>;
+export const ResolveGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ResolveGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ResolveGrievanceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resolveGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ResolveGrievanceMutation, ResolveGrievanceMutationVariables>;
+export const EscalateGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"EscalateGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"note"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"escalateGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"note"},"value":{"kind":"Variable","name":{"kind":"Name","value":"note"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<EscalateGrievanceMutation, EscalateGrievanceMutationVariables>;
+export const CloseGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CloseGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"closeGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CloseGrievanceMutation, CloseGrievanceMutationVariables>;
 export const GetAdminNewsletterCampaignsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminNewsletterCampaigns"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"NewsletterCampaignStatus"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminNewsletterCampaigns"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"NewsletterCampaignFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"currentPage"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"NewsletterCampaignFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NewsletterCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"htmlBody"}},{"kind":"Field","name":{"kind":"Name","value":"audience"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"recipientCount"}},{"kind":"Field","name":{"kind":"Name","value":"sentCount"}},{"kind":"Field","name":{"kind":"Name","value":"skippedCount"}},{"kind":"Field","name":{"kind":"Name","value":"sendStartedAt"}},{"kind":"Field","name":{"kind":"Name","value":"sentAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GetAdminNewsletterCampaignsQuery, GetAdminNewsletterCampaignsQueryVariables>;
 export const GetAdminNewsletterCampaignDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminNewsletterCampaign"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminNewsletterCampaign"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"NewsletterCampaignFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"NewsletterCampaignFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NewsletterCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"htmlBody"}},{"kind":"Field","name":{"kind":"Name","value":"audience"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"recipientCount"}},{"kind":"Field","name":{"kind":"Name","value":"sentCount"}},{"kind":"Field","name":{"kind":"Name","value":"skippedCount"}},{"kind":"Field","name":{"kind":"Name","value":"sendStartedAt"}},{"kind":"Field","name":{"kind":"Name","value":"sentAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GetAdminNewsletterCampaignQuery, GetAdminNewsletterCampaignQueryVariables>;
 export const CreateNewsletterCampaignDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateNewsletterCampaign"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateNewsletterCampaignInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createNewsletterCampaign"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"NewsletterCampaignFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"NewsletterCampaignFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"NewsletterCampaign"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"htmlBody"}},{"kind":"Field","name":{"kind":"Name","value":"audience"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"recipientCount"}},{"kind":"Field","name":{"kind":"Name","value":"sentCount"}},{"kind":"Field","name":{"kind":"Name","value":"skippedCount"}},{"kind":"Field","name":{"kind":"Name","value":"sendStartedAt"}},{"kind":"Field","name":{"kind":"Name","value":"sentAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<CreateNewsletterCampaignMutation, CreateNewsletterCampaignMutationVariables>;
@@ -8207,6 +8920,9 @@ export const GetAdminRolesDocument = {"kind":"Document","definitions":[{"kind":"
 export const GetAdminPermissionsCatalogDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminPermissionsCatalog"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"PermissionFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PermissionFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Permission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"module"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}}]} as unknown as DocumentNode<GetAdminPermissionsCatalogQuery, GetAdminPermissionsCatalogQueryVariables>;
 export const AssignPermissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"AssignPermission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permissionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"assignPermission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"roleId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}}},{"kind":"Argument","name":{"kind":"Name","value":"permissionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permissionId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"RoleFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PermissionFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Permission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"module"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RoleFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Role"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"PermissionFields"}}]}}]}}]} as unknown as DocumentNode<AssignPermissionMutation, AssignPermissionMutationVariables>;
 export const RevokePermissionDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RevokePermission"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"permissionId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"revokePermission"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"roleId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"roleId"}}},{"kind":"Argument","name":{"kind":"Name","value":"permissionId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"permissionId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"RoleFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PermissionFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Permission"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"module"}},{"kind":"Field","name":{"kind":"Name","value":"action"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"description"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"RoleFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Role"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"isDefault"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"permissions"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"PermissionFields"}}]}}]}}]} as unknown as DocumentNode<RevokePermissionMutation, RevokePermissionMutationVariables>;
+export const AdminSearchProductsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdminSearchProducts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"searchProducts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"price"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}}]} as unknown as DocumentNode<AdminSearchProductsQuery, AdminSearchProductsQueryVariables>;
+export const AdminSearchOrdersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdminSearchOrders"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminOrders"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"orderNumber"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"paymentStatus"}},{"kind":"Field","name":{"kind":"Name","value":"totalAmount"}},{"kind":"Field","name":{"kind":"Name","value":"currencyCode"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}}]} as unknown as DocumentNode<AdminSearchOrdersQuery, AdminSearchOrdersQueryVariables>;
+export const AdminSearchCustomersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"AdminSearchCustomers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminCustomers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"IntValue","value":"1"}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"status"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}}]}}]}}]} as unknown as DocumentNode<AdminSearchCustomersQuery, AdminSearchCustomersQueryVariables>;
 export const GetAdminThemeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminTheme"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminTheme"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminThemeFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminThemeFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminTheme"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"primaryLight"}},{"kind":"Field","name":{"kind":"Name","value":"primaryDark"}},{"kind":"Field","name":{"kind":"Name","value":"accentLight"}},{"kind":"Field","name":{"kind":"Name","value":"accentDark"}},{"kind":"Field","name":{"kind":"Name","value":"sidebarLight"}},{"kind":"Field","name":{"kind":"Name","value":"sidebarDark"}},{"kind":"Field","name":{"kind":"Name","value":"destructiveLight"}},{"kind":"Field","name":{"kind":"Name","value":"destructiveDark"}},{"kind":"Field","name":{"kind":"Name","value":"radius"}},{"kind":"Field","name":{"kind":"Name","value":"fontFamily"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedById"}}]}}]} as unknown as DocumentNode<GetAdminThemeQuery, GetAdminThemeQueryVariables>;
 export const UpdateAdminThemeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateAdminTheme"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"updateAdminThemeInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateAdminThemeInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateAdminTheme"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"updateAdminThemeInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"updateAdminThemeInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminThemeFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminThemeFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminTheme"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"primaryLight"}},{"kind":"Field","name":{"kind":"Name","value":"primaryDark"}},{"kind":"Field","name":{"kind":"Name","value":"accentLight"}},{"kind":"Field","name":{"kind":"Name","value":"accentDark"}},{"kind":"Field","name":{"kind":"Name","value":"sidebarLight"}},{"kind":"Field","name":{"kind":"Name","value":"sidebarDark"}},{"kind":"Field","name":{"kind":"Name","value":"destructiveLight"}},{"kind":"Field","name":{"kind":"Name","value":"destructiveDark"}},{"kind":"Field","name":{"kind":"Name","value":"radius"}},{"kind":"Field","name":{"kind":"Name","value":"fontFamily"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedById"}}]}}]} as unknown as DocumentNode<UpdateAdminThemeMutation, UpdateAdminThemeMutationVariables>;
 export const ResetAdminThemeDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ResetAdminTheme"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"resetAdminTheme"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminThemeFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminThemeFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminTheme"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"primaryLight"}},{"kind":"Field","name":{"kind":"Name","value":"primaryDark"}},{"kind":"Field","name":{"kind":"Name","value":"accentLight"}},{"kind":"Field","name":{"kind":"Name","value":"accentDark"}},{"kind":"Field","name":{"kind":"Name","value":"sidebarLight"}},{"kind":"Field","name":{"kind":"Name","value":"sidebarDark"}},{"kind":"Field","name":{"kind":"Name","value":"destructiveLight"}},{"kind":"Field","name":{"kind":"Name","value":"destructiveDark"}},{"kind":"Field","name":{"kind":"Name","value":"radius"}},{"kind":"Field","name":{"kind":"Name","value":"fontFamily"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedById"}}]}}]} as unknown as DocumentNode<ResetAdminThemeMutation, ResetAdminThemeMutationVariables>;
@@ -8284,12 +9000,17 @@ export const UpdateCustomerDocument = {"kind":"Document","definitions":[{"kind":
 export const SoftDeleteCustomerDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SoftDeleteCustomer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"softDeleteCustomer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminCustomerFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminCustomerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCustomer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"userCreatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"marketingOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"preferredCurrency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]} as unknown as DocumentNode<SoftDeleteCustomerMutation, SoftDeleteCustomerMutationVariables>;
 export const RestoreCustomerDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RestoreCustomer"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"restoreCustomer"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminCustomerFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminCustomerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminCustomer"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"email"}},{"kind":"Field","name":{"kind":"Name","value":"phone"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"emailVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"lastLoginAt"}},{"kind":"Field","name":{"kind":"Name","value":"userCreatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"marketingOptIn"}},{"kind":"Field","name":{"kind":"Name","value":"preferredCurrency"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"deletedAt"}}]}}]} as unknown as DocumentNode<RestoreCustomerMutation, RestoreCustomerMutationVariables>;
 export const GetAdminDashboardStatsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminDashboardStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminDashboardStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"totalRevenue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"current"}},{"kind":"Field","name":{"kind":"Name","value":"previous"}},{"kind":"Field","name":{"kind":"Name","value":"changePct"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalOrders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"current"}},{"kind":"Field","name":{"kind":"Name","value":"previous"}},{"kind":"Field","name":{"kind":"Name","value":"changePct"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalProducts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"current"}},{"kind":"Field","name":{"kind":"Name","value":"previous"}},{"kind":"Field","name":{"kind":"Name","value":"changePct"}}]}},{"kind":"Field","name":{"kind":"Name","value":"activeUsers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"current"}},{"kind":"Field","name":{"kind":"Name","value":"previous"}},{"kind":"Field","name":{"kind":"Name","value":"changePct"}}]}},{"kind":"Field","name":{"kind":"Name","value":"monthlyRevenue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"month"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"conversionRate"}},{"kind":"Field","name":{"kind":"Name","value":"avgOrderValue"}},{"kind":"Field","name":{"kind":"Name","value":"activeSellers"}},{"kind":"Field","name":{"kind":"Name","value":"pendingReturns"}},{"kind":"Field","name":{"kind":"Name","value":"recentOrders"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"orderNumber"}},{"kind":"Field","name":{"kind":"Name","value":"customerName"}},{"kind":"Field","name":{"kind":"Name","value":"productSummary"}},{"kind":"Field","name":{"kind":"Name","value":"totalAmount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"placedAt"}}]}}]}}]}}]} as unknown as DocumentNode<GetAdminDashboardStatsQuery, GetAdminDashboardStatsQueryVariables>;
+export const GetAdminAnalyticsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminAnalytics"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"AnalyticsRangeInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminAnalytics"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"range"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"from"}},{"kind":"Field","name":{"kind":"Name","value":"to"}},{"kind":"Field","name":{"kind":"Name","value":"granularity"}}]}},{"kind":"Field","name":{"kind":"Name","value":"revenue"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"gross"}},{"kind":"Field","name":{"kind":"Name","value":"refunds"}},{"kind":"Field","name":{"kind":"Name","value":"net"}},{"kind":"Field","name":{"kind":"Name","value":"orderCount"}},{"kind":"Field","name":{"kind":"Name","value":"avgOrderValue"}}]}},{"kind":"Field","name":{"kind":"Name","value":"newSignups"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"users"}},{"kind":"Field","name":{"kind":"Name","value":"sellers"}}]}},{"kind":"Field","name":{"kind":"Name","value":"gmvSeries"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"bucket"}},{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"gmv"}},{"kind":"Field","name":{"kind":"Name","value":"orderCount"}}]}},{"kind":"Field","name":{"kind":"Name","value":"ordersByStatus"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"count"}}]}},{"kind":"Field","name":{"kind":"Name","value":"topProducts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"unitsSold"}},{"kind":"Field","name":{"kind":"Name","value":"grossRevenue"}}]}},{"kind":"Field","name":{"kind":"Name","value":"topSellers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sellerId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerName"}},{"kind":"Field","name":{"kind":"Name","value":"orderCount"}},{"kind":"Field","name":{"kind":"Name","value":"gmv"}},{"kind":"Field","name":{"kind":"Name","value":"netPayable"}}]}}]}}]}}]} as unknown as DocumentNode<GetAdminAnalyticsQuery, GetAdminAnalyticsQueryVariables>;
 export const GetEmailSettingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmailSetting"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"emailSetting"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mailer"}},{"kind":"Field","name":{"kind":"Name","value":"host"}},{"kind":"Field","name":{"kind":"Name","value":"port"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"encryption"}},{"kind":"Field","name":{"kind":"Name","value":"senderName"}},{"kind":"Field","name":{"kind":"Name","value":"senderEmail"}},{"kind":"Field","name":{"kind":"Name","value":"localDomain"}},{"kind":"Field","name":{"kind":"Name","value":"isConfigured"}},{"kind":"Field","name":{"kind":"Name","value":"hasPassword"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetEmailSettingQuery, GetEmailSettingQueryVariables>;
 export const UpdateEmailSettingDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmailSetting"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmailSettingInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmailSetting"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"mailer"}},{"kind":"Field","name":{"kind":"Name","value":"host"}},{"kind":"Field","name":{"kind":"Name","value":"port"}},{"kind":"Field","name":{"kind":"Name","value":"username"}},{"kind":"Field","name":{"kind":"Name","value":"encryption"}},{"kind":"Field","name":{"kind":"Name","value":"senderName"}},{"kind":"Field","name":{"kind":"Name","value":"senderEmail"}},{"kind":"Field","name":{"kind":"Name","value":"localDomain"}},{"kind":"Field","name":{"kind":"Name","value":"isConfigured"}},{"kind":"Field","name":{"kind":"Name","value":"hasPassword"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateEmailSettingMutation, UpdateEmailSettingMutationVariables>;
 export const GetEmailTemplatesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmailTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"emailTemplates"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"variables"}},{"kind":"Field","name":{"kind":"Name","value":"isEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetEmailTemplatesQuery, GetEmailTemplatesQueryVariables>;
 export const GetEmailTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEmailTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"emailTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"htmlBody"}},{"kind":"Field","name":{"kind":"Name","value":"textBody"}},{"kind":"Field","name":{"kind":"Name","value":"variables"}},{"kind":"Field","name":{"kind":"Name","value":"isEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<GetEmailTemplateQuery, GetEmailTemplateQueryVariables>;
 export const UpdateEmailTemplateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateEmailTemplate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateEmailTemplateInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateEmailTemplate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"htmlBody"}},{"kind":"Field","name":{"kind":"Name","value":"textBody"}},{"kind":"Field","name":{"kind":"Name","value":"variables"}},{"kind":"Field","name":{"kind":"Name","value":"isEnabled"}},{"kind":"Field","name":{"kind":"Name","value":"isSystem"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]}}]} as unknown as DocumentNode<UpdateEmailTemplateMutation, UpdateEmailTemplateMutationVariables>;
 export const SendTestEmailDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"SendTestEmail"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"SendTestEmailInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sendTestEmail"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"success"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode<SendTestEmailMutation, SendTestEmailMutationVariables>;
+export const FileGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"FileGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"FileGrievanceInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"fileGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<FileGrievanceMutation, FileGrievanceMutationVariables>;
+export const GetMyGrievancesDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyGrievances"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myGrievances"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GetMyGrievancesQuery, GetMyGrievancesQueryVariables>;
+export const GetMyGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<GetMyGrievanceQuery, GetMyGrievanceQueryVariables>;
+export const ReplyToGrievanceDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ReplyToGrievance"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"body"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"replyToGrievance"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"body"},"value":{"kind":"Variable","name":{"kind":"Name","value":"body"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceDetailFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"ticketNumber"}},{"kind":"Field","name":{"kind":"Name","value":"orderId"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"category"}},{"kind":"Field","name":{"kind":"Name","value":"subject"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}},{"kind":"Field","name":{"kind":"Name","value":"slaDueAt"}},{"kind":"Field","name":{"kind":"Name","value":"slaBreached"}},{"kind":"Field","name":{"kind":"Name","value":"assignedToUserId"}},{"kind":"Field","name":{"kind":"Name","value":"resolutionNote"}},{"kind":"Field","name":{"kind":"Name","value":"firstResponseAt"}},{"kind":"Field","name":{"kind":"Name","value":"escalatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"resolvedAt"}},{"kind":"Field","name":{"kind":"Name","value":"closedAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"GrievanceDetailFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"GrievanceEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"GrievanceFields"}},{"kind":"Field","name":{"kind":"Name","value":"contactName"}},{"kind":"Field","name":{"kind":"Name","value":"contactEmail"}},{"kind":"Field","name":{"kind":"Name","value":"messages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"authorRole"}},{"kind":"Field","name":{"kind":"Name","value":"authorUserId"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"internal"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<ReplyToGrievanceMutation, ReplyToGrievanceMutationVariables>;
 export const PresignImageUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"PresignImageUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"presignUploadInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"PresignUploadInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"presignImageUpload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"presignUploadInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"presignUploadInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"uploadUrl"}},{"kind":"Field","name":{"kind":"Name","value":"method"}},{"kind":"Field","name":{"kind":"Name","value":"fields"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"expiresIn"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}}]}}]}}]} as unknown as DocumentNode<PresignImageUploadMutation, PresignImageUploadMutationVariables>;
 export const ConfirmImageUploadDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ConfirmImageUpload"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"confirmUploadInput"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ConfirmUploadInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"confirmImageUpload"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"confirmUploadInput"},"value":{"kind":"Variable","name":{"kind":"Name","value":"confirmUploadInput"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ImageFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"format"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"height"}},{"kind":"Field","name":{"kind":"Name","value":"sizeBytes"}},{"kind":"Field","name":{"kind":"Name","value":"ownerType"}},{"kind":"Field","name":{"kind":"Name","value":"ownerId"}},{"kind":"Field","name":{"kind":"Name","value":"purpose"}},{"kind":"Field","name":{"kind":"Name","value":"alt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<ConfirmImageUploadMutation, ConfirmImageUploadMutationVariables>;
 export const DeleteImageDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"DeleteImage"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deleteImage"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ImageFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Image"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"provider"}},{"kind":"Field","name":{"kind":"Name","value":"externalId"}},{"kind":"Field","name":{"kind":"Name","value":"url"}},{"kind":"Field","name":{"kind":"Name","value":"format"}},{"kind":"Field","name":{"kind":"Name","value":"width"}},{"kind":"Field","name":{"kind":"Name","value":"height"}},{"kind":"Field","name":{"kind":"Name","value":"sizeBytes"}},{"kind":"Field","name":{"kind":"Name","value":"ownerType"}},{"kind":"Field","name":{"kind":"Name","value":"ownerId"}},{"kind":"Field","name":{"kind":"Name","value":"purpose"}},{"kind":"Field","name":{"kind":"Name","value":"alt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]} as unknown as DocumentNode<DeleteImageMutation, DeleteImageMutationVariables>;
@@ -8405,6 +9126,15 @@ export const DeleteReviewDocument = {"kind":"Document","definitions":[{"kind":"O
 export const GetAdminReviewsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetAdminReviews"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ReviewStatus"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"search"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"adminReviews"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}},{"kind":"Argument","name":{"kind":"Name","value":"search"},"value":{"kind":"Variable","name":{"kind":"Name","value":"search"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminReviewFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"currentPage"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminReviewFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminReview"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"productName"}},{"kind":"Field","name":{"kind":"Name","value":"productSlug"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"customerName"}},{"kind":"Field","name":{"kind":"Name","value":"customerEmail"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"verifiedPurchase"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenReason"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenById"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GetAdminReviewsQuery, GetAdminReviewsQueryVariables>;
 export const ApproveReviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"ApproveReview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"approveReview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminReviewFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminReviewFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminReview"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"productName"}},{"kind":"Field","name":{"kind":"Name","value":"productSlug"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"customerName"}},{"kind":"Field","name":{"kind":"Name","value":"customerEmail"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"verifiedPurchase"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenReason"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenById"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<ApproveReviewMutation, ApproveReviewMutationVariables>;
 export const RejectReviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RejectReview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"reason"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"rejectReview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}},{"kind":"Argument","name":{"kind":"Name","value":"reason"},"value":{"kind":"Variable","name":{"kind":"Name","value":"reason"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"AdminReviewFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"AdminReviewFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"AdminReview"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"productName"}},{"kind":"Field","name":{"kind":"Name","value":"productSlug"}},{"kind":"Field","name":{"kind":"Name","value":"customerId"}},{"kind":"Field","name":{"kind":"Name","value":"customerName"}},{"kind":"Field","name":{"kind":"Name","value":"customerEmail"}},{"kind":"Field","name":{"kind":"Name","value":"rating"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"body"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"verifiedPurchase"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenReason"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenById"}},{"kind":"Field","name":{"kind":"Name","value":"hiddenAt"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<RejectReviewMutation, RejectReviewMutationVariables>;
+export const SearchProductsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"SearchProducts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"query"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"categorySlug"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"brandSlug"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"minPrice"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"maxPrice"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Float"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sort"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ProductSortOrder"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"searchProducts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"query"},"value":{"kind":"Variable","name":{"kind":"Name","value":"query"}}},{"kind":"Argument","name":{"kind":"Name","value":"categorySlug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"categorySlug"}}},{"kind":"Argument","name":{"kind":"Name","value":"brandSlug"},"value":{"kind":"Variable","name":{"kind":"Name","value":"brandSlug"}}},{"kind":"Argument","name":{"kind":"Name","value":"minPrice"},"value":{"kind":"Variable","name":{"kind":"Name","value":"minPrice"}}},{"kind":"Argument","name":{"kind":"Name","value":"maxPrice"},"value":{"kind":"Variable","name":{"kind":"Name","value":"maxPrice"}}},{"kind":"Argument","name":{"kind":"Name","value":"sort"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sort"}}},{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ProductSummaryFields"}},{"kind":"Field","name":{"kind":"Name","value":"variants"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"priceWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"taxAmount"}},{"kind":"Field","name":{"kind":"Name","value":"compareAtPrice"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"availableQuantity"}},{"kind":"Field","name":{"kind":"Name","value":"stockState"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"attributeName"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"currentPage"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ProductImageFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"ProductImage"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"imageUrl"}},{"kind":"Field","name":{"kind":"Name","value":"altText"}},{"kind":"Field","name":{"kind":"Name","value":"displayOrder"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"ProductSummaryFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Product"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"slug"}},{"kind":"Field","name":{"kind":"Name","value":"productType"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"isFeatured"}},{"kind":"Field","name":{"kind":"Name","value":"price"}},{"kind":"Field","name":{"kind":"Name","value":"compareAtPrice"}},{"kind":"Field","name":{"kind":"Name","value":"priceWithTax"}},{"kind":"Field","name":{"kind":"Name","value":"taxAmount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"labels"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"key"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"color"}},{"kind":"Field","name":{"kind":"Name","value":"textColor"}},{"kind":"Field","name":{"kind":"Name","value":"icon"}},{"kind":"Field","name":{"kind":"Name","value":"priority"}}]}},{"kind":"Field","name":{"kind":"Name","value":"images"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"ProductImageFields"}}]}}]}}]} as unknown as DocumentNode<SearchProductsQuery, SearchProductsQueryVariables>;
+export const DeliveryEstimateDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"DeliveryEstimate"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pincode"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"productId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"variantId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"deliveryEstimate"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"pincode"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pincode"}}},{"kind":"Argument","name":{"kind":"Name","value":"productId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"productId"}}},{"kind":"Argument","name":{"kind":"Name","value":"variantId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"variantId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pincode"}},{"kind":"Field","name":{"kind":"Name","value":"serviceable"}},{"kind":"Field","name":{"kind":"Name","value":"estimatedDispatchDays"}},{"kind":"Field","name":{"kind":"Name","value":"minDeliveryDays"}},{"kind":"Field","name":{"kind":"Name","value":"maxDeliveryDays"}},{"kind":"Field","name":{"kind":"Name","value":"rateSource"}},{"kind":"Field","name":{"kind":"Name","value":"courierName"}},{"kind":"Field","name":{"kind":"Name","value":"shippingCharge"}},{"kind":"Field","name":{"kind":"Name","value":"freeShipping"}},{"kind":"Field","name":{"kind":"Name","value":"codAvailable"}},{"kind":"Field","name":{"kind":"Name","value":"message"}}]}}]}}]} as unknown as DocumentNode<DeliveryEstimateQuery, DeliveryEstimateQueryVariables>;
+export const GetMyStoreCouponsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyStoreCoupons"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"storeId"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myStoreCoupons"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"storeId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"storeId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SellerCouponFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerCouponFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Coupon"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"discountType"}},{"kind":"Field","name":{"kind":"Name","value":"discountValue"}},{"kind":"Field","name":{"kind":"Name","value":"minimumPurchaseAmount"}},{"kind":"Field","name":{"kind":"Name","value":"maximumDiscountAmount"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimit"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimitPerUser"}},{"kind":"Field","name":{"kind":"Name","value":"validFrom"}},{"kind":"Field","name":{"kind":"Name","value":"validUntil"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"redemptionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<GetMyStoreCouponsQuery, GetMyStoreCouponsQueryVariables>;
+export const CreateMyStoreCouponDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateMyStoreCoupon"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateCouponInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createMyStoreCoupon"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SellerCouponFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerCouponFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Coupon"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"discountType"}},{"kind":"Field","name":{"kind":"Name","value":"discountValue"}},{"kind":"Field","name":{"kind":"Name","value":"minimumPurchaseAmount"}},{"kind":"Field","name":{"kind":"Name","value":"maximumDiscountAmount"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimit"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimitPerUser"}},{"kind":"Field","name":{"kind":"Name","value":"validFrom"}},{"kind":"Field","name":{"kind":"Name","value":"validUntil"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"redemptionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<CreateMyStoreCouponMutation, CreateMyStoreCouponMutationVariables>;
+export const UpdateMyStoreCouponDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"UpdateMyStoreCoupon"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"UpdateCouponInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"updateMyStoreCoupon"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SellerCouponFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerCouponFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Coupon"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"storeId"}},{"kind":"Field","name":{"kind":"Name","value":"code"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"discountType"}},{"kind":"Field","name":{"kind":"Name","value":"discountValue"}},{"kind":"Field","name":{"kind":"Name","value":"minimumPurchaseAmount"}},{"kind":"Field","name":{"kind":"Name","value":"maximumDiscountAmount"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimit"}},{"kind":"Field","name":{"kind":"Name","value":"usageLimitPerUser"}},{"kind":"Field","name":{"kind":"Name","value":"validFrom"}},{"kind":"Field","name":{"kind":"Name","value":"validUntil"}},{"kind":"Field","name":{"kind":"Name","value":"isActive"}},{"kind":"Field","name":{"kind":"Name","value":"redemptionCount"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}}]} as unknown as DocumentNode<UpdateMyStoreCouponMutation, UpdateMyStoreCouponMutationVariables>;
+export const RemoveMyStoreCouponDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"RemoveMyStoreCoupon"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"id"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"removeMyStoreCoupon"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"id"},"value":{"kind":"Variable","name":{"kind":"Name","value":"id"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<RemoveMyStoreCouponMutation, RemoveMyStoreCouponMutationVariables>;
+export const GetMyPayoutsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMyPayouts"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"page"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"PayoutStatus"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"myPayouts"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"page"},"value":{"kind":"Variable","name":{"kind":"Name","value":"page"}}},{"kind":"Argument","name":{"kind":"Name","value":"pageSize"},"value":{"kind":"Variable","name":{"kind":"Name","value":"pageSize"}}},{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SellerPayoutFields"}}]}},{"kind":"Field","name":{"kind":"Name","value":"totalCount"}},{"kind":"Field","name":{"kind":"Name","value":"totalPages"}},{"kind":"Field","name":{"kind":"Name","value":"currentPage"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerPayoutFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"PayoutEntity"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"grossAmount"}},{"kind":"Field","name":{"kind":"Name","value":"refundAdjustment"}},{"kind":"Field","name":{"kind":"Name","value":"netAmount"}},{"kind":"Field","name":{"kind":"Name","value":"currencyCode"}},{"kind":"Field","name":{"kind":"Name","value":"utr"}},{"kind":"Field","name":{"kind":"Name","value":"paidAt"}},{"kind":"Field","name":{"kind":"Name","value":"failedAt"}},{"kind":"Field","name":{"kind":"Name","value":"failureReason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"items"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"refundedAmount"}}]}}]}}]} as unknown as DocumentNode<GetMyPayoutsQuery, GetMyPayoutsQueryVariables>;
+export const MySellerOrderRefundPreviewDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MySellerOrderRefundPreview"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"sellerOrderId"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"ID"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mySellerOrderRefundPreview"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"sellerOrderId"},"value":{"kind":"Variable","name":{"kind":"Name","value":"sellerOrderId"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sellerOrderId"}},{"kind":"Field","name":{"kind":"Name","value":"orderNumber"}},{"kind":"Field","name":{"kind":"Name","value":"currencyCode"}},{"kind":"Field","name":{"kind":"Name","value":"subtotal"}},{"kind":"Field","name":{"kind":"Name","value":"taxAmount"}},{"kind":"Field","name":{"kind":"Name","value":"shippingAmount"}},{"kind":"Field","name":{"kind":"Name","value":"discountAmount"}},{"kind":"Field","name":{"kind":"Name","value":"sliceTotal"}},{"kind":"Field","name":{"kind":"Name","value":"alreadyRefunded"}},{"kind":"Field","name":{"kind":"Name","value":"maxRefundable"}},{"kind":"Field","name":{"kind":"Name","value":"refundable"}},{"kind":"Field","name":{"kind":"Name","value":"blockedReason"}},{"kind":"Field","name":{"kind":"Name","value":"paymentGateway"}},{"kind":"Field","name":{"kind":"Name","value":"refunds"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"reason"}},{"kind":"Field","name":{"kind":"Name","value":"failureReason"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]}}]} as unknown as DocumentNode<MySellerOrderRefundPreviewQuery, MySellerOrderRefundPreviewQueryVariables>;
+export const CreateSellerRefundDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"mutation","name":{"kind":"Name","value":"CreateSellerRefund"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"input"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"CreateSellerRefundInput"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"createSellerRefund"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"input"},"value":{"kind":"Variable","name":{"kind":"Name","value":"input"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"amount"}},{"kind":"Field","name":{"kind":"Name","value":"status"}},{"kind":"Field","name":{"kind":"Name","value":"failureReason"}},{"kind":"Field","name":{"kind":"Name","value":"gatewayRefundId"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}}]}}]}}]} as unknown as DocumentNode<CreateSellerRefundMutation, CreateSellerRefundMutationVariables>;
 export const MySellerStatsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MySellerStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mySellerStats"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"netEarningsThisMonth"}},{"kind":"Field","name":{"kind":"Name","value":"netEarningsLastMonth"}},{"kind":"Field","name":{"kind":"Name","value":"netEarningsChangePct"}},{"kind":"Field","name":{"kind":"Name","value":"lifetimeNetEarnings"}},{"kind":"Field","name":{"kind":"Name","value":"grossSalesThisMonth"}},{"kind":"Field","name":{"kind":"Name","value":"lifetimeCommission"}},{"kind":"Field","name":{"kind":"Name","value":"pendingPayoutAmount"}},{"kind":"Field","name":{"kind":"Name","value":"paidPayoutAmount"}},{"kind":"Field","name":{"kind":"Name","value":"ordersThisMonth"}},{"kind":"Field","name":{"kind":"Name","value":"ordersLastMonth"}},{"kind":"Field","name":{"kind":"Name","value":"ordersChangePct"}},{"kind":"Field","name":{"kind":"Name","value":"lifetimeOrders"}},{"kind":"Field","name":{"kind":"Name","value":"avgOrderValue"}},{"kind":"Field","name":{"kind":"Name","value":"pendingOrders"}},{"kind":"Field","name":{"kind":"Name","value":"toShipOrders"}},{"kind":"Field","name":{"kind":"Name","value":"deliveredOrders"}},{"kind":"Field","name":{"kind":"Name","value":"cancelledOrders"}},{"kind":"Field","name":{"kind":"Name","value":"monthlyEarnings"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"label"}},{"kind":"Field","name":{"kind":"Name","value":"value"}}]}},{"kind":"Field","name":{"kind":"Name","value":"bestSellers"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"productId"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"unitsSold"}},{"kind":"Field","name":{"kind":"Name","value":"revenue"}}]}}]}}]}}]} as unknown as DocumentNode<MySellerStatsQuery, MySellerStatsQueryVariables>;
 export const GetMySellerDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetMySeller"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"mySeller"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SellerFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PayoutAccountFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"SellerPayoutAccount"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sellerId"}},{"kind":"Field","name":{"kind":"Name","value":"accountType"}},{"kind":"Field","name":{"kind":"Name","value":"accountHolderName"}},{"kind":"Field","name":{"kind":"Name","value":"accountNumber"}},{"kind":"Field","name":{"kind":"Name","value":"ifscCode"}},{"kind":"Field","name":{"kind":"Name","value":"bankName"}},{"kind":"Field","name":{"kind":"Name","value":"upiId"}},{"kind":"Field","name":{"kind":"Name","value":"walletProvider"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Seller"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"legalName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"businessType"}},{"kind":"Field","name":{"kind":"Name","value":"dateOfIncorporation"}},{"kind":"Field","name":{"kind":"Name","value":"registrationNumber"}},{"kind":"Field","name":{"kind":"Name","value":"panNumber"}},{"kind":"Field","name":{"kind":"Name","value":"gstin"}},{"kind":"Field","name":{"kind":"Name","value":"stateCode"}},{"kind":"Field","name":{"kind":"Name","value":"stateName"}},{"kind":"Field","name":{"kind":"Name","value":"businessEmail"}},{"kind":"Field","name":{"kind":"Name","value":"businessPhone"}},{"kind":"Field","name":{"kind":"Name","value":"supportEmail"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryName"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryPan"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryDesignation"}},{"kind":"Field","name":{"kind":"Name","value":"overallStatus"}},{"kind":"Field","name":{"kind":"Name","value":"panVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"gstinVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"bankVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"documentsVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"commissionRate"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"payoutAccounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"PayoutAccountFields"}}]}}]}}]} as unknown as DocumentNode<GetMySellerQuery, GetMySellerQueryVariables>;
 export const GetSellersDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetSellers"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"status"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"SellerStatus"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"sellers"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"status"},"value":{"kind":"Variable","name":{"kind":"Name","value":"status"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"SellerFields"}}]}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"PayoutAccountFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"SellerPayoutAccount"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"sellerId"}},{"kind":"Field","name":{"kind":"Name","value":"accountType"}},{"kind":"Field","name":{"kind":"Name","value":"accountHolderName"}},{"kind":"Field","name":{"kind":"Name","value":"accountNumber"}},{"kind":"Field","name":{"kind":"Name","value":"ifscCode"}},{"kind":"Field","name":{"kind":"Name","value":"bankName"}},{"kind":"Field","name":{"kind":"Name","value":"upiId"}},{"kind":"Field","name":{"kind":"Name","value":"walletProvider"}},{"kind":"Field","name":{"kind":"Name","value":"isPrimary"}},{"kind":"Field","name":{"kind":"Name","value":"isVerified"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}}]}},{"kind":"FragmentDefinition","name":{"kind":"Name","value":"SellerFields"},"typeCondition":{"kind":"NamedType","name":{"kind":"Name","value":"Seller"}},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"userId"}},{"kind":"Field","name":{"kind":"Name","value":"legalName"}},{"kind":"Field","name":{"kind":"Name","value":"displayName"}},{"kind":"Field","name":{"kind":"Name","value":"businessType"}},{"kind":"Field","name":{"kind":"Name","value":"dateOfIncorporation"}},{"kind":"Field","name":{"kind":"Name","value":"registrationNumber"}},{"kind":"Field","name":{"kind":"Name","value":"panNumber"}},{"kind":"Field","name":{"kind":"Name","value":"gstin"}},{"kind":"Field","name":{"kind":"Name","value":"stateCode"}},{"kind":"Field","name":{"kind":"Name","value":"stateName"}},{"kind":"Field","name":{"kind":"Name","value":"businessEmail"}},{"kind":"Field","name":{"kind":"Name","value":"businessPhone"}},{"kind":"Field","name":{"kind":"Name","value":"supportEmail"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryName"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryPan"}},{"kind":"Field","name":{"kind":"Name","value":"signatoryDesignation"}},{"kind":"Field","name":{"kind":"Name","value":"overallStatus"}},{"kind":"Field","name":{"kind":"Name","value":"panVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"gstinVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"bankVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"documentsVerifiedAt"}},{"kind":"Field","name":{"kind":"Name","value":"rejectionReason"}},{"kind":"Field","name":{"kind":"Name","value":"commissionRate"}},{"kind":"Field","name":{"kind":"Name","value":"createdAt"}},{"kind":"Field","name":{"kind":"Name","value":"updatedAt"}},{"kind":"Field","name":{"kind":"Name","value":"payoutAccounts"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"FragmentSpread","name":{"kind":"Name","value":"PayoutAccountFields"}}]}}]}}]} as unknown as DocumentNode<GetSellersQuery, GetSellersQueryVariables>;

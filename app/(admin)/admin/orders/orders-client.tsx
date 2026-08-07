@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
@@ -123,12 +124,27 @@ export default function OrdersClient() {
   const { can } = useAdminPermissions();
   const canManage = can(["order:manage"]);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  // The header command palette deep-links orders here as `?search=<orderNumber>`
+  // (orders have no standalone detail route). Seed the filter from the URL, and
+  // the effect below keeps it in sync if the palette navigates here while we're
+  // already mounted.
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
+  const [debouncedSearch, setDebouncedSearch] = useState(
+    () => searchParams.get("search") ?? "",
+  );
   const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  // Re-apply `?search=` when the palette navigates here on the same route
+  // (a same-route push doesn't remount, so the initial state above won't re-run).
+  useEffect(() => {
+    const s = searchParams.get("search") ?? "";
+    setSearch(s);
+    setDebouncedSearch(s);
+  }, [searchParams]);
 
   const [detailId, setDetailId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<AdminParentOrder | null>(

@@ -51,6 +51,8 @@ import {
   ShieldCheck,
   History,
   KeyRound,
+  MessageSquareWarning,
+  type LucideIcon,
 } from "lucide-react";
 
 import type { NavItem } from "./nav.types";
@@ -190,6 +192,13 @@ export const adminNavigation: AdminNavGroup[] = [
         icon: PackageX,
         permission: ROUTE_PERMISSIONS.returns,
       },
+      {
+        // CP-EC grievance redressal + monthly compliance report (Phase 4).
+        title: "Grievances",
+        href: "/admin/grievances",
+        icon: MessageSquareWarning,
+        permission: ROUTE_PERMISSIONS.grievances,
+      },
     ],
   },
   {
@@ -287,35 +296,51 @@ export const adminNavigation: AdminNavGroup[] = [
       },
     ],
   },
+];
+
+/**
+ * Settings sections — shown on the /admin/settings hub page (reached from the
+ * profile dropdown) and kept searchable in the command palette, but deliberately
+ * NOT in the main sidebar, which was decluttered by moving them here. Single
+ * source of truth for the hub, the palette, and any future settings sub-nav.
+ */
+export interface SettingsSection {
+  title: string;
+  href: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+export const settingsSections: SettingsSection[] = [
   {
-    label: "Settings",
-    items: [
-      {
-        title: "General",
-        href: "/admin/settings/general",
-        icon: Settings,
-      },
-      {
-        title: "Appearance",
-        href: "/admin/settings/appearance",
-        icon: Palette,
-      },
-      {
-        title: "Branding",
-        href: "/admin/settings/branding",
-        icon: ImagePlus,
-      },
-      {
-        title: "Email",
-        href: "/admin/settings/email",
-        icon: Mail,
-      },
-      {
-        title: "Invoice Template",
-        href: "/admin/settings/invoices",
-        icon: FileBadge,
-      },
-    ],
+    title: "General",
+    href: "/admin/settings/general",
+    description: "Core store configuration and defaults.",
+    icon: Settings,
+  },
+  {
+    title: "Appearance",
+    href: "/admin/settings/appearance",
+    description: "Theme colors, corner radius and fonts for the admin panel.",
+    icon: Palette,
+  },
+  {
+    title: "Branding",
+    href: "/admin/settings/branding",
+    description: "Logo and platform name shown across the panel, emails and PDFs.",
+    icon: ImagePlus,
+  },
+  {
+    title: "Email",
+    href: "/admin/settings/email",
+    description: "Sender identity and transactional email templates.",
+    icon: Mail,
+  },
+  {
+    title: "Invoice Template",
+    href: "/admin/settings/invoices",
+    description: "Details and layout for generated tax invoices.",
+    icon: FileBadge,
   },
 ];
 

@@ -23,6 +23,9 @@ import {
   MapPin,
   Package,
   PackageX,
+  MessageSquareWarning,
+  KeyRound,
+  Star,
   User as UserIcon,
   LogOut,
 } from "lucide-react";
@@ -43,6 +46,9 @@ const NAV: {
   { href: "/account/addresses", label: "Addresses", icon: MapPin },
   { href: "/account/orders", label: "Orders", icon: Package },
   { href: "/account/returns", label: "Returns", icon: PackageX },
+  { href: "/account/reviews", label: "Reviews", icon: Star },
+  { href: "/account/grievances", label: "Complaints", icon: MessageSquareWarning },
+  { href: "/account/password", label: "Password", icon: KeyRound },
 ];
 
 export function AccountShell({ children }: { children: React.ReactNode }) {
