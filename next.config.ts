@@ -25,6 +25,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com", pathname: "/**" },
     ],
   },
+  experimental: {
+    // By default the server loads every route's modules at boot. ~70 of the
+    // ~100 routes are admin/seller pages shoppers never hit, so on a small
+    // host load each route on its first request instead (that first hit is a
+    // little slower; memory then grows only with the routes actually used).
+    preloadEntriesOnStart: false,
+  },
 };
 
 // withSentryConfig is inert without a DSN/auth token: source-map upload only
@@ -33,4 +40,8 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   silent: true,
   disableLogger: true,
+  // Sentry otherwise forces production source maps on, purely so it can upload
+  // them. Without an auth token nothing is uploaded, so skip generating them
+  // (less build memory, ~50 MB less output).
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
 });

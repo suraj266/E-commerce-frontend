@@ -1,6 +1,6 @@
 "use client";
 
-import * as Sentry from "@sentry/nextjs";
+import { captureException } from "@/lib/observability/sentry";
 import { useEffect } from "react";
 
 // global-error replaces the root layout when an error is thrown while
@@ -12,7 +12,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    captureException(error);
     // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);

@@ -64,3 +64,12 @@ export interface BlockDefinition<TProps = Record<string, unknown>> {
   /** Variant used when a block has no `variant` set (legacy blocks + new inserts). */
   defaultVariant: string;
 }
+
+/**
+ * The public-render half of a BlockDefinition (no admin Editor / picker meta),
+ * so the storefront renderer doesn't ship the admin editing UI.
+ */
+export type ViewBlockDefinition<TProps = Record<string, unknown>> = Omit<
+  BlockDefinition<TProps>,
+  "meta" | "Editor"
+>;

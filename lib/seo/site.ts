@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { serverGraphQL } from "@/lib/graphql/server-fetch";
 
 /**
@@ -37,8 +38,12 @@ interface SiteSettingRow {
  * Server-only read of the platform brand name from `SiteSetting.platform_name`
  * (GENERAL group). Falls back to "Ecommerce" when unset or unreachable, so
  * titles/metadata always render. Cached for 5 minutes — branding rarely changes.
+ *
+ * Wrapped in React `cache()`: the root layout, generateMetadata and page
+ * bodies each call it, and serverGraphQL POSTs (which Next does not dedupe),
+ * so one render made the same request 2-3 times. Now it runs once per request.
  */
-export async function getSiteName(): Promise<string> {
+export const getSiteName = cache(async (): Promise<string> => {
   const data = await serverGraphQL<{ siteSettings: SiteSettingRow[] }>(
     SITE_NAME_QUERY,
     { group: "GENERAL" },
@@ -48,7 +53,7 @@ export async function getSiteName(): Promise<string> {
     ?.find((s) => s.key === "platform_name")
     ?.value?.trim();
   return name || DEFAULT_SITE_NAME;
-}
+});
 
 /**
  * Compose an absolute URL from a site-relative path. Pass-through for values

@@ -1,15 +1,28 @@
 import type { MetadataRoute } from "next";
 import { print } from "graphql";
 
-import { GET_PUBLIC_PRODUCTS } from "@/lib/graphql/products";
 import { GET_CATEGORIES } from "@/lib/graphql/categories";
-import type { GetPublicProductsData } from "@/types/product.types";
 import type { GetCategoriesData } from "@/types/category.types";
 import { serverGraphQL } from "@/lib/graphql/server-fetch";
 import { absoluteUrl } from "@/lib/seo/site";
 
-const PRODUCTS_QUERY = print(GET_PUBLIC_PRODUCTS);
+// Only `slug` + `createdAt` are used below. Asking for just those (rather than
+// the full product summary with images/labels/variants) keeps the response for
+// up to 5000 products small enough for Next's data cache (entries over 2 MB
+// are never cached), so the hourly revalidate actually applies.
+const PRODUCTS_QUERY = /* GraphQL */ `
+  query GetSitemapProducts($limit: Float) {
+    publicProducts(limit: $limit) {
+      slug
+      createdAt
+    }
+  }
+`;
 const CATEGORIES_QUERY = print(GET_CATEGORIES);
+
+interface SitemapProductsData {
+  publicProducts: { slug: string; createdAt?: string | null }[];
+}
 
 /**
  * sitemap.xml — static storefront routes plus every active category and
@@ -27,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const [productsData, categoriesData] = await Promise.all([
-    serverGraphQL<GetPublicProductsData>(
+    serverGraphQL<SitemapProductsData>(
       PRODUCTS_QUERY,
       { limit: 5000 },
       { revalidate: 3600 },

@@ -11,6 +11,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 
@@ -41,7 +42,16 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { StarRating } from "./star-rating";
 import { ReviewMediaStrip } from "./review-media-strip";
-import { WriteReviewDialog } from "./write-review-dialog";
+
+// The review form (react-hook-form + zod) only matters once a shopper opens
+// it, so it loads right after hydration instead of in the product page's
+// initial JS. It stays mounted and driven by `open` exactly as before — a
+// closed dialog renders nothing and skips its query — so an early click still
+// opens it as soon as the chunk arrives.
+const WriteReviewDialog = dynamic(
+  () => import("./write-review-dialog").then((m) => m.WriteReviewDialog),
+  { ssr: false },
+);
 
 interface Props {
   productId: string;

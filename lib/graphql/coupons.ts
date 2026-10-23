@@ -1,19 +1,37 @@
 /**
  * Coupon GraphQL ops — admin CRUD + customer validateCoupon.
  *
- * First file migrated to graphql-codegen `client-preset`. The `graphql()`
- * tag returns a TypedDocumentNode — call sites get fully-typed data and
- * variables without `useQuery<MyData>()` generics.
+ * Written with the `gql` tag like the rest of this folder, but every document
+ * is annotated with the TypedDocumentNode type that graphql-codegen generates
+ * for it (codegen picks up `gql` documents too), so call sites still get
+ * fully-typed data and variables.
  *
- * Other files in this folder still use the legacy `gql` import from
- * @apollo/client. Both styles coexist; migrate file-by-file as you touch them.
+ * Why not the client-preset `graphql()` tag here: without a compiler plugin
+ * it is backed by gql/gql.ts, a lookup table that imports EVERY operation in
+ * the app (~840 KB raw). This file is imported by the cart + checkout coupon
+ * hook, so `graphql()` put that whole table on those pages.
  */
 
-import { graphql } from "@/gql";
+import { gql } from "@apollo/client";
+import type { TypedDocumentNode } from "@apollo/client";
+import type {
+  CreateCouponMutation,
+  CreateCouponMutationVariables,
+  GetAdminCouponQuery,
+  GetAdminCouponQueryVariables,
+  GetAdminCouponsQuery,
+  GetAdminCouponsQueryVariables,
+  RemoveCouponMutation,
+  RemoveCouponMutationVariables,
+  UpdateCouponMutation,
+  UpdateCouponMutationVariables,
+  ValidateCouponMutation,
+  ValidateCouponMutationVariables,
+} from "@/gql/graphql";
 
-// Fragment — codegen picks it up by name; consumers reference it via the
-// "...CouponFields" spread inside their own operations.
-graphql(`
+// Fragment — consumers reference it via the "...CouponFields" spread inside
+// their own operations.
+const COUPON_FIELDS = gql`
   fragment CouponFields on Coupon {
     id
     storeId
@@ -33,51 +51,73 @@ graphql(`
     createdAt
     updatedAt
   }
-`);
+`;
 
 // ---- Admin ----
-export const GET_ADMIN_COUPONS = graphql(`
+export const GET_ADMIN_COUPONS: TypedDocumentNode<
+  GetAdminCouponsQuery,
+  GetAdminCouponsQueryVariables
+> = gql`
   query GetAdminCoupons($search: String, $status: String) {
     adminCoupons(search: $search, status: $status) {
       ...CouponFields
     }
   }
-`);
+  ${COUPON_FIELDS}
+`;
 
-export const GET_ADMIN_COUPON = graphql(`
+export const GET_ADMIN_COUPON: TypedDocumentNode<
+  GetAdminCouponQuery,
+  GetAdminCouponQueryVariables
+> = gql`
   query GetAdminCoupon($id: ID!) {
     adminCoupon(id: $id) {
       ...CouponFields
     }
   }
-`);
+  ${COUPON_FIELDS}
+`;
 
-export const CREATE_COUPON = graphql(`
+export const CREATE_COUPON: TypedDocumentNode<
+  CreateCouponMutation,
+  CreateCouponMutationVariables
+> = gql`
   mutation CreateCoupon($input: CreateCouponInput!) {
     createCoupon(input: $input) {
       ...CouponFields
     }
   }
-`);
+  ${COUPON_FIELDS}
+`;
 
-export const UPDATE_COUPON = graphql(`
+export const UPDATE_COUPON: TypedDocumentNode<
+  UpdateCouponMutation,
+  UpdateCouponMutationVariables
+> = gql`
   mutation UpdateCoupon($input: UpdateCouponInput!) {
     updateCoupon(input: $input) {
       ...CouponFields
     }
   }
-`);
+  ${COUPON_FIELDS}
+`;
 
-export const REMOVE_COUPON = graphql(`
+export const REMOVE_COUPON: TypedDocumentNode<
+  RemoveCouponMutation,
+  RemoveCouponMutationVariables
+> = gql`
   mutation RemoveCoupon($id: ID!) {
     removeCoupon(id: $id) {
       id
     }
   }
-`);
+`;
 
 // ---- Customer ----
-export const VALIDATE_COUPON = graphql(`
+export const VALIDATE_COUPON: TypedDocumentNode<
+  ValidateCouponMutation,
+  ValidateCouponMutationVariables
+> = gql`
   mutation ValidateCoupon($input: ValidateCouponInput!) {
     validateCoupon(input: $input) {
       isValid
@@ -92,4 +132,5 @@ export const VALIDATE_COUPON = graphql(`
       }
     }
   }
-`);
+  ${COUPON_FIELDS}
+`;

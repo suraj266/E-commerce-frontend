@@ -1,11 +1,11 @@
 "use client";
 
 import type { Block } from "@/types/page.types";
-import { BLOCK_REGISTRY } from "./registry";
+import { VIEW_REGISTRY } from "./view-registry";
 
 /**
  * BlockRenderer — iterates a page's blocks array and renders each via the
- * matching variant View in BLOCK_REGISTRY. Resolution rules:
+ * matching variant View in VIEW_REGISTRY. Resolution rules:
  *
  *   - Unknown block.type → skipped (forward-compat for new block types
  *     not yet deployed in this build)
@@ -21,7 +21,7 @@ export function BlockRenderer({ blocks }: { blocks: Block[] }) {
       {blocks
         .filter((b) => b.visible !== false)
         .map((block) => {
-          const def = BLOCK_REGISTRY[block.type];
+          const def = VIEW_REGISTRY[block.type];
           if (!def) {
             if (process.env.NODE_ENV !== "production") {
               // eslint-disable-next-line no-console

@@ -1,5 +1,12 @@
+# Sized for a small single host shared with the backend (see
+# backend/docker-compose.prod.yml for the host-level memory budget). Build the
+# image OFF the host (CI or a dev machine) and set FRONTEND_IMAGE to pull it:
+# `next build` needs far more RAM than the running server does.
 services:
   frontend:
+    # Default is the name Compose already gives this build (project
+    # "frontend", service "frontend"); override to pull a prebuilt image.
+    image: ${FRONTEND_IMAGE:-frontend-frontend}
     build:
       context: .
       dockerfile: Dockerfile
@@ -22,6 +29,20 @@ services:
       # changing them does NOT need a rebuild.
       PORT: 3000
       HOSTNAME: 0.0.0.0
+      # glibc's per-core malloc arenas fragment RSS upward over days with
+      # native modules (sharp, used by the image optimizer). Two arenas keep
+      # the resident size flat for a negligible throughput cost.
+      MALLOC_ARENA_MAX: "2"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: ${FRONTEND_MEM_LIMIT:-512m}
+    # Rotate container logs so a long-running host doesn't fill its disk.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 

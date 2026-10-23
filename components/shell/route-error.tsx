@@ -19,7 +19,7 @@
  * dashboard instead of the storefront home.
  */
 
-import * as Sentry from "@sentry/nextjs";
+import { captureException } from "@/lib/observability/sentry";
 import { useEffect } from "react";
 
 export type RouteErrorProps = {
@@ -49,7 +49,7 @@ export function RouteError({
   useEffect(() => {
     // Forward to Sentry (no-op when the DSN is unset) and surface to the
     // browser console for local debugging.
-    Sentry.captureException(error);
+    captureException(error);
     // eslint-disable-next-line no-console
     console.error(error);
   }, [error]);

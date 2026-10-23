@@ -14,8 +14,8 @@
 
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
-import * as LucideIcons from "lucide-react";
 
+import { SocialIcon } from "@/components/layout/social-icon";
 import { GET_PUBLIC_MENU } from "@/lib/graphql/menus";
 import {
   GetPublicMenuData,
@@ -106,13 +106,8 @@ function SocialRow() {
     <div className="flex items-center gap-2">
       {items.map((item) => {
         // Lucide icon by name (case-sensitive). Fallback to a generic link
-        // glyph if the admin typed an unknown name.
+        // glyph if the admin typed an unknown name (see SocialIcon).
         const iconName = item.icon ?? "";
-        const Icon =
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ((LucideIcons as any)[iconName] as
-            | LucideIcons.LucideIcon
-            | undefined) ?? LucideIcons.Link;
         const ext = isExternal(item.url);
         return (
           <a
@@ -124,7 +119,7 @@ function SocialRow() {
             aria-label={item.label}
             title={item.label}
           >
-            <Icon className="h-4 w-4" />
+            <SocialIcon name={iconName} className="h-4 w-4" />
           </a>
         );
       })}
