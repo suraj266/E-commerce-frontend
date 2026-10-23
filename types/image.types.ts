@@ -23,6 +23,7 @@ export const IMAGE_PURPOSES = [
   "ICON",
   "PRODUCT_PRIMARY",
   "PRODUCT_GALLERY",
+  "CUSTOM_ARTWORK",
   "GENERIC",
 ] as const;
 export type ImagePurpose = (typeof IMAGE_PURPOSES)[number];
@@ -78,6 +79,7 @@ export const IMAGE_PRESETS = {
     aspect: "1:1",
   },
   PRODUCT_GALLERY: { sizes: [400, 800, 1200], aspect: "free" },
+  CUSTOM_ARTWORK: { sizes: [400, 800, 1200, 2048], aspect: "free" },
   GENERIC: { sizes: [200, 400, 800, 1200], aspect: "free" },
 } as const satisfies Record<
   ImagePurpose,

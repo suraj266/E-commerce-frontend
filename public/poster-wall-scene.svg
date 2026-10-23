@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Room wall mockup">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5f0e8"/>
+      <stop offset="1" stop-color="#e7dece"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="20%" r="72%">
+      <stop offset="0" stop-color="#fffefb" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#fffefb" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cdaa80"/>
+      <stop offset="1" stop-color="#b78d61"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- wall -->
+  <rect width="1200" height="900" fill="url(#wall)"/>
+  <rect width="1200" height="900" fill="url(#glow)"/>
+
+  <!-- floor -->
+  <rect y="726" width="1200" height="174" fill="url(#floor)"/>
+  <rect y="718" width="1200" height="10" fill="#f2ece2"/>
+  <g stroke="#a5804f" stroke-width="2" opacity="0.28">
+    <line x1="0" y1="774" x2="1200" y2="774"/>
+    <line x1="0" y1="826" x2="1200" y2="826"/>
+    <line x1="0" y1="878" x2="1200" y2="878"/>
+  </g>
+
+  <!-- potted plant, lower-left -->
+  <ellipse cx="150" cy="752" rx="118" ry="20" fill="url(#soft)"/>
+  <g transform="translate(88,548)">
+    <path d="M70 210 C 12 152 6 62 46 22 C 60 72 70 150 70 210 Z" fill="#5f8459"/>
+    <path d="M70 210 C 130 150 140 56 96 22 C 82 76 72 150 70 210 Z" fill="#6f9668"/>
+    <path d="M70 210 C 42 132 36 72 60 42 C 78 92 78 160 70 210 Z" fill="#527449"/>
+    <path d="M35 205 L107 205 L96 286 L46 286 Z" fill="#c9794b"/>
+    <rect x="30" y="196" width="82" height="16" rx="4" fill="#bd6c3f"/>
+  </g>
+
+  <!-- floor lamp, lower-right -->
+  <g transform="translate(1004,470)">
+    <ellipse cx="20" cy="284" rx="72" ry="14" fill="url(#soft)"/>
+    <rect x="16" y="72" width="8" height="210" fill="#4b4741"/>
+    <rect x="-8" y="280" width="56" height="8" rx="3" fill="#4b4741"/>
+    <path d="M-16 72 L56 72 L42 8 L-2 8 Z" fill="#ecdcba"/>
+  </g>
+</svg>

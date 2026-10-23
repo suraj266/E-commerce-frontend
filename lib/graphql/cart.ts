@@ -21,6 +21,7 @@ export const CART_FIELDS = gql`
       taxAmount
       availableQuantity
       stockState
+      customization
       createdAt
       product {
         ...ProductFields

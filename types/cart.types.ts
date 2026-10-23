@@ -21,10 +21,44 @@ export interface CartItem {
   taxAmount?: number | null;
   availableQuantity: number;
   stockState: CartStockState;
+  /**
+   * Custom-Wall payload (JSON string) for a print-on-demand line:
+   * { imageId, imageUrl, fileName, imageWidth, imageHeight, sizeLabel, notes }.
+   * Null for ordinary catalog lines. Parse with `parseCartCustomization`.
+   */
+  customization?: string | null;
   createdAt: string;
   updatedAt: string;
   product?: Product | null;
   variant?: ProductVariant | null;
+}
+
+/** Parsed shape of `CartItem.customization` / `OrderItem.customization`. */
+export interface LineCustomization {
+  imageId: string;
+  imageUrl: string;
+  fileName?: string | null;
+  imageWidth?: number;
+  imageHeight?: number;
+  sizeLabel?: string;
+  notes?: string | null;
+  /** Printed crop rectangle, normalized to the original image (0..1). */
+  crop?: { x: number; y: number; w: number; h: number } | null;
+  /** Printed pixel dimensions (the cropped region). */
+  printWidth?: number;
+  printHeight?: number;
+}
+
+export function parseCartCustomization(
+  json: string | null | undefined,
+): LineCustomization | null {
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json) as LineCustomization;
+    return parsed && parsed.imageUrl ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface Cart {
@@ -42,6 +76,13 @@ export interface Cart {
 export interface AddToCartInput {
   variantId: string;
   quantity?: number;
+  /** Custom-Wall: the buyer's uploaded artwork (imageId) + optional print note. */
+  customization?: {
+    imageId: string;
+    notes?: string;
+    /** Printed crop rectangle, normalized to the original image (0..1). */
+    crop?: { x: number; y: number; w: number; h: number };
+  };
 }
 
 export interface UpdateCartItemQtyInput {

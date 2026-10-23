@@ -97,6 +97,37 @@ export function LogisticsSection({
             </FormItem>
           )}
         />
+
+        <div className="rounded-lg border border-primary/25 bg-primary/5 p-3">
+          <FormField
+            control={form.control}
+            name="isCustomizable"
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={field.value}
+                    onChange={field.onChange}
+                    className="h-4 w-4"
+                  />
+                </FormControl>
+                <FormLabel className="!m-0 font-semibold">
+                  Personalized print — customers upload their own image
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Turns the product page into an upload-your-photo flow: the customer
+            uploads an image, crops it to the chosen size, and only sizes their
+            image can print sharply are offered. Make this a{" "}
+            <span className="font-medium">Variable</span> product and name its
+            size variants <span className="font-mono">A4 / A3 / A2 / A1</span> —
+            each size&apos;s print resolution is derived from the name. Leave off
+            for ordinary products.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );

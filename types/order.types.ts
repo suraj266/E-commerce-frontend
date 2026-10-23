@@ -87,6 +87,12 @@ export interface OrderItem {
   discountAmount: number;
   attributesSnapshot: OrderItemAttribute[];
   imageUrlSnapshot?: string | null;
+  /**
+   * Custom-Wall payload (JSON string) — the buyer-uploaded artwork + size the
+   * seller must print. Null for ordinary lines. Parse with
+   * `parseCartCustomization` from cart.types.
+   */
+  customization?: string | null;
   createdAt: string;
 }
 

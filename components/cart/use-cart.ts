@@ -150,14 +150,31 @@ export function useCart() {
   const loading = isAuthed ? authedLoading : guestLoading;
 
   const add = useCallback(
-    async (variantId: string, quantity = 1, opts?: { silent?: boolean }) => {
+    async (
+      variantId: string,
+      quantity = 1,
+      opts?: {
+        silent?: boolean;
+        /** Custom-Wall: attach the buyer's uploaded artwork + printed crop. */
+        customization?: {
+          imageId: string;
+          notes?: string;
+          crop?: { x: number; y: number; w: number; h: number };
+        };
+      },
+    ) => {
       try {
+        const input = {
+          variantId,
+          quantity,
+          ...(opts?.customization
+            ? { customization: opts.customization }
+            : {}),
+        };
         if (isAuthed) {
-          await addMutation({ variables: { input: { variantId, quantity } } });
+          await addMutation({ variables: { input } });
         } else {
-          await addGuestMutation({
-            variables: { input: { variantId, quantity } },
-          });
+          await addGuestMutation({ variables: { input } });
         }
         if (!opts?.silent) toast.success("Added to cart");
         refetch();

@@ -32,6 +32,7 @@ import { WishlistHeartButton } from "@/components/wishlist/wishlist-heart-button
 import { InlineRatingLink } from "@/components/reviews/inline-rating-link";
 import { ProductReviewsSection } from "@/components/reviews/product-reviews-section";
 import { DeliveryEstimator } from "./delivery-estimator";
+import { PosterCustomizer } from "./poster-customizer";
 
 export function ProductDetailClient({ product }: { product: Product }) {
   const { add: addToCart, busy: cartBusy } = useCart();
@@ -239,7 +240,12 @@ export function ProductDetailClient({ product }: { product: Product }) {
           </span>
         </nav>
 
-        {/* Hero — image gallery + buy block */}
+        {/* Hero — custom (upload-your-photo) products render a full-width
+            preview-left / controls-right experience; ordinary products get the
+            gallery + buy block. */}
+        {product.isCustomizable ? (
+          <PosterCustomizer product={product} />
+        ) : (
         <div className="grid md:grid-cols-2 gap-6 lg:gap-10">
           {/* Gallery */}
           <div className="space-y-3">
@@ -305,8 +311,15 @@ export function ProductDetailClient({ product }: { product: Product }) {
               <p className="text-muted-foreground">{product.shortDescription}</p>
             )}
 
-            {/* Variant selectors (VARIABLE products) */}
-            {isVariable && variantAxes.length > 0 && (
+            {/* Custom-Wall (print-on-demand) products get a dedicated buy
+                experience: upload artwork → live preview → DPI-gated size →
+                add to cart. The standard variant picker + CTAs are skipped. */}
+            {product.isCustomizable && <PosterCustomizer product={product} />}
+
+            {!product.isCustomizable && (
+              <>
+                {/* Variant selectors (VARIABLE products) */}
+                {isVariable && variantAxes.length > 0 && (
               <div className="space-y-3 pt-2">
                 {variantAxes.map((axis) => (
                   <div key={axis.attributeId} className="space-y-1.5">
@@ -501,11 +514,14 @@ export function ProductDetailClient({ product }: { product: Product }) {
               />
             </div>
 
-            {/* Pincode → delivery ETA estimator (P4-B). Reuses the checkout
-                courier serviceability read-only; degrades to in-house config. */}
-            <DeliveryEstimator productId={product.id} currency={currency} />
+                {/* Pincode → delivery ETA estimator (P4-B). Reuses the checkout
+                    courier serviceability read-only; degrades to in-house config. */}
+                <DeliveryEstimator productId={product.id} currency={currency} />
+              </>
+            )}
           </div>
         </div>
+        )}
 
         {/* Description */}
         {product.description && (
@@ -600,8 +616,9 @@ export function ProductDetailClient({ product }: { product: Product }) {
         </section>
       </div>
 
-      {/* Sticky mobile buy bar (hidden on desktop) */}
-      {showStickyBar && (
+      {/* Sticky mobile buy bar (hidden on desktop; skipped for Custom-Wall,
+          which has its own upload-first buy flow). */}
+      {showStickyBar && !product.isCustomizable && (
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t bg-background/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 dark:bg-surface-2/70 dark:supports-[backdrop-filter]:bg-surface-2/55 dark:border-border-strong md:hidden animate-in slide-in-from-bottom-2">
           <div className="min-w-0">
             <div className="font-heading text-base font-bold leading-tight truncate">

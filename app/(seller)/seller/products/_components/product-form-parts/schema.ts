@@ -32,6 +32,13 @@ export const productSchema = z.object({
   height: z.coerce.number().min(0).optional().or(z.literal("")),
   isDigital: z.boolean(),
 
+  /**
+   * Custom-Wall toggle — customers upload their own image + crop it to the
+   * chosen size instead of a plain add-to-cart. Needs a VARIABLE product whose
+   * size variants are named A4/A3/A2/A1.
+   */
+  isCustomizable: z.boolean().default(false),
+
   /** Tax — pick from admin-managed catalog. UUID or empty (no tax assigned). */
   taxId: z.string().uuid().optional().or(z.literal("")),
 

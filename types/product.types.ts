@@ -121,6 +121,8 @@ export interface Product {
   status: ProductStatus;
   isFeatured: boolean;
   isDigital: boolean;
+  /** True = Custom-Wall print-on-demand product (upload artwork + pick size). */
+  isCustomizable?: boolean;
 
   // Pricing (computed from default variant)
   price?: number | null;

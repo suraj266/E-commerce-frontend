@@ -63,6 +63,7 @@ export const PRODUCT_FIELDS = gql`
     status
     isFeatured
     isDigital
+    isCustomizable
     price
     compareAtPrice
     costPrice

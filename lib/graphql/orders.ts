@@ -36,6 +36,7 @@ export const ORDER_ITEM_FIELDS = gql`
       value
     }
     imageUrlSnapshot
+    customization
     createdAt
   }
 `;

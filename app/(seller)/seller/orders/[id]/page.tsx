@@ -20,6 +20,8 @@ import { useMutation, useQuery, useLazyQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  Download,
+  Image as ImageIcon,
   Loader2,
   Package,
   RotateCcw,
@@ -49,6 +51,7 @@ import {
   type OrderStatus,
 } from "@/types/order.types";
 import { formatPrice } from "@/lib/utils/currency";
+import { parseCartCustomization } from "@/types/cart.types";
 import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { OrderStatusTimeline } from "@/components/orders/order-status-timeline";
 import { InvoiceCard } from "@/components/orders/invoice-card";
@@ -751,6 +754,11 @@ export default function SellerOrderDetailPage() {
 /* -------------------------------------------------------------------------- */
 
 function SellerOrderItemRow({ item }: { item: OrderItem }) {
+  // Custom-Wall line: the buyer uploaded artwork we must print. The download
+  // URL is the print-ready original (imageUrlSnapshot === the master file).
+  const custom = parseCartCustomization(item.customization);
+  const downloadUrl = custom?.imageUrl ?? item.imageUrlSnapshot ?? null;
+
   return (
     <div className="flex gap-4 p-4">
       <div className="relative h-16 w-16 shrink-0 rounded-md overflow-hidden bg-muted">
@@ -770,9 +778,40 @@ function SellerOrderItemRow({ item }: { item: OrderItem }) {
             {item.variantName}
           </div>
         )}
-        <div className="text-xs text-muted-foreground mt-0.5">
-          SKU {item.sku}
-        </div>
+        <div className="text-xs text-muted-foreground mt-0.5">SKU {item.sku}</div>
+
+        {custom && (
+          <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-xs">
+            <div className="flex items-center gap-1.5 font-semibold text-primary">
+              <ImageIcon className="h-3.5 w-3.5" />
+              Custom print
+              {custom.sizeLabel ? ` · ${custom.sizeLabel}` : ""}
+            </div>
+            {(custom.imageWidth && custom.imageHeight) ? (
+              <div className="mt-0.5 text-muted-foreground">
+                Artwork {custom.imageWidth}×{custom.imageHeight}px
+                {custom.fileName ? ` · ${custom.fileName}` : ""}
+              </div>
+            ) : null}
+            {custom.notes ? (
+              <div className="mt-0.5 text-muted-foreground">
+                Note: “{custom.notes}”
+              </div>
+            ) : null}
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+                className="mt-1.5 inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download original to print ↗
+              </a>
+            )}
+          </div>
+        )}
       </div>
       <div className="text-right">
         <div className="text-sm font-semibold">
